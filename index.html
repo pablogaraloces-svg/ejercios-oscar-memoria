@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Mi Acompañante Diario</title>
+<meta name="description" content="Asistente diario de estimulación cognitiva, recordatorios y compañía." />
+<meta name="theme-color" content="#5E81AC" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="assets/icons/icon-192.png" />
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png" />
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- Pantalla de carga -->
+  <section class="screen active" id="screen-loading">
+    <div class="col center grow">
+      <div class="mascot bounce" style="width:140px;height:140px;font-size:4.4rem;">🌻</div>
+      <p class="title-lg" style="margin-top:24px;">Preparando todo con cariño…</p>
+    </div>
+  </section>
+
+  <!-- Configuración inicial guiada -->
+  <section class="screen" id="screen-onboarding">
+    <div id="onboarding-root" class="col grow"></div>
+  </section>
+
+  <!-- Pantalla principal -->
+  <section class="screen" id="screen-home">
+    <div class="top-bar">
+      <div class="row">
+        <div class="mascot bounce" id="home-mascot">🌻</div>
+        <div class="col" style="gap:4px;">
+          <h1 class="title-xl" id="home-greeting">Hola</h1>
+          <p class="text-md" id="home-date"></p>
+        </div>
+      </div>
+      <button class="btn btn-ghost" id="btn-open-settings" aria-label="Ajustes">⚙️ Ajustes</button>
+    </div>
+
+    <div class="grow col center" style="gap:32px;">
+      <button class="btn btn-huge btn-success" id="btn-start-session" style="width:100%;max-width:640px;">
+        ▶️ Empezar el ratito de hoy
+      </button>
+      <div class="grid-options" style="max-width:640px;">
+        <button class="option-card" id="btn-open-reports">
+          <span class="emoji">📈</span>
+          <span>Cómo voy</span>
+        </button>
+        <button class="option-card" id="btn-open-family">
+          <span class="emoji">👨‍👩‍👧</span>
+          <span>Mi familia</span>
+        </button>
+      </div>
+    </div>
+    <p class="text-md" style="text-align:center;">Estoy aquí para acompañarte, sin prisa. 💛</p>
+  </section>
+
+  <!-- Sesión diaria (flujo dinámico) -->
+  <section class="screen" id="screen-session">
+    <div class="top-bar">
+      <button class="btn btn-icon btn-ghost" id="btn-session-back" aria-label="Volver">←</button>
+      <div class="row grow" style="margin:0 20px;">
+        <div class="progress-track"><div class="progress-fill" id="session-progress" style="width:0%;"></div></div>
+      </div>
+      <span class="pill" id="session-step-label">1 / 8</span>
+    </div>
+    <div class="row grow" style="align-items:flex-start; gap:24px;">
+      <div class="col" style="align-items:center; gap:8px; flex-shrink:0;">
+        <div class="mascot bounce" id="session-mascot">🌻</div>
+      </div>
+      <div id="session-content" class="col grow fade-in" style="justify-content:center;"></div>
+    </div>
+    <div id="session-bubble" class="speech-bubble hidden" style="align-self:flex-start; margin-left:120px;"></div>
+  </section>
+
+  <!-- Informes -->
+  <section class="screen" id="screen-reports">
+    <div class="top-bar">
+      <button class="btn btn-icon btn-ghost" id="btn-reports-back" aria-label="Volver">←</button>
+      <h2 class="title-lg">Cómo voy</h2>
+      <div style="width:88px;"></div>
+    </div>
+    <div id="reports-root" class="col grow" style="gap:24px; overflow-y:auto;"></div>
+  </section>
+
+  <!-- Familia -->
+  <section class="screen" id="screen-family">
+    <div class="top-bar">
+      <button class="btn btn-icon btn-ghost" id="btn-family-back" aria-label="Volver">←</button>
+      <h2 class="title-lg">Mi familia</h2>
+      <button class="btn btn-accent" id="btn-add-family">➕ Añadir</button>
+    </div>
+    <div id="family-root" class="col grow" style="gap:16px; overflow-y:auto;"></div>
+  </section>
+
+  <!-- Ajustes -->
+  <section class="screen" id="screen-settings">
+    <div class="top-bar">
+      <button class="btn btn-icon btn-ghost" id="btn-settings-back" aria-label="Volver">←</button>
+      <h2 class="title-lg">Ajustes</h2>
+      <div style="width:88px;"></div>
+    </div>
+    <div class="row wrap" style="gap:12px; margin-bottom:20px;" id="settings-tabs"></div>
+    <div id="settings-root" class="col grow" style="gap:16px; overflow-y:auto;"></div>
+  </section>
+
+  <!-- Botón fijo de salir -->
+  <button class="exit-fab" id="btn-exit" aria-label="Salir de la aplicación">🚪</button>
+
+  <!-- Modal de confirmación de salida -->
+  <div class="modal-backdrop" id="exit-modal">
+    <div class="modal-box">
+      <div style="font-size:3.2rem;">🌻</div>
+      <h2 class="title-lg">¿Quieres salir por ahora?</h2>
+      <p class="text-base" style="margin:16px 0 28px;">Hemos guardado todo tu progreso. Puedes volver cuando quieras, aquí te espero.</p>
+      <div class="row center" style="gap:16px;">
+        <button class="btn btn-ghost" id="btn-exit-cancel">Seguir un poco más</button>
+        <button class="btn btn-warm" id="btn-exit-confirm">Salir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal genérico reutilizable -->
+  <div class="modal-backdrop" id="generic-modal">
+    <div class="modal-box" id="generic-modal-box"></div>
+  </div>
+
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
