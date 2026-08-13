@@ -3,6 +3,47 @@
 Aplicación web progresiva (PWA), pensada para tablets Android como la **Honor Pad X9a**,
 que funciona **completamente offline** una vez instalada.
 
+## 🆕 Novedades de la versión 2
+
+- **Pantalla adaptada a 2508×1504** (Honor Pad X9a) sin scroll lateral, y totalmente
+  utilizable tanto en horizontal como en vertical en cualquier tablet.
+- **"Mi evolución"** (antes "Cómo voy"): ahora incluye, además de la precisión general,
+  una gráfica de **en qué tipo de ejercicio falla más**, un recuento de **los estados
+  de ánimo marcados día a día**, y el **porcentaje de cumplimiento de los recordatorios**.
+- **Mi familia**: cada persona se muestra en una tarjeta con su foto; el botón
+  "Modificar" permite cambiar nombre, parentesco o foto, y desde ahí también se
+  puede **quitar** a la persona.
+- **Voz**: se puede elegir, de entre las voces en español instaladas en la tablet
+  (incluida la de Google si el dispositivo la tiene), cuál usar. Todo funciona
+  sin conexión: es el propio sistema Android el que ya trae los motores de voz.
+- **Mascota**: ahora es un mono/macaco simpático (🐵) que cambia de cara según
+  Óscar acierta, falla, o está pensando.
+- **Celebraciones más emotivas**: al acertar aparece una animación de confeti +
+  un emoji que "explota" en el centro de la pantalla con partículas.
+- **Botón "Continuamos"**: al terminar cada ejercicio aparece (parpadeando) un
+  botón para avanzar cuando el usuario quiera, además de un avance automático
+  con más margen de tiempo para que la voz y la animación no se corten.
+- **Sonidos de animales**: al tocar cada animal suena un efecto sintetizado
+  simpático (sin necesidad de archivos de audio ni conexión a internet).
+- **Ejercicio de familia**: adivinar el nombre de la persona en la foto, con
+  3 opciones y orden aleatorio.
+- **Reacciones de voz según el ánimo**: si la respuesta es positiva, la voz
+  se alegra; si es menos buena, anima con una frase motivadora (siempre variada).
+- **Recordatorios**: corregido el botón "Hecho" (ahora responde de forma
+  inmediata y fiable).
+- **Nuevo ejercicio "Encuentra las diferencias"**: dos imágenes con 3
+  diferencias reales que hay que tocar en la segunda.
+- **Ayuda pasado un minuto**: si no se toca nada en un ejercicio, pasado un
+  minuto la voz anima suavemente y se resalta una pista visual.
+- **Ejercicio de memoria**: introducción hablada variada ("Óscar, fíjate bien
+  en estas imágenes…"), 10 segundos fijos de estudio, y preguntas que no se
+  repiten siempre igual.
+- **Ejercicio de animales**: corregido el género gramatical ("¿Cuál es la
+  vaca?") y ahora solo se muestra el dibujo, sin el nombre debajo.
+- **20 ejercicios diarios** variados en lugar de 8.
+- **Música de fondo relajante**, generada en el propio dispositivo (sin
+  archivos ni internet), con control de volumen y opción de apagarla en Ajustes.
+
 ## 📲 Instalación en la Honor Pad X9a (o cualquier tablet Android)
 
 **Opción A — Instalar como app (recomendado):**
@@ -39,16 +80,18 @@ oscar-pwa/
 │  ├─ core/
 │  │  ├─ db.js             → IndexedDB (perfil, recordatorios, progreso, sesiones)
 │  │  ├─ state.js          → estado en memoria + catálogos por defecto
-│  │  ├─ phrases.js        → saludos, motivación, cierre (según hora del día)
-│  │  ├─ voice.js          → voz opcional (Web Speech API, sin internet)
-│  │  ├─ mascot.js         → comportamiento de la mascota
+│  │  ├─ phrases.js        → saludos, motivación, cierre, reacciones de ánimo
+│  │  ├─ voice.js          → voz opcional y seleccionable (Web Speech API, sin internet)
+│  │  ├─ music.js          → música de fondo generativa (Web Audio, sin archivos)
+│  │  ├─ sounds.js         → efectos de sonido de animales (Web Audio)
+│  │  ├─ mascot.js         → mono/macaco con expresiones según acierto/fallo
 │  │  ├─ adaptiveDifficulty.js → sube/baja dificultad de forma invisible
 │  │  ├─ hints.js          → ayudas progresivas (suave → pista → resaltado → solución)
 │  │  ├─ reminders.js      → recordatorios configurables por la familia
-│  │  ├─ reports.js        → cálculo de estadísticas + gráfica en canvas
-│  │  └─ confetti.js       → celebración visual
+│  │  ├─ reports.js        → estadísticas (precisión, fallos por categoría, ánimo, cumplimiento)
+│  │  └─ confetti.js       → celebraciones visuales
 │  ├─ exercises/           → biblioteca de ejercicios (memoria, atención, cálculo,
-│  │                          colores, animales, fotos familiares)
+│  │                          colores, animales, diferencias, fotos familiares)
 │  └─ screens/              → onboarding, sesión diaria, ajustes, familia, informes
 └─ assets/icons/            → iconos de la app en todos los tamaños
 ```

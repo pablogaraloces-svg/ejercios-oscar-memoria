@@ -45,6 +45,33 @@ export const pickClosing = makePicker([
   "{name}, gracias por este ratito juntos. Hasta pronto.",
 ]);
 
+export const pickMoodPositiveReaction = makePicker([
+  "Qué alegría, {name}. Me encanta verte así.",
+  "¡Genial, {name}! Vamos a aprovechar este buen ánimo.",
+  "Me alegro mucho, {name}. Sigamos con esa energía.",
+  "Qué bien, {name}. Eso se nota en tu sonrisa.",
+]);
+
+export const pickMoodEncourageReaction = makePicker([
+  "Gracias por contármelo, {name}. Vamos a pasar un ratito tranquilo juntos.",
+  "No pasa nada, {name}, hoy iremos con calma y cariño.",
+  "Te acompaño igualmente, {name}. Seguro que mejora el día.",
+  "Está bien decirlo, {name}. Aquí estoy, vamos poco a poco.",
+]);
+
+export const pickMemoryIntro = makePicker([
+  "{name}, ahora fíjate bien en estas imágenes durante unos segundos.",
+  "Vamos a entrenar la memoria, {name}. Mira con calma, sin prisa.",
+  "{name}, obsérvalas tranquilamente, luego te pregunto.",
+  "Fíjate bien, {name}. Dentro de un momento te pregunto qué había.",
+]);
+
+export const pickInactivityHint = makePicker([
+  "Tómate tu tiempo. Cuando quieras, fíjate en las opciones.",
+  "Aquí sigo, sin prisa. Cuando estés listo, elige una opción.",
+  "Tranquilo/a, vamos a mirarlo juntos con calma.",
+]);
+
 function getPartOfDay() {
   const h = new Date().getHours();
   if (h < 6) return "madrugada";

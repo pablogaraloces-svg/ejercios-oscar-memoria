@@ -2,10 +2,12 @@ import { DB } from "../core/db.js";
 import { DEFAULT_REMINDER_CATALOG } from "../core/state.js";
 import { getReminders, addReminder, removeReminder, setReminderEnabled } from "../core/reminders.js";
 import { Voice } from "../core/voice.js";
+import { Music } from "../core/music.js";
 
 const TABS = [
   { key: "perfil", label: "👤 Perfil" },
   { key: "recordatorios", label: "✅ Recordatorios" },
+  { key: "voz", label: "🔊 Voz y música" },
   { key: "accesibilidad", label: "🔎 Accesibilidad" },
 ];
 
@@ -31,6 +33,7 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
     rootEl.innerHTML = "";
     if (activeTab === "perfil") await renderProfileTab();
     else if (activeTab === "recordatorios") await renderRemindersTab();
+    else if (activeTab === "voz") await renderVoiceTab();
     else await renderAccessibilityTab();
   }
 
@@ -105,7 +108,6 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
     });
     wrap.appendChild(list);
 
-    // Catálogo para añadir los que faltan
     const missing = DEFAULT_REMINDER_CATALOG.filter((c) => !currentKeys.has(c.label));
     if (missing.length) {
       const addTitle = document.createElement("p");
@@ -128,7 +130,6 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
       wrap.appendChild(grid);
     }
 
-    // Recordatorio personalizado
     const customTitle = document.createElement("p");
     customTitle.className = "text-md";
     customTitle.style.marginTop = "20px";
@@ -154,6 +155,119 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
     rootEl.appendChild(wrap);
   }
 
+  function switchRow(label, checked, onChange) {
+    const row = document.createElement("div");
+    row.className = "switch-row";
+    row.innerHTML = `<span class="text-base" style="font-weight:700;">${label}</span>`;
+    const sw = document.createElement("label");
+    sw.className = "switch";
+    sw.innerHTML = `<input type="checkbox" ${checked ? "checked" : ""} /><span class="track"></span><span class="thumb"></span>`;
+    sw.querySelector("input").onchange = (e) => onChange(e.target.checked);
+    row.appendChild(sw);
+    return row;
+  }
+
+  async function renderVoiceTab() {
+    const s = ctx.settings;
+    const wrap = document.createElement("div");
+    wrap.className = "col";
+    wrap.style.maxWidth = "640px";
+    wrap.style.gap = "18px";
+
+    wrap.appendChild(
+      switchRow("🔊 Voz que acompaña", s.voiceEnabled, async (v) => {
+        s.voiceEnabled = v;
+        Voice.setEnabled(v);
+        await DB.put("settings", s);
+        if (v) Voice.say("Así sonará mi voz durante los ejercicios.");
+      })
+    );
+
+    const voiceCard = document.createElement("div");
+    voiceCard.className = "card col";
+    voiceCard.innerHTML = `<p class="text-base" style="font-weight:700;">Elegir voz</p>
+      <p class="text-md">Se muestran las voces en español instaladas en esta tablet (incluida la de Google, si está disponible).</p>`;
+    const select = document.createElement("select");
+    select.style.cssText =
+      "min-height:64px; border-radius:16px; border:3px solid var(--color-border); padding:0 14px; font-size:var(--font-base); background:var(--color-bg-soft); color:var(--color-text); margin-top:10px;";
+    function fillVoices() {
+      const voices = Voice.getAvailableVoices();
+      select.innerHTML = "";
+      if (!voices.length) {
+        const opt = document.createElement("option");
+        opt.textContent = "No se han encontrado voces en este dispositivo";
+        select.appendChild(opt);
+        return;
+      }
+      voices.forEach((v) => {
+        const opt = document.createElement("option");
+        opt.value = v.uri;
+        opt.textContent = `${v.isGoogle ? "🟢 Google — " : ""}${v.name} (${v.lang})`;
+        if (v.uri === (s.voiceURI || Voice.getSelectedURI())) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+    fillVoices();
+    Voice.onVoicesReady(fillVoices);
+    select.onchange = async () => {
+      s.voiceURI = select.value;
+      Voice.setVoiceURI(select.value);
+      await DB.put("settings", s);
+      Voice.setEnabled(true);
+      Voice.say("Hola, así sonaré a partir de ahora.");
+      Voice.setEnabled(s.voiceEnabled);
+    };
+    voiceCard.appendChild(select);
+
+    const tryBtn = document.createElement("button");
+    tryBtn.className = "btn btn-ghost";
+    tryBtn.style.marginTop = "12px";
+    tryBtn.textContent = "🔈 Probar esta voz";
+    tryBtn.onclick = () => {
+      const wasEnabled = Voice.isEnabled();
+      Voice.setEnabled(true);
+      Voice.say(`Hola ${ctx.profile.name}, encantado de acompañarte hoy.`, {
+        onEnd: () => Voice.setEnabled(wasEnabled),
+      });
+    };
+    voiceCard.appendChild(tryBtn);
+    wrap.appendChild(voiceCard);
+
+    // Música de fondo
+    const musicCard = document.createElement("div");
+    musicCard.className = "card col";
+    musicCard.appendChild(
+      switchRow("🎵 Música de fondo relajante", s.musicEnabled, async (v) => {
+        s.musicEnabled = v;
+        await DB.put("settings", s);
+        if (v) Music.start(s.musicVolume);
+        else Music.stop();
+      })
+    );
+    const volLabel = document.createElement("p");
+    volLabel.className = "text-md";
+    volLabel.style.marginTop = "12px";
+    volLabel.textContent = "Volumen de la música";
+    musicCard.appendChild(volLabel);
+    const volInput = document.createElement("input");
+    volInput.type = "range";
+    volInput.min = "0";
+    volInput.max = "1";
+    volInput.step = "0.05";
+    volInput.value = String(s.musicVolume);
+    volInput.style.width = "100%";
+    volInput.style.height = "56px";
+    volInput.oninput = async () => {
+      s.musicVolume = Number(volInput.value);
+      Music.setVolume(s.musicVolume);
+      await DB.put("settings", s);
+    };
+    musicCard.appendChild(volInput);
+    wrap.appendChild(musicCard);
+
+    rootEl.appendChild(wrap);
+  }
+
   async function renderAccessibilityTab() {
     const s = ctx.settings;
     const wrap = document.createElement("div");
@@ -161,25 +275,6 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
     wrap.style.maxWidth = "640px";
     wrap.style.gap = "14px";
 
-    function switchRow(label, checked, onChange) {
-      const row = document.createElement("div");
-      row.className = "switch-row";
-      row.innerHTML = `<span class="text-base" style="font-weight:700;">${label}</span>`;
-      const sw = document.createElement("label");
-      sw.className = "switch";
-      sw.innerHTML = `<input type="checkbox" ${checked ? "checked" : ""} /><span class="track"></span><span class="thumb"></span>`;
-      sw.querySelector("input").onchange = (e) => onChange(e.target.checked);
-      row.appendChild(sw);
-      return row;
-    }
-
-    wrap.appendChild(
-      switchRow("🔊 Voz que acompaña", s.voiceEnabled, async (v) => {
-        s.voiceEnabled = v;
-        Voice.setEnabled(v);
-        await DB.put("settings", s);
-      })
-    );
     wrap.appendChild(
       switchRow("🌗 Alto contraste", s.highContrast, async (v) => {
         s.highContrast = v;
@@ -195,7 +290,7 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
       })
     );
     wrap.appendChild(
-      switchRow("🌻 Mostrar mascota", s.mascotEnabled, async (v) => {
+      switchRow("🐵 Mostrar mascota", s.mascotEnabled, async (v) => {
         s.mascotEnabled = v;
         await DB.put("settings", s);
       })

@@ -1,27 +1,67 @@
 /**
- * mascot.js — Mascota discreta que solo interviene para ayudar.
- * No hace ruido visual constante; se activa en momentos concretos.
+ * mascot.js — Mono/macaco simpático y discreto. Cambia de cara según
+ * cómo le va a Óscar en el ejercicio: contento al acertar, animando
+ * con cariño si falla, pensativo mientras espera respuesta.
  */
+const FACES = {
+  idle: "🐵",
+  thinking: "🤔",
+  happy: "🙉",
+  veryHappy: "🐒",
+  encouraging: "🙈",
+  pointing: "🐵",
+};
+
 export class Mascot {
   constructor(rootEl, bubbleEl) {
     this.root = rootEl;
     this.bubble = bubbleEl;
     this.hideTimer = null;
+    this.faceTimer = null;
+  }
+
+  setFace(face) {
+    if (this.root) this.root.textContent = FACES[face] || FACES.idle;
   }
 
   idle() {
     this.root.className = "mascot bounce";
+    this.setFace("idle");
+  }
+
+  thinking() {
+    this.root.className = "mascot bounce";
+    this.setFace("thinking");
   }
 
   pointTo(direction) {
-    // direction: 'left' | 'right'
     this.root.className = `mascot bounce point-${direction}`;
-    setTimeout(() => (this.root.className = "mascot bounce"), 1600);
+    this.setFace("pointing");
+    clearTimeout(this.faceTimer);
+    this.faceTimer = setTimeout(() => {
+      this.root.className = "mascot bounce";
+      this.setFace("idle");
+    }, 1600);
   }
 
   celebrate() {
     this.root.className = "mascot celebrate";
-    setTimeout(() => (this.root.className = "mascot bounce"), 800);
+    this.setFace(Math.random() > 0.5 ? "happy" : "veryHappy");
+    clearTimeout(this.faceTimer);
+    this.faceTimer = setTimeout(() => {
+      this.root.className = "mascot bounce";
+      this.setFace("idle");
+    }, 1400);
+  }
+
+  encourage() {
+    this.root.className = "mascot bounce shake-soft";
+    this.setFace("encouraging");
+    clearTimeout(this.faceTimer);
+    this.faceTimer = setTimeout(() => {
+      this.root.className = "mascot bounce";
+      this.setFace("idle");
+    }, 1400);
   }
 
   say(text, { duration = 4200 } = {}) {

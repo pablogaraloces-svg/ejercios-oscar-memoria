@@ -14,11 +14,15 @@ export const AppState = {
 export const DEFAULT_SETTINGS = {
   id: "global",
   voiceEnabled: false,
+  voiceURI: null, // voz elegida por la familia (Google TTS del dispositivo, si está instalada)
   highContrast: false,
   textSize: "base", // base | lg | xl
   reduceMotion: false,
   mascotEnabled: true,
-  sessionMinutes: 20,
+  sessionMinutes: 25,
+  exercisesPerSession: 20,
+  musicEnabled: true,
+  musicVolume: 0.35,
 };
 
 export const DEFAULT_REMINDER_CATALOG = [

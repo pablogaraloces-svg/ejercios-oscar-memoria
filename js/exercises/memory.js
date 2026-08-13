@@ -1,15 +1,32 @@
 import { ANIMALS, OBJECTS, sample, shuffle, randInt } from "./data.js";
 
+const INTROS = [
+  "{name}, ahora fíjate bien en estas imágenes durante unos segundos.",
+  "Vamos a entrenar la memoria, {name}. Mira con calma, sin prisa.",
+  "{name}, obsérvalas tranquilamente, luego te pregunto.",
+  "Fíjate bien, {name}. Dentro de un momento te pregunto qué había.",
+];
+
+const QUESTIONS = [
+  "¿Cuál de estos la hemos visto antes?",
+  "¿Cuál de estas imágenes ha aparecido antes?",
+  "¿Te acuerdas de cuál era? Tócala.",
+  "¿Cuál de estas estaba en el grupo de antes?",
+];
+
+function pickOne(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
 /**
- * Genera un ejercicio de memoria: se muestran N elementos unos segundos,
- * luego se pregunta cuál de ellos apareció.
- * Nivel bajo = 2 elementos a recordar y estudio largo.
- * Nivel alto = hasta 4 elementos y menos tiempo.
+ * Genera un ejercicio de memoria: se muestran N elementos durante 10
+ * segundos exactos, luego se pregunta cuál de ellos apareció.
+ * La introducción y la pregunta varían para no sonar repetitivas.
  */
 export function generateMemoryExercise(level = 2) {
   const pool = Math.random() > 0.5 ? ANIMALS : OBJECTS;
   const itemsToShow = Math.min(2 + Math.floor(level / 3), 4);
-  const studySeconds = Math.max(4, 8 - Math.floor(level / 2));
+  const studySeconds = 10;
 
   const shown = sample(pool, itemsToShow);
   const decoyCount = Math.min(1 + Math.floor(level / 4), 3);
@@ -30,7 +47,8 @@ export function generateMemoryExercise(level = 2) {
     kind: "memory_recall",
     studyItems: shown,
     studySeconds,
-    prompt: "¿Cuál de estos la hemos visto antes?",
+    introText: pickOne(INTROS),
+    prompt: pickOne(QUESTIONS),
     options,
   };
 }

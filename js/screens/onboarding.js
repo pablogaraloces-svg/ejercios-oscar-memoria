@@ -62,7 +62,7 @@ export function renderOnboarding(root, onComplete) {
   function stepWelcome(c) {
     c.innerHTML = `
       <div class="col center grow">
-        <div style="font-size:5rem;">🌻</div>
+        <div style="font-size:5rem;">🐵</div>
         <h1 class="title-huge" style="text-align:center;">¡Hola! Vamos a preparar tu espacio</h1>
         <p class="text-base" style="text-align:center; max-width:560px;">
           Solo te voy a pedir un par de cosas muy sencillas. Tranquilo/a, no hay prisa.
@@ -120,7 +120,7 @@ export function renderOnboarding(root, onComplete) {
     ALL_CATEGORIES.filter((cat) => cat !== "fotos").forEach((cat) => {
       const btn = document.createElement("button");
       btn.className = "option-card";
-      const emojiMap = { memoria: "🧠", atencion: "👀", calculo: "➕", colores: "🎨", animales: "🐾" };
+      const emojiMap = { memoria: "🧠", atencion: "👀", calculo: "➕", colores: "🎨", animales: "🐾", diferencias: "🔍" };
       btn.innerHTML = `<span class="emoji">${emojiMap[cat]}</span><span>${CATEGORY_LABELS[cat]}</span>`;
       btn.style.borderColor = data.categories.includes(cat) ? "var(--color-success)" : "";
       btn.onclick = () => {

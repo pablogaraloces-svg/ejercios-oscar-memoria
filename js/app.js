@@ -1,11 +1,12 @@
 import { DB } from "./core/db.js";
 import { DEFAULT_SETTINGS } from "./core/state.js";
 import { Voice } from "./core/voice.js";
+import { Music } from "./core/music.js";
 import { Mascot } from "./core/mascot.js";
 import { renderOnboarding } from "./screens/onboarding.js";
 import { SessionRunner } from "./screens/session.js";
 import { renderSettings } from "./screens/settingsScreen.js";
-import { renderFamily, openAddFamilyModal } from "./screens/familyScreen.js";
+import { renderFamily, openAddFamilyModal, openEditFamilyModal } from "./screens/familyScreen.js";
 import { renderReports } from "./screens/reportsScreen.js";
 import { getGreeting } from "./core/phrases.js";
 
@@ -27,7 +28,19 @@ function applySettings(settings) {
     document.body.classList.add(`text-${settings.textSize}`);
   }
   Voice.setEnabled(!!settings.voiceEnabled);
+  if (settings.voiceURI) Voice.setVoiceURI(settings.voiceURI);
 }
+
+// El audio en el navegador requiere un primer gesto del usuario:
+// arrancamos la música de fondo en cuanto toque la pantalla por primera vez.
+let musicPrimed = false;
+function primeMusicOnFirstTouch() {
+  if (musicPrimed) return;
+  musicPrimed = true;
+  if (ctx.settings?.musicEnabled) Music.start(ctx.settings.musicVolume ?? 0.35);
+  document.removeEventListener("pointerdown", primeMusicOnFirstTouch);
+}
+document.addEventListener("pointerdown", primeMusicOnFirstTouch);
 
 async function boot() {
   // Registrar service worker para uso 100% offline
@@ -103,7 +116,19 @@ document.getElementById("btn-reports-back").addEventListener("click", goHome);
 
 /* ---------------- Familia ---------------- */
 function refreshFamilyScreen() {
-  renderFamily(document.getElementById("family-root"), ctx);
+  renderFamily(document.getElementById("family-root"), ctx, openEditModal);
+}
+function openEditModal(index) {
+  const modal = document.getElementById("generic-modal");
+  const box = document.getElementById("generic-modal-box");
+  openEditFamilyModal(box, ctx, index, (updatedProfile) => {
+    modal.classList.remove("active");
+    if (updatedProfile) {
+      ctx.profile = updatedProfile;
+      refreshFamilyScreen();
+    }
+  });
+  modal.classList.add("active");
 }
 document.getElementById("btn-open-family").addEventListener("click", () => {
   showScreen("screen-family");
@@ -115,7 +140,10 @@ document.getElementById("btn-add-family").addEventListener("click", () => {
   const box = document.getElementById("generic-modal-box");
   openAddFamilyModal(box, ctx, (updatedProfile) => {
     modal.classList.remove("active");
-    if (updatedProfile) refreshFamilyScreen();
+    if (updatedProfile) {
+      ctx.profile = updatedProfile;
+      refreshFamilyScreen();
+    }
   });
   modal.classList.add("active");
 });

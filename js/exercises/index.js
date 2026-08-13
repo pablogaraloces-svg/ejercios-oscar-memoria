@@ -4,6 +4,7 @@ import { generateCalculationExercise } from "./calculation.js";
 import { generateColorExercise } from "./colors.js";
 import { generateAnimalExercise } from "./animals.js";
 import { generateFamilyPhotoExercise } from "./familyPhotos.js";
+import { generateDifferencesExercise } from "./spotDifference.js";
 import { getLevel } from "../core/adaptiveDifficulty.js";
 
 const GENERATORS = {
@@ -12,9 +13,10 @@ const GENERATORS = {
   calculo: generateCalculationExercise,
   colores: generateColorExercise,
   animales: generateAnimalExercise,
+  diferencias: generateDifferencesExercise,
 };
 
-export const ALL_CATEGORIES = ["memoria", "atencion", "calculo", "colores", "animales", "fotos"];
+export const ALL_CATEGORIES = ["memoria", "atencion", "calculo", "colores", "animales", "diferencias", "fotos"];
 
 export const CATEGORY_LABELS = {
   memoria: "Memoria",
@@ -22,6 +24,7 @@ export const CATEGORY_LABELS = {
   calculo: "Cálculo",
   colores: "Colores",
   animales: "Animales",
+  diferencias: "Diferencias",
   fotos: "Familia",
 };
 
@@ -30,7 +33,7 @@ export const CATEGORY_LABELS = {
  * categorías (evita dos seguidas iguales) y respetando el nivel
  * adaptativo guardado por categoría para este perfil.
  */
-export async function buildSessionExercises(profile, count = 8) {
+export async function buildSessionExercises(profile, count = 20) {
   const enabledCategories = (profile.enabledCategories && profile.enabledCategories.length
     ? profile.enabledCategories
     : ALL_CATEGORIES
@@ -38,6 +41,7 @@ export async function buildSessionExercises(profile, count = 8) {
 
   const exercises = [];
   let lastCategory = null;
+  let lastTwo = [];
 
   for (let i = 0; i < count; i++) {
     let category;
@@ -45,8 +49,13 @@ export async function buildSessionExercises(profile, count = 8) {
     do {
       category = enabledCategories[Math.floor(Math.random() * enabledCategories.length)];
       attempts++;
-    } while (category === lastCategory && enabledCategories.length > 1 && attempts < 8);
+    } while (
+      (category === lastCategory || lastTwo.filter((c) => c === category).length >= 2) &&
+      enabledCategories.length > 1 &&
+      attempts < 12
+    );
     lastCategory = category;
+    lastTwo = [...lastTwo.slice(-1), category];
 
     const level = await getLevel(profile.id, category);
     let ex;

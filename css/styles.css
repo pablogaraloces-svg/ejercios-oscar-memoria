@@ -32,13 +32,6 @@
   --space-5: 48px;
   --space-6: 64px;
 
-  --font-huge: 3.4rem;
-  --font-xl: 2.6rem;
-  --font-lg: 2.1rem;
-  --font-md: 1.6rem;
-  --font-base: 1.35rem;
-  --font-sm: 1.1rem;
-
   --shadow-soft: 0 8px 24px rgba(60, 60, 60, 0.08);
   --shadow-lift: 0 14px 36px rgba(60, 60, 60, 0.14);
 
@@ -72,6 +65,7 @@ body.text-xl { font-size: 128%; }
 
 html, body {
   height: 100%;
+  width: 100%;
   margin: 0;
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
@@ -83,14 +77,32 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   overflow: hidden;
+  overflow-x: hidden;
+  width: 100dvw;
+  height: 100dvh;
   transition: background var(--dur-med) var(--ease-gentle), color var(--dur-med) var(--ease-gentle);
 }
 
+/* Contenedor raíz: pensado para 2508x1504 (Honor Pad X9a) y proporcional
+   en cualquier otra tablet, en horizontal Y en vertical, sin scroll lateral. */
 #app {
   position: relative;
-  height: 100vh;
-  width: 100vw;
+  height: 100dvh;
+  width: 100dvw;
+  max-width: 100vw;
   overflow: hidden;
+  overflow-x: hidden;
+}
+
+/* Escalado tipográfico fluido: se adapta a la anchura real del dispositivo,
+   con techo pensado para el ancho de 2508px de la Honor Pad X9a. */
+:root {
+  --font-huge: clamp(2.1rem, 3.6vw, 3.6rem);
+  --font-xl: clamp(1.7rem, 2.8vw, 2.8rem);
+  --font-lg: clamp(1.4rem, 2.2vw, 2.2rem);
+  --font-md: clamp(1.15rem, 1.7vw, 1.7rem);
+  --font-base: clamp(1rem, 1.4vw, 1.4rem);
+  --font-sm: clamp(0.9rem, 1.1vw, 1.15rem);
 }
 
 .screen {
@@ -104,6 +116,9 @@ body {
   pointer-events: none;
   transition: opacity var(--dur-slow) var(--ease-gentle), transform var(--dur-slow) var(--ease-gentle);
   overflow-y: auto;
+  overflow-x: hidden;
+  max-width: 100vw;
+  box-sizing: border-box;
 }
 .screen.active {
   opacity: 1;
@@ -206,6 +221,9 @@ h1, h2, h3, p { margin: 0; }
 .option-card:active { transform: scale(0.96); }
 .option-card:focus-visible { outline: 5px solid var(--color-focus); outline-offset: 4px; }
 .option-card .emoji { font-size: 4rem; line-height: 1; }
+.family-photo { width: 140px; height: 140px; object-fit: cover; border-radius: 20px; box-shadow: var(--shadow-soft); }
+.family-card { transition: transform var(--dur-fast) var(--ease-gentle); }
+.family-card:hover { transform: translateY(-2px); }
 .option-card.correct-flash { background: var(--color-success-soft); border-color: var(--color-success); animation: popGood var(--dur-med) var(--ease-gentle); }
 .option-card.wrong-flash { background: var(--color-accent-soft); border-color: var(--color-accent); }
 @keyframes popGood { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
@@ -278,7 +296,9 @@ h1, h2, h3, p { margin: 0; }
 .mascot.point-left { transform: rotate(-14deg); }
 .mascot.point-right { transform: rotate(14deg); }
 .mascot.celebrate { animation: mascotCelebrate 700ms var(--ease-gentle); }
-@keyframes mascotCelebrate { 0% {transform: scale(1);} 40% {transform: scale(1.25) rotate(10deg);} 100% {transform: scale(1);} }
+@keyframes mascotCelebrate { 0% {transform: scale(1);} 40% {transform: scale(1.3) rotate(12deg);} 70% { transform: scale(0.95) rotate(-6deg);} 100% {transform: scale(1);} }
+.mascot.shake-soft { animation: mascotShake 600ms var(--ease-gentle); }
+@keyframes mascotShake { 0%,100% { transform: translateX(0);} 25% { transform: translateX(-6px) rotate(-3deg);} 75% { transform: translateX(6px) rotate(3deg);} }
 
 .speech-bubble {
   background: var(--color-surface);
@@ -355,7 +375,6 @@ h1, h2, h3, p { margin: 0; }
 .switch input:checked ~ .track { background: var(--color-success); }
 .switch input:checked ~ .thumb { transform: translateX(32px); }
 
-/* ---------- Exit fijo ---------- */
 .exit-fab {
   position: fixed;
   bottom: var(--space-3);
@@ -372,6 +391,43 @@ h1, h2, h3, p { margin: 0; }
 }
 .exit-fab:active { transform: scale(0.94); }
 
+/* ---------- Botón "Continuamos" parpadeante ---------- */
+.btn-continue-blink {
+  animation: continueBlink 1.1s ease-in-out infinite;
+}
+@keyframes continueBlink {
+  0%, 100% { transform: scale(1); box-shadow: var(--shadow-soft); }
+  50% { transform: scale(1.045); box-shadow: 0 0 0 14px rgba(111,191,139,0.22); }
+}
+
+/* ---------- Burst de celebración emotivo ---------- */
+.success-burst {
+  position: fixed;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 5rem;
+  pointer-events: none;
+  z-index: 210;
+  animation: burstPop 1000ms var(--ease-gentle) forwards;
+}
+@keyframes burstPop {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  35% { transform: translate(-50%, -50%) scale(1.25); opacity: 1; }
+  70% { transform: translate(-50%, -60%) scale(1.05); opacity: 1; }
+  100% { transform: translate(-50%, -90%) scale(0.9); opacity: 0; }
+}
+.success-particle {
+  position: fixed;
+  font-size: 2.2rem;
+  pointer-events: none;
+  z-index: 205;
+  animation: particleFly 1100ms var(--ease-gentle) forwards;
+}
+@keyframes particleFly {
+  0% { transform: translate(0,0) scale(0.6) rotate(0deg); opacity: 1; }
+  100% { transform: var(--fly-to) scale(1.1) rotate(180deg); opacity: 0; }
+}
+
 /* ---------- Confeti simple ---------- */
 .confetti-piece {
   position: fixed;
@@ -386,14 +442,61 @@ h1, h2, h3, p { margin: 0; }
   to { transform: translateY(110vh) rotate(360deg); opacity: 0.2; }
 }
 
+/* ---------- Ejercicio: encuentra las diferencias ---------- */
+.diff-cell {
+  width: 76px;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.6rem;
+  border-radius: 16px;
+  background: var(--color-bg-soft);
+  border: 3px solid var(--color-border);
+  transition: transform var(--dur-fast) var(--ease-gentle), background var(--dur-fast) var(--ease-gentle), border-color var(--dur-fast) var(--ease-gentle);
+}
+.diff-cell-interactive { cursor: pointer; }
+.diff-cell-interactive:active { transform: scale(0.92); }
+.diff-cell-found {
+  background: var(--color-success-soft);
+  border-color: var(--color-success);
+  animation: popGood var(--dur-med) var(--ease-gentle);
+}
+.diff-cell-wrong {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+}
+
 /* Fade util */
 .fade-in { animation: fadeIn var(--dur-slow) var(--ease-gentle); }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
 
 .hidden { display: none !important; }
 
-/* Tablet landscape optimisation */
-@media (max-width: 900px) {
-  .grid-options { grid-template-columns: 1fr; }
-  :root { --font-huge: 2.4rem; --font-xl: 2rem; --font-lg: 1.7rem; }
+/* ---------- Adaptación horizontal / vertical ---------- */
+/* La app está pensada para tablets grandes (p.ej. Honor Pad X9a, 2508x1504).
+   En vertical reordenamos cabecera y mascota para aprovechar la altura,
+   sin que aparezca nunca scroll lateral. */
+.session-body { align-items: flex-start; gap: var(--space-3); }
+.session-bubble-pos { align-self: flex-start; margin-left: 120px; }
+@media (orientation: portrait) {
+  .session-bubble-pos { margin-left: 0; align-self: center; }
 }
+
+@media (orientation: portrait) {
+  .top-bar { flex-wrap: wrap; row-gap: var(--space-2); }
+  .session-body { flex-direction: column; align-items: center; }
+  .mascot { width: 76px; height: 76px; font-size: 2.4rem; }
+}
+
+@media (max-width: 700px) {
+  .grid-options { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 700px), (orientation: portrait) and (max-width: 900px) {
+  .grid-options.cols-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Nunca permitir que nada empuje scroll horizontal */
+img, canvas, svg, video { max-width: 100%; }
+

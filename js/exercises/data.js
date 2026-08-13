@@ -4,16 +4,16 @@
  */
 
 export const ANIMALS = [
-  { name: "Perro", emoji: "🐶" }, { name: "Gato", emoji: "🐱" },
-  { name: "Caballo", emoji: "🐴" }, { name: "Vaca", emoji: "🐮" },
-  { name: "Oveja", emoji: "🐑" }, { name: "Cerdo", emoji: "🐷" },
-  { name: "Gallina", emoji: "🐔" }, { name: "Pato", emoji: "🦆" },
-  { name: "Conejo", emoji: "🐰" }, { name: "León", emoji: "🦁" },
-  { name: "Elefante", emoji: "🐘" }, { name: "Mono", emoji: "🐵" },
-  { name: "Oso", emoji: "🐻" }, { name: "Tortuga", emoji: "🐢" },
-  { name: "Pez", emoji: "🐟" }, { name: "Pájaro", emoji: "🐦" },
-  { name: "Burro", emoji: "🫏" }, { name: "Cabra", emoji: "🐐" },
-  { name: "Ratón", emoji: "🐭" }, { name: "Búho", emoji: "🦉" },
+  { name: "Perro", emoji: "🐶", article: "el" }, { name: "Gato", emoji: "🐱", article: "el" },
+  { name: "Caballo", emoji: "🐴", article: "el" }, { name: "Vaca", emoji: "🐮", article: "la" },
+  { name: "Oveja", emoji: "🐑", article: "la" }, { name: "Cerdo", emoji: "🐷", article: "el" },
+  { name: "Gallina", emoji: "🐔", article: "la" }, { name: "Pato", emoji: "🦆", article: "el" },
+  { name: "Conejo", emoji: "🐰", article: "el" }, { name: "León", emoji: "🦁", article: "el" },
+  { name: "Elefante", emoji: "🐘", article: "el" }, { name: "Mono", emoji: "🐵", article: "el" },
+  { name: "Oso", emoji: "🐻", article: "el" }, { name: "Tortuga", emoji: "🐢", article: "la" },
+  { name: "Pez", emoji: "🐟", article: "el" }, { name: "Pájaro", emoji: "🐦", article: "el" },
+  { name: "Burro", emoji: "🫏", article: "el" }, { name: "Cabra", emoji: "🐐", article: "la" },
+  { name: "Ratón", emoji: "🐭", article: "el" }, { name: "Búho", emoji: "🦉", article: "el" },
 ];
 
 export const COLORS = [
@@ -34,6 +34,12 @@ export const OBJECTS = [
   { name: "Casa", emoji: "🏠" }, { name: "Coche", emoji: "🚗" },
   { name: "Pelota", emoji: "⚽" }, { name: "Manzana", emoji: "🍎" },
   { name: "Pan", emoji: "🥖" }, { name: "Pescado", emoji: "🐟" },
+];
+
+/** Banco amplio para el ejercicio "encuentra las diferencias". */
+export const SCENE_ITEMS = [
+  "🌳","🌸","🍄","🦋","🐝","☀️","⭐","🌈","🍎","🍇","🎈","🎀","🧸","⚽","🚗",
+  "🏠","🌙","☂️","🐦","🐟","🌻","🍀","🎵","💛","🍊","🍉","🎁","🧦","👒","🕶️",
 ];
 
 export function shuffle(arr) {

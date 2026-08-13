@@ -1,12 +1,24 @@
 import { DB, uid } from "../core/db.js";
-import { getGreeting, getWellbeingQuestions, pickMotivation, pickClosing, fillName } from "../core/phrases.js";
+import {
+  getGreeting,
+  getWellbeingQuestions,
+  pickMotivation,
+  pickClosing,
+  pickMoodPositiveReaction,
+  pickMoodEncourageReaction,
+  pickInactivityHint,
+  fillName,
+} from "../core/phrases.js";
 import { Voice } from "../core/voice.js";
+import { Sounds } from "../core/sounds.js";
 import { HintFlow } from "../core/hints.js";
 import { reportResult } from "../core/adaptiveDifficulty.js";
 import { getReminders, markReminderDoneToday, isReminderDoneToday } from "../core/reminders.js";
-import { buildSessionExercises } from "../exercises/index.js";
-import { burstConfetti } from "../core/confetti.js";
-import { CATEGORY_LABELS } from "../exercises/index.js";
+import { buildSessionExercises, CATEGORY_LABELS } from "../exercises/index.js";
+import { burstConfetti, celebrateSuccess } from "../core/confetti.js";
+
+const INACTIVITY_MS = 60000;
+const POSITIVE_MOODS = new Set(["Muy bien", "Bien"]);
 
 function getPartOfDay() {
   const h = new Date().getHours();
@@ -28,6 +40,7 @@ export class SessionRunner {
     this.stats = { correct: 0, total: 0 };
     this.steps = [];
     this.stepIndex = 0;
+    this.inactivityTimer = null;
   }
 
   async start(onFinish) {
@@ -37,7 +50,7 @@ export class SessionRunner {
     const part = getPartOfDay();
     const wellbeing = getWellbeingQuestions(part);
     const reminders = (await getReminders(this.profile.id)).filter((r) => r.enabled);
-    const exercises = await buildSessionExercises(this.profile, 8);
+    const exercises = await buildSessionExercises(this.profile, this.settings.exercisesPerSession || 20);
 
     this.steps = [
       { type: "greeting" },
@@ -63,13 +76,50 @@ export class SessionRunner {
   }
 
   next() {
+    this.clearInactivityTimer();
     if (this.stepIndex < this.steps.length - 1) {
       this.stepIndex++;
       this.renderStep();
     }
   }
 
+  /* -------- Espera + botón "Continuamos" -------- */
+  scheduleContinue(delayMs) {
+    let advanced = false;
+    const go = () => {
+      if (advanced) return;
+      advanced = true;
+      clearTimeout(timer);
+      this.next();
+    };
+    const btn = document.createElement("button");
+    btn.className = "btn btn-success btn-huge btn-continue-blink";
+    btn.style.marginTop = "24px";
+    btn.style.alignSelf = "center";
+    btn.textContent = "Continuamos ▶️";
+    btn.onclick = go;
+    // El botón aparece tras un pequeño respiro para no tapar la animación de acierto
+    setTimeout(() => {
+      if (!advanced) this.contentEl.appendChild(btn);
+    }, 500);
+    const timer = setTimeout(go, delayMs);
+  }
+
+  /* -------- Aviso pasados 60s sin tocar nada -------- */
+  startInactivityTimer(onTrigger) {
+    this.clearInactivityTimer();
+    this.inactivityTimer = setTimeout(() => {
+      Voice.say(fillName(pickInactivityHint(), this.profile.name));
+      onTrigger?.();
+    }, INACTIVITY_MS);
+  }
+  clearInactivityTimer() {
+    clearTimeout(this.inactivityTimer);
+    this.inactivityTimer = null;
+  }
+
   renderStep() {
+    this.clearInactivityTimer();
     this.updateProgress();
     this.mascot.idle();
     this.contentEl.innerHTML = "";
@@ -122,14 +172,22 @@ export class SessionRunner {
       b.style.minWidth = "170px";
       b.innerHTML = `<span class="emoji">${m.emoji}</span><span>${m.label}</span>`;
       b.onclick = async () => {
+        options.querySelectorAll("button").forEach((x) => (x.style.pointerEvents = "none"));
+        b.classList.add("correct-flash");
         await DB.put("settings", {
           id: `mood_${new Date().toDateString()}_${question.key}`,
           date: new Date().toDateString(),
           key: question.key,
           value: m.label,
         });
+        const isPositive = POSITIVE_MOODS.has(m.label);
+        const reaction = fillName(
+          isPositive ? pickMoodPositiveReaction() : pickMoodEncourageReaction(),
+          this.profile.name
+        );
         this.mascot.celebrate();
-        this.next();
+        this.say(reaction);
+        this.scheduleContinue(Math.max(2200, Voice.estimateDurationMs(reaction)));
       };
       options.appendChild(b);
     });
@@ -154,17 +212,37 @@ export class SessionRunner {
       row.innerHTML = `<span class="row" style="gap:14px; font-size:var(--font-md); font-weight:700;">
           <span style="font-size:2.2rem;">${rem.emoji}</span> ${rem.label}
         </span>`;
+
+      // Botón "Hecho": estado optimista inmediato + persistencia en segundo plano.
       const doneBtn = document.createElement("button");
+      doneBtn.type = "button";
       doneBtn.className = "btn btn-success";
-      isReminderDoneToday(this.profile.id, rem.id).then((done) => {
-        doneBtn.textContent = done ? "✔️ Hecho" : "Marcar hecho";
-        if (done) doneBtn.classList.add("btn-ghost");
-      });
-      doneBtn.onclick = async () => {
-        await markReminderDoneToday(this.profile.id, rem.id);
+      doneBtn.textContent = "Marcar hecho";
+
+      const setDoneVisual = () => {
         doneBtn.textContent = "✔️ Hecho";
-        this.mascot.celebrate();
+        doneBtn.classList.add("btn-ghost");
       };
+
+      isReminderDoneToday(this.profile.id, rem.id)
+        .then((done) => {
+          if (done) setDoneVisual();
+        })
+        .catch(() => {});
+
+      doneBtn.addEventListener("click", async () => {
+        if (doneBtn.dataset.locked === "1") return;
+        doneBtn.dataset.locked = "1";
+        setDoneVisual();
+        this.mascot.celebrate();
+        Sounds.playPositive();
+        try {
+          await markReminderDoneToday(this.profile.id, rem.id);
+        } catch (err) {
+          console.error("No se pudo guardar el recordatorio:", err);
+        }
+      });
+
       row.appendChild(doneBtn);
       list.appendChild(row);
     });
@@ -180,15 +258,26 @@ export class SessionRunner {
     this.contentEl.appendChild(box);
   }
 
+  /* ---------------- Ejercicios ---------------- */
+
   renderExercise(ex) {
     this.stats.total++;
     const catLabel = CATEGORY_LABELS[ex.category] || "";
-    const header = document.createElement("div");
-    header.className = "col";
-    header.innerHTML = `<span class="pill" style="align-self:flex-start;">${catLabel}</span>
-      <h2 class="title-xl" style="margin-top:10px;">${ex.prompt}</h2>`;
-    this.contentEl.appendChild(header);
-    this.say(ex.prompt);
+    this.mascot.thinking();
+
+    if (ex.kind !== "memory_recall") {
+      const header = document.createElement("div");
+      header.className = "col";
+      header.innerHTML = `<span class="pill" style="align-self:flex-start;">${catLabel}</span>
+        <h2 class="title-xl" style="margin-top:10px;">${ex.prompt}</h2>`;
+      this.contentEl.appendChild(header);
+      this.say(ex.prompt);
+    } else {
+      const pill = document.createElement("span");
+      pill.className = "pill";
+      pill.textContent = catLabel;
+      this.contentEl.appendChild(pill);
+    }
 
     const hintFlow = new HintFlow({
       name: this.profile.name,
@@ -201,10 +290,20 @@ export class SessionRunner {
 
     if (ex.kind === "memory_recall") this.renderMemoryRecall(ex, hintFlow);
     else if (ex.kind === "photo_choice") this.renderPhotoChoice(ex, hintFlow);
+    else if (ex.kind === "spot_diff") this.renderSpotDiff(ex, hintFlow);
     else this.renderChoice(ex, hintFlow);
   }
 
   renderMemoryRecall(ex, hintFlow) {
+    const introText = fillName(ex.introText, this.profile.name);
+    const introEl = document.createElement("p");
+    introEl.className = "title-lg fade-in";
+    introEl.style.textAlign = "center";
+    introEl.style.marginTop = "10px";
+    introEl.textContent = introText;
+    this.contentEl.appendChild(introEl);
+    this.say(introText);
+
     const studyBox = document.createElement("div");
     studyBox.className = "row wrap center fade-in";
     studyBox.style.gap = "28px";
@@ -226,18 +325,20 @@ export class SessionRunner {
     this.contentEl.appendChild(timerNote);
 
     setTimeout(() => {
+      introEl.remove();
       studyBox.remove();
       timerNote.remove();
       const askHeader = document.createElement("p");
-      askHeader.className = "title-lg";
+      askHeader.className = "title-lg fade-in";
       askHeader.style.textAlign = "center";
       askHeader.textContent = ex.prompt;
       this.contentEl.appendChild(askHeader);
+      this.say(ex.prompt);
       this.renderChoice(ex, hintFlow, true);
     }, ex.studySeconds * 1000);
   }
 
-  renderChoice(ex, hintFlow, skipHeaderDup = false) {
+  renderChoice(ex, hintFlow) {
     const grid = document.createElement("div");
     grid.className = `grid-options ${ex.options.length > 4 ? "cols-3" : ""}`;
     grid.style.marginTop = "24px";
@@ -249,7 +350,9 @@ export class SessionRunner {
       if (opt.color) {
         btn.innerHTML = `<span style="width:64px;height:64px;border-radius:16px;background:${opt.color};border:3px solid rgba(0,0,0,0.1);display:block;"></span><span>${opt.label}</span>`;
       } else if (opt.emoji) {
-        btn.innerHTML = `<span class="emoji">${opt.emoji}</span><span>${opt.label}</span>`;
+        btn.innerHTML = opt.hideLabel
+          ? `<span class="emoji">${opt.emoji}</span>`
+          : `<span class="emoji">${opt.emoji}</span><span>${opt.label}</span>`;
       } else {
         btn.innerHTML = `<span style="font-size:2.4rem;">${opt.label}</span>`;
       }
@@ -259,6 +362,8 @@ export class SessionRunner {
       grid.appendChild(btn);
     });
     this.contentEl.appendChild(grid);
+
+    this.startInactivityTimer(() => this.highlightCorrect());
   }
 
   renderPhotoChoice(ex, hintFlow) {
@@ -271,39 +376,153 @@ export class SessionRunner {
   }
 
   async handleAnswer(ex, btn, opt, hintFlow) {
+    if (ex.category === "animales") Sounds.playAnimal(opt.label);
+
     this.optionButtons.forEach((b) => (b.style.pointerEvents = "none"));
     if (opt.correct) {
+      this.clearInactivityTimer();
       btn.classList.add("correct-flash");
       this.mascot.celebrate();
+      Sounds.playPositive();
       const msg = fillName(pickMotivation(), this.profile.name);
       this.say(msg);
       this.stats.correct++;
       await reportResult(this.profile.id, ex.category, { success: true, usedHints: hintFlow.errorCount });
       burstConfetti(14);
-      setTimeout(() => this.next(), 1400);
+      celebrateSuccess({ big: ["🎉", "⭐", "🥳", "👏"][Math.floor(Math.random() * 4)] });
+      this.scheduleContinue(Math.max(2400, Voice.estimateDurationMs(msg)));
     } else {
       btn.classList.add("wrong-flash");
       this.optionButtons.forEach((b) => (b.style.pointerEvents = "auto"));
       const dir = this.optionButtons.indexOf(btn) < this.optionButtons.length / 2 ? "right" : "left";
       this.mascot.pointTo(dir);
+      Sounds.playSoftError();
       const count = hintFlow.registerError();
       if (count >= 4) {
+        this.clearInactivityTimer();
         await reportResult(this.profile.id, ex.category, { success: false, usedHints: count });
-        setTimeout(() => this.next(), 2600);
       }
     }
   }
 
   highlightCorrect() {
-    const correctBtn = this.optionButtons.find((b) => b.dataset.correct === "1");
+    const correctBtn = this.optionButtons?.find((b) => b.dataset.correct === "1");
     correctBtn?.classList.add("btn-wiggle-hint");
   }
 
   revealCorrect(ex) {
-    const correctBtn = this.optionButtons.find((b) => b.dataset.correct === "1");
+    const correctBtn = this.optionButtons?.find((b) => b.dataset.correct === "1");
     correctBtn?.classList.add("correct-flash");
-    this.say(`No te preocupes, ${this.profile.name}. Era esta. La próxima vez seguro que la ves.`);
+    const msg = `No te preocupes, ${this.profile.name}. Era esta. La próxima vez seguro que la ves.`;
+    this.mascot.encourage();
+    this.say(msg);
+    this.scheduleContinue(Math.max(2800, Voice.estimateDurationMs(msg)));
   }
+
+  /* ---------------- Encuentra las diferencias ---------------- */
+
+  renderSpotDiff(ex, hintFlow) {
+    const wrap = document.createElement("div");
+    wrap.className = "col";
+    wrap.style.gap = "14px";
+    wrap.style.marginTop = "18px";
+
+    const labels = document.createElement("div");
+    labels.className = "row";
+    labels.style.justifyContent = "center";
+    labels.style.gap = "48px";
+    labels.innerHTML = `<span class="pill">Imagen A</span><span class="pill">Imagen B — toca aquí</span>`;
+    wrap.appendChild(labels);
+
+    const panels = document.createElement("div");
+    panels.className = "row wrap";
+    panels.style.gap = "24px";
+    panels.style.justifyContent = "center";
+
+    const cols = Math.ceil(Math.sqrt(ex.panelA.length));
+
+    function buildPanel(items, interactive) {
+      const p = document.createElement("div");
+      p.className = "card";
+      p.style.display = "grid";
+      p.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+      p.style.gap = "10px";
+      items.forEach((emoji) => {
+        const cell = document.createElement("div");
+        cell.textContent = emoji;
+        cell.className = "diff-cell";
+        if (interactive) cell.classList.add("diff-cell-interactive");
+        p.appendChild(cell);
+      });
+      return p;
+    }
+
+    const panelA = buildPanel(ex.panelA, false);
+    const panelB = buildPanel(ex.panelB, true);
+    panels.appendChild(panelA);
+    panels.appendChild(panelB);
+    wrap.appendChild(panels);
+
+    const status = document.createElement("p");
+    status.className = "text-md";
+    status.style.textAlign = "center";
+    status.textContent = `Encontradas: 0 / ${ex.diffPositions.length}`;
+    wrap.appendChild(status);
+
+    this.contentEl.appendChild(wrap);
+
+    const found = new Set();
+
+    const onCellTap = async (idx, cell) => {
+      if (found.has(idx)) return;
+      this.clearInactivityTimer();
+      if (ex.diffPositions.includes(idx)) {
+        found.add(idx);
+        cell.classList.add("diff-cell-found");
+        this.mascot.celebrate();
+        Sounds.playPositive();
+        status.textContent = `Encontradas: ${found.size} / ${ex.diffPositions.length}`;
+
+        if (found.size === ex.diffPositions.length) {
+          await reportResult(this.profile.id, ex.category, { success: true, usedHints: hintFlow.errorCount });
+          const msg = fillName(pickMotivation(), this.profile.name);
+          this.say(msg);
+          burstConfetti(18);
+          celebrateSuccess({ big: "🔍✨" });
+          this.scheduleContinue(Math.max(2400, Voice.estimateDurationMs(msg)));
+        } else {
+          this.startInactivityTimer(() => this.hintSpotDiff(panelB, ex, found));
+        }
+      } else {
+        cell.classList.add("diff-cell-wrong");
+        Sounds.playSoftError();
+        setTimeout(() => cell.classList.remove("diff-cell-wrong"), 500);
+        const count = hintFlow.registerError();
+        if (count >= 4) {
+          ex.diffPositions
+            .filter((p) => !found.has(p))
+            .forEach((p) => panelB.children[p].classList.add("btn-wiggle-hint"));
+        }
+        this.startInactivityTimer(() => this.hintSpotDiff(panelB, ex, found));
+      }
+    };
+
+    [...panelB.children].forEach((cell, idx) => {
+      cell.onclick = () => onCellTap(idx, cell);
+    });
+
+    this.startInactivityTimer(() => this.hintSpotDiff(panelB, ex, found));
+  }
+
+  hintSpotDiff(panelB, ex, found) {
+    const remaining = ex.diffPositions.filter((p) => !found.has(p));
+    if (remaining.length) {
+      const target = remaining[0];
+      panelB.children[target]?.classList.add("btn-wiggle-hint");
+    }
+  }
+
+  /* ---------------- Cierre ---------------- */
 
   async renderClosing() {
     const box = document.createElement("div");
@@ -313,6 +532,7 @@ export class SessionRunner {
       <h2 class="title-xl" style="text-align:center;">${text}</h2>`;
     this.say(text);
     burstConfetti(36);
+    celebrateSuccess({ big: "🏆" });
 
     const accuracy = this.stats.total ? this.stats.correct / this.stats.total : 0;
     const durationMin = Math.round((Date.now() - this.startedAt) / 60000);

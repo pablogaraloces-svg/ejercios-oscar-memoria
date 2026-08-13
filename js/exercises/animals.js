@@ -7,13 +7,14 @@ export function generateAnimalExercise(level = 2) {
   const options = chosen.map((a) => ({
     emoji: a.emoji,
     label: a.name,
+    hideLabel: true, // solo se muestra el dibujo, sin el nombre debajo
     correct: a.name === target.name,
   }));
 
   return {
     category: "animales",
     kind: "choice",
-    prompt: `¿Cuál es el ${target.name.toLowerCase()}?`,
+    prompt: `¿Cuál es ${target.article} ${target.name.toLowerCase()}?`,
     options: shuffle(options),
   };
 }

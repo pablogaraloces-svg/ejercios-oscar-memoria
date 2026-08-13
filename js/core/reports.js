@@ -1,4 +1,5 @@
 import { DB } from "./db.js";
+import { CATEGORY_LABELS } from "../exercises/index.js";
 
 /**
  * reports.js — Construye datos de evolución y los dibuja en <canvas>.
@@ -101,4 +102,176 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.lineTo(x + w, y + h);
   ctx.lineTo(x, y + h);
   ctx.closePath();
+}
+
+/** ---------- Fallos por categoría de ejercicio ---------- */
+export async function getCategoryStats(profileId) {
+  const all = await DB.getAll("progress");
+  const mine = all.filter((r) => r.profileId === profileId);
+  return mine.map((r) => {
+    const history = r.history || [];
+    const total = history.length;
+    const fails = history.filter((h) => !h.success).length;
+    const failRate = total ? fails / total : 0;
+    return { category: r.category, label: CATEGORY_LABELS[r.category] || r.category, total, fails, failRate };
+  }).filter((c) => c.total > 0);
+}
+
+export function drawCategoryErrorChart(canvas, stats) {
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  if (!stats.length) {
+    ctx.fillStyle = "#5A5A5A";
+    ctx.font = "22px sans-serif";
+    ctx.fillText("Todavía no hay suficientes datos", 20, h / 2);
+    return;
+  }
+  const padding = 44;
+  const chartW = w - padding * 2;
+  const chartH = h - padding * 2;
+  const barGap = 20;
+  const barW = chartW / stats.length - barGap;
+
+  ctx.strokeStyle = "#E4DFD3";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(padding, padding);
+  ctx.lineTo(padding, h - padding);
+  ctx.lineTo(w - padding, h - padding);
+  ctx.stroke();
+
+  stats.forEach((s, i) => {
+    const barH = chartH * s.failRate;
+    const x = padding + i * (barW + barGap);
+    const y = h - padding - barH;
+    const grad = ctx.createLinearGradient(0, y, 0, h - padding);
+    grad.addColorStop(0, "#EF798A");
+    grad.addColorStop(1, "#FFB454");
+    ctx.fillStyle = grad;
+    roundRect(ctx, x, y, barW, Math.max(barH, 2), 10);
+    ctx.fill();
+
+    ctx.fillStyle = "#5A5A5A";
+    ctx.font = "16px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(s.label, x + barW / 2, h - padding + 24);
+    ctx.fillText(`${Math.round(s.failRate * 100)}%`, x + barW / 2, y - 8);
+  });
+}
+
+/** ---------- Estados de ánimo marcados por día ---------- */
+export async function getMoodStats(profileId) {
+  const all = await DB.getAll("settings");
+  const moods = all.filter((r) => r.id?.startsWith("mood_"));
+  const counts = {};
+  moods.forEach((m) => {
+    counts[m.value] = (counts[m.value] || 0) + 1;
+  });
+  return counts;
+}
+
+export function drawMoodChart(canvas, counts) {
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  const order = [
+    { label: "Muy bien", emoji: "😊", color: "#6FBF8B" },
+    { label: "Bien", emoji: "🙂", color: "#A9D6B8" },
+    { label: "Regular", emoji: "😐", color: "#FFB454" },
+    { label: "No muy bien", emoji: "😕", color: "#EF798A" },
+  ];
+  const total = order.reduce((acc, o) => acc + (counts[o.label] || 0), 0);
+  if (!total) {
+    ctx.fillStyle = "#5A5A5A";
+    ctx.font = "22px sans-serif";
+    ctx.fillText("Todavía no hay respuestas de ánimo registradas", 20, h / 2);
+    return;
+  }
+  const padding = 44;
+  const chartW = w - padding * 2;
+  const chartH = h - padding * 2;
+  const barGap = 26;
+  const barW = chartW / order.length - barGap;
+
+  order.forEach((o, i) => {
+    const value = counts[o.label] || 0;
+    const ratio = value / total;
+    const barH = chartH * ratio;
+    const x = padding + i * (barW + barGap);
+    const y = h - padding - barH;
+    ctx.fillStyle = o.color;
+    roundRect(ctx, x, y, barW, Math.max(barH, 2), 10);
+    ctx.fill();
+    ctx.font = "28px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(o.emoji, x + barW / 2, y - 12);
+    ctx.fillStyle = "#5A5A5A";
+    ctx.font = "15px sans-serif";
+    ctx.fillText(`${value}`, x + barW / 2, h - padding + 22);
+  });
+}
+
+/** ---------- Cumplimiento de recordatorios ---------- */
+export async function getReminderAdherence(profileId) {
+  const [reminders, all] = await Promise.all([
+    DB.getAll("reminders").then((r) => r.filter((x) => x.profileId === profileId && x.enabled)),
+    DB.getAll("settings"),
+  ]);
+  const doneEntries = all.filter((r) => r.id?.startsWith("done_") && r.profileId === profileId && r.done);
+  const byDate = {};
+  doneEntries.forEach((d) => {
+    byDate[d.date] = (byDate[d.date] || 0) + 1;
+  });
+  const days = Object.keys(byDate).sort();
+  const totalReminders = reminders.length || 1;
+  const series = days.map((d) => ({ date: d, rate: Math.min(1, byDate[d] / totalReminders) }));
+  const overall = series.length
+    ? series.reduce((acc, s) => acc + s.rate, 0) / series.length
+    : 0;
+  return { series, overall, totalReminders: reminders.length };
+}
+
+export function drawAdherenceChart(canvas, series) {
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  const data = series.slice(-10);
+  if (!data.length) {
+    ctx.fillStyle = "#5A5A5A";
+    ctx.font = "22px sans-serif";
+    ctx.fillText("Todavía no hay recordatorios marcados", 20, h / 2);
+    return;
+  }
+  const padding = 44;
+  const chartW = w - padding * 2;
+  const chartH = h - padding * 2;
+  const barGap = 14;
+  const barW = chartW / data.length - barGap;
+
+  ctx.strokeStyle = "#E4DFD3";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(padding, padding);
+  ctx.lineTo(padding, h - padding);
+  ctx.lineTo(w - padding, h - padding);
+  ctx.stroke();
+
+  data.forEach((s, i) => {
+    const barH = chartH * s.rate;
+    const x = padding + i * (barW + barGap);
+    const y = h - padding - barH;
+    const grad = ctx.createLinearGradient(0, y, 0, h - padding);
+    grad.addColorStop(0, "#5E81AC");
+    grad.addColorStop(1, "#6FBF8B");
+    ctx.fillStyle = grad;
+    roundRect(ctx, x, y, barW, Math.max(barH, 2), 10);
+    ctx.fill();
+    ctx.fillStyle = "#5A5A5A";
+    ctx.font = "14px sans-serif";
+    ctx.textAlign = "center";
+    const label = s.date.split(" ").slice(1, 3).join(" ");
+    ctx.fillText(label, x + barW / 2, h - padding + 20);
+    ctx.fillText(`${Math.round(s.rate * 100)}%`, x + barW / 2, y - 8);
+  });
 }
