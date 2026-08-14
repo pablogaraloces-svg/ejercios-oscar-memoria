@@ -1,19 +1,23 @@
 /**
- * hints.js — Ayudas progresivas.
- * 1er error: mensaje suave.
- * 2º error: pista textual.
- * 3er error: resaltar (parpadeo suave) el botón correcto.
- * 4º error: solución amable, sin frustración.
+ * hints.js — Ayudas progresivas ante errores.
+ * 1er error: mensaje suave (voz), sin pista visual todavía.
+ * 2º error: aviso corto por voz ("Fíjate bien, te voy a dar una pequeña
+ *           pista") + pista VISUAL (parpadeo en la opción correcta).
+ *           La voz no describe la pista, solo avisa de que va a darla.
+ * 3er error: se mantiene/refuerza la pista visual, sin voz nueva.
+ * 4º error: solución amable (voz + visual).
  */
-import { pickHint, pickTryAgainSoft, fillName } from "./phrases.js";
+import { pickTryAgainSoft, fillName } from "./phrases.js";
+
+const PISTA_INTRO = "Fíjate bien, {name}. Te voy a dar una pequeña pista.";
 
 export class HintFlow {
-  constructor({ name, onSoft, onHint, onHighlight, onReveal }) {
+  constructor({ name, onSoft, onPistaVoice, onVisualHint, onReveal }) {
     this.name = name;
     this.errorCount = 0;
     this.onSoft = onSoft;
-    this.onHint = onHint;
-    this.onHighlight = onHighlight;
+    this.onPistaVoice = onPistaVoice;
+    this.onVisualHint = onVisualHint;
     this.onReveal = onReveal;
   }
 
@@ -28,10 +32,12 @@ export class HintFlow {
         this.onSoft?.(fillName(pickTryAgainSoft(), this.name));
         break;
       case 2:
-        this.onHint?.(pickHint());
+        this.onPistaVoice?.(fillName(PISTA_INTRO, this.name));
+        this.onVisualHint?.();
         break;
       case 3:
-        this.onHighlight?.();
+        // Solo refuerzo visual, sin nueva frase hablada.
+        this.onVisualHint?.();
         break;
       default:
         this.onReveal?.();

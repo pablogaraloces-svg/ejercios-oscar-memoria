@@ -3,6 +3,63 @@
 Aplicación web progresiva (PWA), pensada para tablets Android como la **Honor Pad X9a**,
 que funciona **completamente offline** una vez instalada.
 
+## 🆕 Novedades de la versión 3
+
+- **Pantalla de Óscar simplificada al máximo**: en la pantalla principal solo
+  ve dos botones: "Empezar el ratito de hoy" y "Mi familia" (en modo solo
+  lectura, sin poder modificar nada).
+- **Administración con PIN**: un botoncito discreto 🔐 abajo a la izquierda
+  (muy poco visible, para no distraer a Óscar) da acceso, tras introducir un
+  PIN, a Ajustes, Mi evolución y la edición de la familia. El PIN se crea
+  durante la configuración inicial y se puede cambiar luego en Ajustes > Perfil.
+- **Botón "Estoy listo"** más grande, en masculino.
+- **Mascota mono mucho más interactiva**: al tocarla reacciona con una
+  animación divertida distinta cada vez (giro, salto, tambaleo, o un
+  "achuchón"), y cambia de cara.
+- **Recordatorios**: corregido de verdad el botón "Marcar hecho" — ahora, al
+  pulsarlo, se pone completamente verde de forma inmediata y clara.
+- **Pistas ahora son visuales, no habladas**: la voz solo avisa una vez
+  ("Fíjate bien, Óscar, te voy a dar una pequeña pista") y a partir de ahí la
+  ayuda es un parpadeo suave sobre la opción correcta — la voz no da más
+  pistas por texto.
+- **Aviso por inactividad diferenciado**: si pasa un minuto sin tocar nada,
+  ya no parpadea el botón entero; se mueve solo el dibujo de la opción
+  correcta (p.ej. la luna se balancea un poco), dejando el parpadeo del botón
+  reservado para cuando de verdad se ha fallado varias veces.
+- **Ejercicios visuales sin nombres escritos**: animales, colores, atención y
+  memoria muestran solo el dibujo, nunca el texto debajo.
+- **Todo más compacto**: tipografía, tarjetas y espaciados reducidos para que
+  la sesión entera quepa en pantalla sin tener que hacer scroll.
+- **Botón "Continuamos"** movido arriba a la derecha, junto a la barra de
+  progreso, en lugar de debajo del contenido.
+- **Corregido el audio de las operaciones matemáticas**: ahora la voz siempre
+  dice "más" o "menos" correctamente (antes, en algunos motores de voz, el
+  signo "-" se leía mal).
+- **Reconocimiento familiar mejorado**: "¿Reconoces a esta persona?" con 3
+  nombres, y al acertar la voz dice, por ejemplo, "Correcto, Óscar. Esta es tu
+  yerno, Pablo."
+- **Música de fondo con 5 ambientes** distintos para elegir (Amanecer
+  tranquilo, Brisa suave, Tarde de piano, Jardín sereno, Manta cálida).
+- **Selector de voz ampliado**: ahora se listan todas las voces/asistentes de
+  voz instalados en la tablet (no solo los de Google), con el español
+  primero. *Nota honesta*: al ser una app 100% offline, solo puede usar las
+  voces que ya tenga instaladas el propio dispositivo; para voces más
+  humanas y naturales, se pueden instalar voces de mayor calidad desde
+  Ajustes de Android (Idiomas y entrada > Síntesis de voz > Motor de Google >
+  Instalar datos de voz) y aparecerán aquí automáticamente.
+- **Perfil ampliado** con peso y altura (opcionales).
+- **Mi evolución** ahora incluye: gráfica de a qué horas se hacen las
+  sesiones, y un **calendario del mes** que colorea cada día según el ánimo
+  que marcó Óscar, con el recuento de días buenos/regulares/malos.
+- **Enviar resumen en PDF**: genera un PDF con estadísticas y todas las
+  gráficas, y abre el panel de compartir de Android para enviarlo por la
+  app de correo que se prefiera (o lo descarga si el dispositivo no soporta
+  compartir archivos). *Nota honesta*: la app no tiene servidor propio, así
+  que no envía el correo ella misma — prepara el PDF y lo entrega a la app
+  de correo elegida.
+- **Saludo con fecha completa**: al empezar la sesión, además de saludar, la
+  voz dice el día, mes y año actuales.
+
 ## 🆕 Novedades de la versión 2
 
 - **Pantalla adaptada a 2508×1504** (Honor Pad X9a) sin scroll lateral, y totalmente

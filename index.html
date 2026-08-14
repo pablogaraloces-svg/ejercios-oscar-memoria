@@ -27,7 +27,7 @@
     <div id="onboarding-root" class="col grow"></div>
   </section>
 
-  <!-- Pantalla principal -->
+  <!-- Pantalla principal (solo lo esencial para Óscar) -->
   <section class="screen" id="screen-home">
     <div class="top-bar">
       <div class="row">
@@ -37,35 +37,52 @@
           <p class="text-md" id="home-date"></p>
         </div>
       </div>
-      <button class="btn btn-ghost" id="btn-open-settings" aria-label="Ajustes">⚙️ Ajustes</button>
     </div>
 
-    <div class="grow col center" style="gap:32px;">
+    <div class="grow col center" style="gap:28px;">
       <button class="btn btn-huge btn-success" id="btn-start-session" style="width:100%;max-width:640px;">
         ▶️ Empezar el ratito de hoy
       </button>
-      <div class="grid-options" style="max-width:640px;">
-        <button class="option-card" id="btn-open-reports">
-          <span class="emoji">📈</span>
-          <span>Mi evolución</span>
-        </button>
-        <button class="option-card" id="btn-open-family">
-          <span class="emoji">👨‍👩‍👧</span>
-          <span>Mi familia</span>
-        </button>
-      </div>
+      <button class="option-card" id="btn-open-family" style="width:100%; max-width:340px;">
+        <span class="emoji">👨‍👩‍👧</span>
+        <span>Mi familia</span>
+      </button>
     </div>
     <p class="text-md" style="text-align:center;">Estoy aquí para acompañarte, sin prisa. 💛</p>
+  </section>
+
+  <!-- Botón discreto de administración (solo familia, con contraseña) -->
+  <button class="admin-fab" id="btn-admin" aria-label="Administración">🔐</button>
+
+  <!-- Menú de administración (tras contraseña) -->
+  <section class="screen" id="screen-admin-menu">
+    <div class="top-bar">
+      <button class="btn btn-icon btn-ghost" id="btn-admin-back" aria-label="Volver">←</button>
+      <h2 class="title-lg">Administración</h2>
+      <div style="width:88px;"></div>
+    </div>
+    <div class="col grow center" style="gap:20px;">
+      <button class="option-card" id="btn-admin-settings" style="width:100%; max-width:420px;">
+        <span class="emoji">⚙️</span><span>Ajustes</span>
+      </button>
+      <button class="option-card" id="btn-admin-reports" style="width:100%; max-width:420px;">
+        <span class="emoji">📈</span><span>Mi evolución</span>
+      </button>
+      <button class="option-card" id="btn-admin-family" style="width:100%; max-width:420px;">
+        <span class="emoji">👨‍👩‍👧</span><span>Editar familia</span>
+      </button>
+    </div>
   </section>
 
   <!-- Sesión diaria (flujo dinámico) -->
   <section class="screen" id="screen-session">
     <div class="top-bar">
       <button class="btn btn-icon btn-ghost" id="btn-session-back" aria-label="Volver">←</button>
-      <div class="row grow" style="margin:0 20px;">
+      <div class="row grow" style="margin:0 16px;">
         <div class="progress-track"><div class="progress-fill" id="session-progress" style="width:0%;"></div></div>
       </div>
       <span class="pill" id="session-step-label">1 / 8</span>
+      <button class="btn btn-success btn-continue-blink hidden" id="session-continue-btn">Continuamos ▶️</button>
     </div>
     <div class="row grow session-body">
       <div class="col" style="align-items:center; gap:8px; flex-shrink:0;">
@@ -81,17 +98,17 @@
     <div class="top-bar">
       <button class="btn btn-icon btn-ghost" id="btn-reports-back" aria-label="Volver">←</button>
       <h2 class="title-lg">Mi evolución</h2>
-      <div style="width:88px;"></div>
+      <button class="btn btn-accent" id="btn-send-report">📧 Enviar resumen</button>
     </div>
-    <div id="reports-root" class="col grow" style="gap:24px; overflow-y:auto;"></div>
+    <div id="reports-root" class="col grow" style="gap:20px; overflow-y:auto;"></div>
   </section>
 
   <!-- Familia -->
   <section class="screen" id="screen-family">
     <div class="top-bar">
       <button class="btn btn-icon btn-ghost" id="btn-family-back" aria-label="Volver">←</button>
-      <h2 class="title-lg">Mi familia</h2>
-      <button class="btn btn-accent" id="btn-add-family">➕ Añadir</button>
+      <h2 class="title-lg" id="family-title">Mi familia</h2>
+      <button class="btn btn-accent hidden" id="btn-add-family">➕ Añadir</button>
     </div>
     <div id="family-root" class="col grow" style="gap:16px; overflow-y:auto;"></div>
   </section>

@@ -92,6 +92,74 @@ export function drawAccuracyChart(canvas, sessions) {
   });
 }
 
+/** ---------- Distribución de sesiones por hora del día ---------- */
+export function getSessionHourDistribution(sessions) {
+  const buckets = new Array(24).fill(0);
+  sessions.forEach((s) => {
+    const h = typeof s.hour === "number" ? s.hour : new Date(s.timestamp).getHours();
+    buckets[h] = (buckets[h] || 0) + 1;
+  });
+  return buckets;
+}
+
+export function drawHourChart(canvas, buckets) {
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  const total = buckets.reduce((a, b) => a + b, 0);
+  if (!total) {
+    ctx.fillStyle = "#5A5A5A";
+    ctx.font = "20px sans-serif";
+    ctx.fillText("Todavía no hay sesiones registradas", 20, h / 2);
+    return;
+  }
+  const padding = 40;
+  const chartW = w - padding * 2;
+  const chartH = h - padding * 2;
+  const barW = chartW / 24;
+  const max = Math.max(...buckets, 1);
+
+  buckets.forEach((v, hour) => {
+    const barH = (v / max) * chartH;
+    const x = padding + hour * barW;
+    const y = h - padding - barH;
+    ctx.fillStyle = "#5E81AC";
+    roundRect(ctx, x + 2, y, barW - 4, Math.max(barH, v ? 2 : 0), 6);
+    ctx.fill();
+    if (hour % 3 === 0) {
+      ctx.fillStyle = "#5A5A5A";
+      ctx.font = "13px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(`${hour}h`, x + barW / 2, h - padding + 18);
+    }
+  });
+}
+
+/** ---------- Ánimo por día del mes (para el calendario) ---------- */
+const MOOD_ORDER = ["Muy bien", "Bien", "Regular", "No muy bien"];
+const MOOD_RANK = { "Muy bien": 0, "Bien": 1, "Regular": 2, "No muy bien": 3 };
+
+export async function getMoodByDate(profileId) {
+  const all = await DB.getAll("settings");
+  const moods = all.filter((r) => r.id?.startsWith("mood_"));
+  const byDate = {};
+  moods.forEach((m) => {
+    // Si hay varias respuestas el mismo día, nos quedamos con la menos positiva
+    if (!byDate[m.date] || MOOD_RANK[m.value] > MOOD_RANK[byDate[m.date]]) {
+      byDate[m.date] = m.value;
+    }
+  });
+  return byDate;
+}
+
+export function summarizeMoodByDate(byDate) {
+  const counts = { "Muy bien": 0, "Bien": 0, "Regular": 0, "No muy bien": 0 };
+  Object.values(byDate).forEach((v) => {
+    if (counts[v] !== undefined) counts[v]++;
+  });
+  return counts;
+}
+
 function roundRect(ctx, x, y, w, h, r) {
   const radius = Math.min(r, h);
   ctx.beginPath();

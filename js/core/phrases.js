@@ -107,3 +107,15 @@ export function getWellbeingQuestions(part) {
 export function fillName(template, name) {
   return template.replaceAll("{name}", name || "");
 }
+
+/** Frase hablada con el día, mes y año de hoy, para que la voz lo recuerde al empezar. */
+export function getSpokenDate() {
+  const now = new Date();
+  const text = now.toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  return `Hoy es ${text}.`;
+}

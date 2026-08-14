@@ -1,6 +1,7 @@
 import { DB, uid } from "../core/db.js";
 import {
   getGreeting,
+  getSpokenDate,
   getWellbeingQuestions,
   pickMotivation,
   pickClosing,
@@ -29,12 +30,13 @@ function getPartOfDay() {
 }
 
 export class SessionRunner {
-  constructor({ contentEl, mascot, bubbleEl, progressFillEl, stepLabelEl, profile, settings }) {
+  constructor({ contentEl, mascot, bubbleEl, progressFillEl, stepLabelEl, continueBtn, profile, settings }) {
     this.contentEl = contentEl;
     this.mascot = mascot;
     this.bubbleEl = bubbleEl;
     this.progressFillEl = progressFillEl;
     this.stepLabelEl = stepLabelEl;
+    this.continueBtn = continueBtn;
     this.profile = profile;
     this.settings = settings;
     this.stats = { correct: 0, total: 0 };
@@ -69,6 +71,14 @@ export class SessionRunner {
     Voice.say(text);
   }
 
+  /** Habla `spoken` (si existe) pero muestra `visible` en la burbuja de texto. */
+  sayVisibleVsSpoken(visible, spoken) {
+    this.bubbleEl.textContent = visible;
+    this.bubbleEl.classList.remove("hidden");
+    this.bubbleEl.classList.add("fade-in");
+    Voice.say(spoken || visible);
+  }
+
   updateProgress() {
     const pct = Math.round((this.stepIndex / (this.steps.length - 1)) * 100);
     this.progressFillEl.style.width = `${pct}%`;
@@ -77,32 +87,31 @@ export class SessionRunner {
 
   next() {
     this.clearInactivityTimer();
+    this.hideContinueBtn();
     if (this.stepIndex < this.steps.length - 1) {
       this.stepIndex++;
       this.renderStep();
     }
   }
 
-  /* -------- Espera + botón "Continuamos" -------- */
+  /* -------- Botón "Continuamos" arriba a la derecha -------- */
+  hideContinueBtn() {
+    this.continueBtn.classList.add("hidden");
+    this.continueBtn.onclick = null;
+    clearTimeout(this._continueTimer);
+  }
+
   scheduleContinue(delayMs) {
     let advanced = false;
     const go = () => {
       if (advanced) return;
       advanced = true;
-      clearTimeout(timer);
+      clearTimeout(this._continueTimer);
       this.next();
     };
-    const btn = document.createElement("button");
-    btn.className = "btn btn-success btn-huge btn-continue-blink";
-    btn.style.marginTop = "24px";
-    btn.style.alignSelf = "center";
-    btn.textContent = "Continuamos ▶️";
-    btn.onclick = go;
-    // El botón aparece tras un pequeño respiro para no tapar la animación de acierto
-    setTimeout(() => {
-      if (!advanced) this.contentEl.appendChild(btn);
-    }, 500);
-    const timer = setTimeout(go, delayMs);
+    this.continueBtn.onclick = go;
+    this.continueBtn.classList.remove("hidden");
+    this._continueTimer = setTimeout(go, delayMs);
   }
 
   /* -------- Aviso pasados 60s sin tocar nada -------- */
@@ -120,6 +129,7 @@ export class SessionRunner {
 
   renderStep() {
     this.clearInactivityTimer();
+    this.hideContinueBtn();
     this.updateProgress();
     this.mascot.idle();
     this.contentEl.innerHTML = "";
@@ -136,16 +146,18 @@ export class SessionRunner {
   }
 
   renderGreeting() {
-    const text = getGreeting(this.profile.name);
-    this.say(text);
+    const greetText = getGreeting(this.profile.name);
+    const dateText = getSpokenDate();
+    this.say(`${greetText} ${dateText}`);
     const box = document.createElement("div");
     box.className = "col center grow";
-    box.innerHTML = `<div style="font-size:4rem;">👋</div>
-      <h2 class="title-xl" style="text-align:center;">${text}</h2>`;
+    box.innerHTML = `<div style="font-size:3.2rem;">👋</div>
+      <h2 class="title-xl" style="text-align:center;">${greetText}</h2>
+      <p class="text-md" style="text-align:center;">${dateText}</p>`;
     const btn = document.createElement("button");
-    btn.className = "btn btn-success btn-huge";
-    btn.style.marginTop = "32px";
-    btn.textContent = "Estoy list@";
+    btn.className = "btn btn-success btn-huge btn-start-bigger";
+    btn.style.marginTop = "28px";
+    btn.textContent = "Estoy listo";
     btn.onclick = () => this.next();
     box.appendChild(btn);
     this.contentEl.appendChild(box);
@@ -155,11 +167,11 @@ export class SessionRunner {
     this.say(question.text);
     const box = document.createElement("div");
     box.className = "col center grow";
-    box.innerHTML = `<div style="font-size:3.4rem;">💬</div><h2 class="title-xl" style="text-align:center;">${question.text}</h2>`;
+    box.innerHTML = `<div style="font-size:2.8rem;">💬</div><h2 class="title-xl" style="text-align:center;">${question.text}</h2>`;
     const options = document.createElement("div");
     options.className = "row wrap center";
-    options.style.marginTop = "32px";
-    options.style.gap = "18px";
+    options.style.marginTop = "26px";
+    options.style.gap = "16px";
     const moods = [
       { emoji: "😊", label: "Muy bien" },
       { emoji: "🙂", label: "Bien" },
@@ -169,7 +181,7 @@ export class SessionRunner {
     moods.forEach((m) => {
       const b = document.createElement("button");
       b.className = "option-card";
-      b.style.minWidth = "170px";
+      b.style.minWidth = "150px";
       b.innerHTML = `<span class="emoji">${m.emoji}</span><span>${m.label}</span>`;
       b.onclick = async () => {
         options.querySelectorAll("button").forEach((x) => (x.style.pointerEvents = "none"));
@@ -202,33 +214,32 @@ export class SessionRunner {
     this.say("¿Has podido hacer alguna de estas cositas hoy?");
     const list = document.createElement("div");
     list.className = "col";
-    list.style.marginTop = "20px";
-    list.style.gap = "14px";
+    list.style.marginTop = "16px";
+    list.style.gap = "12px";
 
     reminders.forEach((rem) => {
       const row = document.createElement("div");
-      row.className = "switch-row";
-      row.style.minHeight = "88px";
-      row.innerHTML = `<span class="row" style="gap:14px; font-size:var(--font-md); font-weight:700;">
-          <span style="font-size:2.2rem;">${rem.emoji}</span> ${rem.label}
+      row.className = "switch-row reminder-row";
+      row.innerHTML = `<span class="row" style="gap:12px; font-size:var(--font-md); font-weight:700;">
+          <span style="font-size:1.8rem;">${rem.emoji}</span> ${rem.label}
         </span>`;
 
-      // Botón "Hecho": estado optimista inmediato + persistencia en segundo plano.
       const doneBtn = document.createElement("button");
       doneBtn.type = "button";
-      doneBtn.className = "btn btn-success";
+      doneBtn.className = "btn btn-ghost reminder-done-btn";
       doneBtn.textContent = "Marcar hecho";
 
       const setDoneVisual = () => {
         doneBtn.textContent = "✔️ Hecho";
-        doneBtn.classList.add("btn-ghost");
+        doneBtn.classList.remove("btn-ghost");
+        doneBtn.classList.add("reminder-done-btn-active");
       };
 
       isReminderDoneToday(this.profile.id, rem.id)
         .then((done) => {
           if (done) setDoneVisual();
         })
-        .catch(() => {});
+        .catch((err) => console.error("Error comprobando recordatorio:", err));
 
       doneBtn.addEventListener("click", async () => {
         if (doneBtn.dataset.locked === "1") return;
@@ -240,6 +251,7 @@ export class SessionRunner {
           await markReminderDoneToday(this.profile.id, rem.id);
         } catch (err) {
           console.error("No se pudo guardar el recordatorio:", err);
+          doneBtn.dataset.locked = "0";
         }
       });
 
@@ -250,7 +262,7 @@ export class SessionRunner {
 
     const nextBtn = document.createElement("button");
     nextBtn.className = "btn btn-huge btn-success";
-    nextBtn.style.marginTop = "24px";
+    nextBtn.style.marginTop = "20px";
     nextBtn.textContent = "Continuar";
     nextBtn.onclick = () => this.next();
     box.appendChild(nextBtn);
@@ -269,9 +281,9 @@ export class SessionRunner {
       const header = document.createElement("div");
       header.className = "col";
       header.innerHTML = `<span class="pill" style="align-self:flex-start;">${catLabel}</span>
-        <h2 class="title-xl" style="margin-top:10px;">${ex.prompt}</h2>`;
+        <h2 class="title-xl" style="margin-top:8px;">${ex.prompt}</h2>`;
       this.contentEl.appendChild(header);
-      this.say(ex.prompt);
+      this.sayVisibleVsSpoken(ex.prompt, ex.spokenPrompt);
     } else {
       const pill = document.createElement("span");
       pill.className = "pill";
@@ -282,8 +294,8 @@ export class SessionRunner {
     const hintFlow = new HintFlow({
       name: this.profile.name,
       onSoft: (msg) => this.say(msg),
-      onHint: (msg) => this.say(msg),
-      onHighlight: () => this.highlightCorrect(),
+      onPistaVoice: (msg) => this.say(msg),
+      onVisualHint: () => this.showVisualHint(),
       onReveal: () => this.revealCorrect(ex),
     });
     this.currentHintFlow = hintFlow;
@@ -299,20 +311,20 @@ export class SessionRunner {
     const introEl = document.createElement("p");
     introEl.className = "title-lg fade-in";
     introEl.style.textAlign = "center";
-    introEl.style.marginTop = "10px";
+    introEl.style.marginTop = "8px";
     introEl.textContent = introText;
     this.contentEl.appendChild(introEl);
     this.say(introText);
 
     const studyBox = document.createElement("div");
     studyBox.className = "row wrap center fade-in";
-    studyBox.style.gap = "28px";
-    studyBox.style.marginTop = "24px";
+    studyBox.style.gap = "20px";
+    studyBox.style.marginTop = "18px";
     ex.studyItems.forEach((item) => {
       const card = document.createElement("div");
       card.className = "card col center";
-      card.style.minWidth = "160px";
-      card.innerHTML = `<span style="font-size:4.5rem;">${item.emoji}</span><span class="text-base" style="font-weight:700;">${item.name}</span>`;
+      card.style.minWidth = "120px";
+      card.innerHTML = `<span style="font-size:3.4rem;">${item.emoji}</span>`;
       studyBox.appendChild(card);
     });
     this.contentEl.appendChild(studyBox);
@@ -320,7 +332,7 @@ export class SessionRunner {
     const timerNote = document.createElement("p");
     timerNote.className = "text-md";
     timerNote.style.textAlign = "center";
-    timerNote.style.marginTop = "18px";
+    timerNote.style.marginTop = "14px";
     timerNote.textContent = "Míralo con calma, ahora te pregunto…";
     this.contentEl.appendChild(timerNote);
 
@@ -334,27 +346,27 @@ export class SessionRunner {
       askHeader.textContent = ex.prompt;
       this.contentEl.appendChild(askHeader);
       this.say(ex.prompt);
-      this.renderChoice(ex, hintFlow, true);
+      this.renderChoice(ex, hintFlow);
     }, ex.studySeconds * 1000);
   }
 
   renderChoice(ex, hintFlow) {
     const grid = document.createElement("div");
     grid.className = `grid-options ${ex.options.length > 4 ? "cols-3" : ""}`;
-    grid.style.marginTop = "24px";
+    grid.style.marginTop = "18px";
     this.optionButtons = [];
 
     ex.options.forEach((opt) => {
       const btn = document.createElement("button");
       btn.className = "option-card";
       if (opt.color) {
-        btn.innerHTML = `<span style="width:64px;height:64px;border-radius:16px;background:${opt.color};border:3px solid rgba(0,0,0,0.1);display:block;"></span><span>${opt.label}</span>`;
+        btn.innerHTML = `<span style="width:52px;height:52px;border-radius:14px;background:${opt.color};border:3px solid rgba(0,0,0,0.1);display:block;"></span>`;
       } else if (opt.emoji) {
         btn.innerHTML = opt.hideLabel
           ? `<span class="emoji">${opt.emoji}</span>`
           : `<span class="emoji">${opt.emoji}</span><span>${opt.label}</span>`;
       } else {
-        btn.innerHTML = `<span style="font-size:2.4rem;">${opt.label}</span>`;
+        btn.innerHTML = `<span style="font-size:2.2rem;">${opt.label}</span>`;
       }
       btn.dataset.correct = opt.correct ? "1" : "0";
       btn.onclick = () => this.handleAnswer(ex, btn, opt, hintFlow);
@@ -363,14 +375,14 @@ export class SessionRunner {
     });
     this.contentEl.appendChild(grid);
 
-    this.startInactivityTimer(() => this.highlightCorrect());
+    this.startInactivityTimer(() => this.showInactivityHint());
   }
 
   renderPhotoChoice(ex, hintFlow) {
     const photoBox = document.createElement("div");
     photoBox.className = "col center";
-    photoBox.style.marginTop = "16px";
-    photoBox.innerHTML = `<img src="${ex.photo}" alt="Foto familiar" style="width:220px;height:220px;object-fit:cover;border-radius:28px;box-shadow:var(--shadow-lift);" />`;
+    photoBox.style.marginTop = "12px";
+    photoBox.innerHTML = `<img src="${ex.photo}" alt="Foto familiar" style="width:170px;height:170px;object-fit:cover;border-radius:24px;box-shadow:var(--shadow-lift);" />`;
     this.contentEl.appendChild(photoBox);
     this.renderChoice(ex, hintFlow);
   }
@@ -384,7 +396,15 @@ export class SessionRunner {
       btn.classList.add("correct-flash");
       this.mascot.celebrate();
       Sounds.playPositive();
-      const msg = fillName(pickMotivation(), this.profile.name);
+
+      let msg;
+      if (ex.category === "fotos") {
+        msg = opt.relation
+          ? `Correcto, ${this.profile.name}. Esta es tu ${opt.relation}, ${opt.label}.`
+          : `Correcto, ${this.profile.name}. Esta es ${opt.label}.`;
+      } else {
+        msg = fillName(pickMotivation(), this.profile.name);
+      }
       this.say(msg);
       this.stats.correct++;
       await reportResult(this.profile.id, ex.category, { success: true, usedHints: hintFlow.errorCount });
@@ -394,20 +414,29 @@ export class SessionRunner {
     } else {
       btn.classList.add("wrong-flash");
       this.optionButtons.forEach((b) => (b.style.pointerEvents = "auto"));
-      const dir = this.optionButtons.indexOf(btn) < this.optionButtons.length / 2 ? "right" : "left";
-      this.mascot.pointTo(dir);
       Sounds.playSoftError();
       const count = hintFlow.registerError();
       if (count >= 4) {
         this.clearInactivityTimer();
         await reportResult(this.profile.id, ex.category, { success: false, usedHints: count });
+      } else {
+        this.startInactivityTimer(() => this.showInactivityHint());
       }
     }
   }
 
-  highlightCorrect() {
+  /** Pista visual (2º-3º error): parpadeo en el botón correcto. */
+  showVisualHint() {
     const correctBtn = this.optionButtons?.find((b) => b.dataset.correct === "1");
     correctBtn?.classList.add("btn-wiggle-hint");
+  }
+
+  /** Pista de inactividad (60s sin tocar nada): solo se mueve el dibujo. */
+  showInactivityHint() {
+    const correctBtn = this.optionButtons?.find((b) => b.dataset.correct === "1");
+    const emojiSpan = correctBtn?.querySelector(".emoji");
+    if (emojiSpan) emojiSpan.classList.add("emoji-hint-wiggle");
+    else correctBtn?.classList.add("emoji-hint-wiggle");
   }
 
   revealCorrect(ex) {
@@ -424,19 +453,19 @@ export class SessionRunner {
   renderSpotDiff(ex, hintFlow) {
     const wrap = document.createElement("div");
     wrap.className = "col";
-    wrap.style.gap = "14px";
-    wrap.style.marginTop = "18px";
+    wrap.style.gap = "10px";
+    wrap.style.marginTop = "14px";
 
     const labels = document.createElement("div");
     labels.className = "row";
     labels.style.justifyContent = "center";
-    labels.style.gap = "48px";
+    labels.style.gap = "40px";
     labels.innerHTML = `<span class="pill">Imagen A</span><span class="pill">Imagen B — toca aquí</span>`;
     wrap.appendChild(labels);
 
     const panels = document.createElement("div");
     panels.className = "row wrap";
-    panels.style.gap = "24px";
+    panels.style.gap = "18px";
     panels.style.justifyContent = "center";
 
     const cols = Math.ceil(Math.sqrt(ex.panelA.length));
@@ -446,7 +475,7 @@ export class SessionRunner {
       p.className = "card";
       p.style.display = "grid";
       p.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-      p.style.gap = "10px";
+      p.style.gap = "8px";
       items.forEach((emoji) => {
         const cell = document.createElement("div");
         cell.textContent = emoji;
@@ -491,7 +520,7 @@ export class SessionRunner {
           celebrateSuccess({ big: "🔍✨" });
           this.scheduleContinue(Math.max(2400, Voice.estimateDurationMs(msg)));
         } else {
-          this.startInactivityTimer(() => this.hintSpotDiff(panelB, ex, found));
+          this.startInactivityTimer(() => this.hintSpotDiffInactivity(panelB, ex, found));
         }
       } else {
         cell.classList.add("diff-cell-wrong");
@@ -502,8 +531,9 @@ export class SessionRunner {
           ex.diffPositions
             .filter((p) => !found.has(p))
             .forEach((p) => panelB.children[p].classList.add("btn-wiggle-hint"));
+        } else {
+          this.startInactivityTimer(() => this.hintSpotDiffInactivity(panelB, ex, found));
         }
-        this.startInactivityTimer(() => this.hintSpotDiff(panelB, ex, found));
       }
     };
 
@@ -511,14 +541,15 @@ export class SessionRunner {
       cell.onclick = () => onCellTap(idx, cell);
     });
 
-    this.startInactivityTimer(() => this.hintSpotDiff(panelB, ex, found));
+    this.startInactivityTimer(() => this.hintSpotDiffInactivity(panelB, ex, found));
   }
 
-  hintSpotDiff(panelB, ex, found) {
+  /** Inactividad en "diferencias": solo se mueve uno de los dibujos aún no encontrados. */
+  hintSpotDiffInactivity(panelB, ex, found) {
     const remaining = ex.diffPositions.filter((p) => !found.has(p));
     if (remaining.length) {
       const target = remaining[0];
-      panelB.children[target]?.classList.add("btn-wiggle-hint");
+      panelB.children[target]?.classList.add("emoji-hint-wiggle");
     }
   }
 
@@ -528,7 +559,7 @@ export class SessionRunner {
     const box = document.createElement("div");
     box.className = "col center grow";
     const text = fillName(pickClosing(), this.profile.name);
-    box.innerHTML = `<div style="font-size:5rem;">🎉</div>
+    box.innerHTML = `<div style="font-size:4rem;">🎉</div>
       <h2 class="title-xl" style="text-align:center;">${text}</h2>`;
     this.say(text);
     burstConfetti(36);
@@ -542,6 +573,7 @@ export class SessionRunner {
       profileId: this.profile.id,
       date: new Date().toDateString(),
       timestamp: Date.now(),
+      hour: new Date().getHours(),
       exercisesCompleted: this.stats.total,
       accuracy,
       durationMin,
@@ -549,7 +581,7 @@ export class SessionRunner {
 
     const btn = document.createElement("button");
     btn.className = "btn btn-huge btn-success";
-    btn.style.marginTop = "32px";
+    btn.style.marginTop = "26px";
     btn.textContent = "Volver al inicio";
     btn.onclick = () => this.onFinish();
     box.appendChild(btn);

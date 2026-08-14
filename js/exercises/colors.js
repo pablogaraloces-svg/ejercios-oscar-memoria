@@ -8,6 +8,7 @@ export function generateColorExercise(level = 2) {
     color: c.hex,
     label: c.name,
     correct: c.name === target.name,
+    hideLabel: true,
   }));
 
   return {

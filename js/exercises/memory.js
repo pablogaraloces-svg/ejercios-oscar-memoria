@@ -40,6 +40,7 @@ export function generateMemoryExercise(level = 2) {
     label: item.name,
     emoji: item.emoji,
     correct: item.name === target.name,
+    hideLabel: true,
   }));
 
   return {

@@ -1,15 +1,17 @@
 import { DB } from "../core/db.js";
 
-export function renderFamily(rootEl, ctx, openModalFn) {
+export function renderFamily(rootEl, ctx, openModalFn, editable = false) {
   rootEl.innerHTML = "";
   const family = ctx.profile.family || [];
 
   if (family.length === 0) {
     const empty = document.createElement("div");
     empty.className = "col center grow";
-    empty.innerHTML = `<div style="font-size:4rem;">👨‍👩‍👧‍👦</div>
+    empty.innerHTML = `<div style="font-size:3.4rem;">👨‍👩‍👧‍👦</div>
       <p class="text-base" style="text-align:center; max-width:480px;">
-        Aún no hay fotos de familiares. Añade alguna para poder reconocerlas durante los ejercicios.
+        ${editable
+          ? "Aún no hay fotos de familiares. Añade alguna para poder reconocerlas durante los ejercicios."
+          : "Todavía no hay fotos de la familia aquí."}
       </p>`;
     rootEl.appendChild(empty);
     return;
@@ -22,15 +24,17 @@ export function renderFamily(rootEl, ctx, openModalFn) {
     card.className = "card col center family-card";
     card.innerHTML = `
       <img src="${f.photo}" alt="${f.name}" class="family-photo" />
-      <p class="text-base" style="font-weight:700; margin-top:12px;">${f.name}</p>
+      <p class="text-base" style="font-weight:700; margin-top:10px;">${f.name}</p>
       <p class="text-md">${f.relation || ""}</p>
     `;
-    const modBtn = document.createElement("button");
-    modBtn.className = "btn btn-ghost";
-    modBtn.style.marginTop = "10px";
-    modBtn.textContent = "✏️ Modificar";
-    modBtn.onclick = () => openModalFn(idx);
-    card.appendChild(modBtn);
+    if (editable) {
+      const modBtn = document.createElement("button");
+      modBtn.className = "btn btn-ghost";
+      modBtn.style.marginTop = "8px";
+      modBtn.textContent = "✏️ Modificar";
+      modBtn.onclick = () => openModalFn(idx);
+      card.appendChild(modBtn);
+    }
     grid.appendChild(card);
   });
   rootEl.appendChild(grid);

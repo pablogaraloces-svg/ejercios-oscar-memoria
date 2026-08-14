@@ -14,7 +14,7 @@ export const AppState = {
 export const DEFAULT_SETTINGS = {
   id: "global",
   voiceEnabled: false,
-  voiceURI: null, // voz elegida por la familia (Google TTS del dispositivo, si está instalada)
+  voiceURI: null, // voz elegida por la familia (voces instaladas en el dispositivo)
   highContrast: false,
   textSize: "base", // base | lg | xl
   reduceMotion: false,
@@ -23,6 +23,8 @@ export const DEFAULT_SETTINGS = {
   exercisesPerSession: 20,
   musicEnabled: true,
   musicVolume: 0.35,
+  musicTrack: 0, // 0-4, ver core/music.js
+  adminPin: "1234", // PIN de administración (cambiable desde Ajustes > Perfil)
 };
 
 export const DEFAULT_REMINDER_CATALOG = [

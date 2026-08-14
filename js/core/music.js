@@ -1,16 +1,21 @@
 /**
- * music.js — Música de fondo relajante y motivadora, 100% generada en el
- * dispositivo con Web Audio API (no requiere descargar ningún archivo,
- * así que funciona sin conexión). Un pad suave en escala mayor pentatónica
- * con una ligera variación aleatoria para que no suene mecánico.
+ * music.js — Música de fondo relajante, 100% generada en el dispositivo
+ * con Web Audio API (no requiere descargar nada, funciona sin conexión).
+ * Se ofrecen 5 variantes distintas para poder cambiar el ambiente.
  */
 let audioCtx = null;
 let masterGain = null;
-let padNodes = [];
 let running = false;
 let scheduleTimer = null;
+let currentTrack = 0;
 
-const SCALE = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25]; // Do mayor pentatónica
+export const TRACKS = [
+  { name: "Amanecer tranquilo", scale: [261.63, 293.66, 329.63, 392.0, 440.0, 523.25], tempo: 1.0, wave: "sine" },
+  { name: "Brisa suave", scale: [220.0, 246.94, 277.18, 329.63, 369.99, 440.0], tempo: 1.15, wave: "sine" },
+  { name: "Tarde de piano", scale: [261.63, 311.13, 349.23, 392.0, 466.16, 523.25], tempo: 0.85, wave: "triangle" },
+  { name: "Jardín sereno", scale: [293.66, 329.63, 392.0, 440.0, 493.88, 587.33], tempo: 1.05, wave: "sine" },
+  { name: "Manta cálida", scale: [196.0, 220.0, 246.94, 293.66, 329.63, 392.0], tempo: 0.75, wave: "triangle" },
+];
 
 function ensureContext() {
   if (!audioCtx) {
@@ -24,10 +29,10 @@ function ensureContext() {
   return audioCtx;
 }
 
-function playNote(freq, duration, startTime) {
+function playNote(freq, duration, startTime, wave) {
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
-  osc.type = "sine";
+  osc.type = wave;
   osc.frequency.value = freq;
   gain.gain.setValueAtTime(0, startTime);
   gain.gain.linearRampToValueAtTime(0.5, startTime + duration * 0.3);
@@ -36,28 +41,33 @@ function playNote(freq, duration, startTime) {
   gain.connect(masterGain);
   osc.start(startTime);
   osc.stop(startTime + duration + 0.1);
-  padNodes.push(osc);
 }
 
 function scheduleLoop() {
   if (!running || !audioCtx) return;
+  const track = TRACKS[currentTrack] || TRACKS[0];
   const now = audioCtx.currentTime;
-  const noteDur = 3.2 + Math.random() * 1.6;
-  const freq = SCALE[Math.floor(Math.random() * SCALE.length)];
-  playNote(freq, noteDur, now + 0.05);
-  // acorde suave de fondo ocasional
+  const noteDur = (3.2 + Math.random() * 1.6) * track.tempo;
+  const freq = track.scale[Math.floor(Math.random() * track.scale.length)];
+  playNote(freq, noteDur, now + 0.05, track.wave);
   if (Math.random() > 0.6) {
-    const freq2 = SCALE[Math.floor(Math.random() * SCALE.length)] / 2;
-    playNote(freq2, noteDur * 1.3, now + 0.1);
+    const freq2 = track.scale[Math.floor(Math.random() * track.scale.length)] / 2;
+    playNote(freq2, noteDur * 1.3, now + 0.1, track.wave);
   }
-  padNodes = padNodes.filter((n) => n);
   scheduleTimer = setTimeout(scheduleLoop, noteDur * 700);
 }
 
 export const Music = {
-  start(volume = 0.35) {
+  setTrack(index) {
+    currentTrack = Math.max(0, Math.min(TRACKS.length - 1, index));
+  },
+  getTrack() {
+    return currentTrack;
+  },
+  start(volume = 0.35, trackIndex = null) {
     const ctx = ensureContext();
     if (!ctx) return;
+    if (trackIndex !== null) this.setTrack(trackIndex);
     if (ctx.state === "suspended") ctx.resume();
     running = true;
     masterGain.gain.cancelScheduledValues(ctx.currentTime);

@@ -14,6 +14,15 @@ function isSpanish(v) {
   return v.lang?.toLowerCase().startsWith("es");
 }
 
+const FEMALE_HINTS = /female|mujer|helena|paulina|mónica|monica|elvira|lucia|lucía|marisol|conchita|penélope|penelope|carmen/i;
+const MALE_HINTS = /male|hombre|jorge|diego|pablo|carlos|enrique|miguel|juan(?!a)/i;
+
+function guessGender(name) {
+  if (FEMALE_HINTS.test(name)) return "mujer";
+  if (MALE_HINTS.test(name)) return "hombre";
+  return "sin especificar";
+}
+
 function refreshVoices() {
   if (typeof speechSynthesis === "undefined") return [];
   const voices = speechSynthesis.getVoices();
@@ -48,17 +57,25 @@ export const Voice = {
     return enabled;
   },
 
-  /** Lista de voces en español disponibles en este dispositivo (incluye Google TTS si está instalado). */
+  /** Lista de voces disponibles en este dispositivo — incluye todas las
+   * instaladas (Google, Samsung, u otros motores del sistema), no solo
+   * español, para que la familia pueda ver todos los "asistentes de voz"
+   * que ofrece la tablet. Las voces en español aparecen primero. */
   getAvailableVoices() {
     if (typeof speechSynthesis === "undefined") return [];
     const all = speechSynthesis.getVoices();
-    const spanish = all.filter(isSpanish);
-    return (spanish.length ? spanish : all).map((v) => ({
+    const withMeta = all.map((v) => ({
       uri: v.voiceURI,
       name: v.name,
       isGoogle: /google/i.test(v.name),
       lang: v.lang,
+      gender: guessGender(v.name),
     }));
+    return withMeta.sort((a, b) => {
+      const aEs = a.lang?.toLowerCase().startsWith("es") ? 0 : 1;
+      const bEs = b.lang?.toLowerCase().startsWith("es") ? 0 : 1;
+      return aEs - bEs;
+    });
   },
 
   /** Se resuelve cuando la lista de voces del sistema esté cargada (puede tardar un instante). */

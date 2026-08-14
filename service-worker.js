@@ -2,7 +2,7 @@
  * service-worker.js — Cache-first para uso 100% offline.
  * Sube CACHE_VERSION cuando se publiquen cambios para forzar actualización.
  */
-const CACHE_VERSION = "acompanante-v2";
+const CACHE_VERSION = "acompanante-v3";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -15,6 +15,7 @@ const CORE_ASSETS = [
   "./js/core/voice.js",
   "./js/core/music.js",
   "./js/core/sounds.js",
+  "./js/core/pdfExport.js",
   "./js/core/mascot.js",
   "./js/core/adaptiveDifficulty.js",
   "./js/core/hints.js",

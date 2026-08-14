@@ -2,7 +2,7 @@ import { DB } from "../core/db.js";
 import { DEFAULT_REMINDER_CATALOG } from "../core/state.js";
 import { getReminders, addReminder, removeReminder, setReminderEnabled } from "../core/reminders.js";
 import { Voice } from "../core/voice.js";
-import { Music } from "../core/music.js";
+import { Music, TRACKS } from "../core/music.js";
 
 const TABS = [
   { key: "perfil", label: "👤 Perfil" },
@@ -39,6 +39,7 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
 
   async function renderProfileTab() {
     const p = ctx.profile;
+    const s = ctx.settings;
     const card = document.createElement("div");
     card.className = "card col";
     card.style.maxWidth = "640px";
@@ -51,16 +52,39 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
         <label for="set-age">Edad (opcional)</label>
         <input type="number" id="set-age" value="${p.age ?? ""}" />
       </div>
+      <div class="row wrap" style="gap:16px;">
+        <div class="field" style="flex:1; min-width:180px;">
+          <label for="set-weight">Peso (kg, opcional)</label>
+          <input type="number" id="set-weight" value="${p.weight ?? ""}" />
+        </div>
+        <div class="field" style="flex:1; min-width:180px;">
+          <label for="set-height">Altura (cm, opcional)</label>
+          <input type="number" id="set-height" value="${p.height ?? ""}" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="set-pin">PIN de administración (para entrar en 🔐)</label>
+        <input type="text" id="set-pin" inputmode="numeric" maxlength="6" value="${s.adminPin || "1234"}" />
+      </div>
     `;
     const saveBtn = document.createElement("button");
     saveBtn.className = "btn btn-success btn-huge";
-    saveBtn.style.marginTop = "20px";
+    saveBtn.style.marginTop = "16px";
     saveBtn.textContent = "Guardar cambios";
     saveBtn.onclick = async () => {
       p.name = card.querySelector("#set-name").value.trim() || p.name;
       const ageVal = card.querySelector("#set-age").value;
       p.age = ageVal ? Number(ageVal) : null;
+      const weightVal = card.querySelector("#set-weight").value;
+      p.weight = weightVal ? Number(weightVal) : null;
+      const heightVal = card.querySelector("#set-height").value;
+      p.height = heightVal ? Number(heightVal) : null;
       await DB.put("profile", p);
+
+      const pinVal = card.querySelector("#set-pin").value.trim();
+      if (pinVal) s.adminPin = pinVal;
+      await DB.put("settings", s);
+
       ctx.onProfileUpdated?.(p);
       saveBtn.textContent = "¡Guardado! ✔️";
       setTimeout(() => (saveBtn.textContent = "Guardar cambios"), 1600);
@@ -172,7 +196,7 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
     const wrap = document.createElement("div");
     wrap.className = "col";
     wrap.style.maxWidth = "640px";
-    wrap.style.gap = "18px";
+    wrap.style.gap = "16px";
 
     wrap.appendChild(
       switchRow("🔊 Voz que acompaña", s.voiceEnabled, async (v) => {
@@ -185,11 +209,11 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
 
     const voiceCard = document.createElement("div");
     voiceCard.className = "card col";
-    voiceCard.innerHTML = `<p class="text-base" style="font-weight:700;">Elegir voz</p>
-      <p class="text-md">Se muestran las voces en español instaladas en esta tablet (incluida la de Google, si está disponible).</p>`;
+    voiceCard.innerHTML = `<p class="text-base" style="font-weight:700;">Elegir voz / asistente de voz</p>
+      <p class="text-md">Se muestran todas las voces instaladas en esta tablet (los distintos "asistentes de voz" que tenga el dispositivo), con el español primero.</p>`;
     const select = document.createElement("select");
     select.style.cssText =
-      "min-height:64px; border-radius:16px; border:3px solid var(--color-border); padding:0 14px; font-size:var(--font-base); background:var(--color-bg-soft); color:var(--color-text); margin-top:10px;";
+      "min-height:56px; border-radius:14px; border:3px solid var(--color-border); padding:0 14px; font-size:var(--font-base); background:var(--color-bg-soft); color:var(--color-text); margin-top:8px;";
     function fillVoices() {
       const voices = Voice.getAvailableVoices();
       select.innerHTML = "";
@@ -202,7 +226,8 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
       voices.forEach((v) => {
         const opt = document.createElement("option");
         opt.value = v.uri;
-        opt.textContent = `${v.isGoogle ? "🟢 Google — " : ""}${v.name} (${v.lang})`;
+        const genderTag = v.gender !== "sin especificar" ? ` · ${v.gender}` : "";
+        opt.textContent = `${v.isGoogle ? "🟢 " : ""}${v.name} (${v.lang}${genderTag})`;
         if (v.uri === (s.voiceURI || Voice.getSelectedURI())) opt.selected = true;
         select.appendChild(opt);
       });
@@ -221,7 +246,7 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
 
     const tryBtn = document.createElement("button");
     tryBtn.className = "btn btn-ghost";
-    tryBtn.style.marginTop = "12px";
+    tryBtn.style.marginTop = "10px";
     tryBtn.textContent = "🔈 Probar esta voz";
     tryBtn.onclick = () => {
       const wasEnabled = Voice.isEnabled();
@@ -231,6 +256,14 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
       });
     };
     voiceCard.appendChild(tryBtn);
+
+    const note = document.createElement("p");
+    note.className = "text-sm";
+    note.style.marginTop = "10px";
+    note.style.color = "var(--color-text-soft)";
+    note.textContent =
+      "Nota: para voces más naturales y humanas, se pueden instalar voces de mayor calidad desde los Ajustes de Android (Ajustes > Sistema > Idiomas y entrada > Síntesis de voz > Motor de Google > Instalar datos de voz). En cuanto se instalen, aparecerán aquí automáticamente para elegir, sin necesitar conexión después de instalarlas.";
+    voiceCard.appendChild(note);
     wrap.appendChild(voiceCard);
 
     // Música de fondo
@@ -240,10 +273,36 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
       switchRow("🎵 Música de fondo relajante", s.musicEnabled, async (v) => {
         s.musicEnabled = v;
         await DB.put("settings", s);
-        if (v) Music.start(s.musicVolume);
+        if (v) Music.start(s.musicVolume, s.musicTrack);
         else Music.stop();
       })
     );
+
+    const trackTitle = document.createElement("p");
+    trackTitle.className = "text-md";
+    trackTitle.style.marginTop = "12px";
+    trackTitle.textContent = "Elegir ambiente musical:";
+    musicCard.appendChild(trackTitle);
+
+    const trackGrid = document.createElement("div");
+    trackGrid.className = "grid-options cols-3";
+    TRACKS.forEach((t, idx) => {
+      const b = document.createElement("button");
+      b.className = "option-card";
+      b.style.minHeight = "76px";
+      b.innerHTML = `<span>${t.name}</span>`;
+      b.style.borderColor = s.musicTrack === idx ? "var(--color-success)" : "";
+      b.onclick = async () => {
+        s.musicTrack = idx;
+        await DB.put("settings", s);
+        [...trackGrid.children].forEach((c) => (c.style.borderColor = ""));
+        b.style.borderColor = "var(--color-success)";
+        if (s.musicEnabled) Music.start(s.musicVolume, idx);
+      };
+      trackGrid.appendChild(b);
+    });
+    musicCard.appendChild(trackGrid);
+
     const volLabel = document.createElement("p");
     volLabel.className = "text-md";
     volLabel.style.marginTop = "12px";
@@ -256,7 +315,7 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
     volInput.step = "0.05";
     volInput.value = String(s.musicVolume);
     volInput.style.width = "100%";
-    volInput.style.height = "56px";
+    volInput.style.height = "48px";
     volInput.oninput = async () => {
       s.musicVolume = Number(volInput.value);
       Music.setVolume(s.musicVolume);

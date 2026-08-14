@@ -9,10 +9,11 @@ export function renderOnboarding(root, onComplete) {
     reminderKeys: ["medicacion", "agua"],
     categories: [...ALL_CATEGORIES.filter((c) => c !== "fotos")],
     textSize: "base",
+    adminPin: "1234",
   };
   let step = 0;
 
-  const steps = [stepWelcome, stepName, stepReminders, stepExercises, stepAccessibility, stepDone];
+  const steps = [stepWelcome, stepName, stepReminders, stepExercises, stepAccessibility, stepAdminPin, stepDone];
 
   function renderStep() {
     root.innerHTML = "";
@@ -163,6 +164,20 @@ export function renderOnboarding(root, onComplete) {
     navButtons(c);
   }
 
+  function stepAdminPin(c) {
+    c.innerHTML = `<h2 class="title-lg">Un PIN solo para la familia</h2>
+      <p class="text-md">Con este PIN se podrá entrar en Ajustes, Mi evolución y editar la familia, sin que ${data.name || "él/ella"} tenga que ver esos botones. Se puede cambiar luego desde Administración.</p>
+      <div class="field" style="margin-top:20px; max-width:260px;">
+        <label for="ob-pin">PIN (4-6 dígitos)</label>
+        <input type="text" id="ob-pin" inputmode="numeric" maxlength="6" value="${data.adminPin}" style="font-size:1.6rem; text-align:center; letter-spacing:6px;" />
+      </div>`;
+    const input = c.querySelector("#ob-pin");
+    input.addEventListener("input", () => {
+      data.adminPin = input.value.trim() || "1234";
+    });
+    navButtons(c);
+  }
+
   function stepDone(c) {
     c.innerHTML = `<div class="col center grow">
         <div style="font-size:5rem;">🎉</div>
@@ -187,7 +202,7 @@ export function renderOnboarding(root, onComplete) {
       };
       await DB.put("profile", profile);
       await seedDefaultReminders(profile.id, data.reminderKeys);
-      const settings = { ...DEFAULT_SETTINGS, textSize: data.textSize };
+      const settings = { ...DEFAULT_SETTINGS, textSize: data.textSize, adminPin: data.adminPin || "1234" };
       await DB.put("settings", settings);
       onComplete(profile, settings);
     };

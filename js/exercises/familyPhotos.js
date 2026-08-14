@@ -15,10 +15,11 @@ export function generateFamilyPhotoExercise(family, level = 2) {
   return {
     category: "fotos",
     kind: "photo_choice",
-    prompt: "¿Quién es esta persona?",
+    prompt: "¿Reconoces a esta persona?",
     photo: target.photo,
     options: chosen.map((f) => ({
       label: f.name,
+      relation: f.relation || "",
       correct: f.name === target.name,
     })),
   };

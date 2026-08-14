@@ -13,9 +13,9 @@ export function generateAttentionExercise(level = 2) {
     const [common, different] = sample(pool, 2);
     const options = [];
     for (let i = 0; i < gridSize - 1; i++) {
-      options.push({ label: common.name, emoji: common.emoji, correct: false, isDistractor: true });
+      options.push({ label: common.name, emoji: common.emoji, correct: false, isDistractor: true, hideLabel: true });
     }
-    options.push({ label: different.name, emoji: different.emoji, correct: true });
+    options.push({ label: different.name, emoji: different.emoji, correct: true, hideLabel: true });
     return {
       category: "atencion",
       kind: "choice",
@@ -35,6 +35,7 @@ export function generateAttentionExercise(level = 2) {
     emoji: isColor ? undefined : item.emoji,
     color: isColor ? item.hex : undefined,
     correct: item.name === target.name,
+    hideLabel: true,
   }));
 
   return {
