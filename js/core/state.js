@@ -15,6 +15,8 @@ export const DEFAULT_SETTINGS = {
   id: "global",
   voiceEnabled: false,
   voiceURI: null, // voz elegida por la familia (voces instaladas en el dispositivo)
+  voiceRate: 0.92, // 0.75 lenta, 0.92 normal, 1.12 rápida
+  voicePitch: 1.0, // tono, margen pequeño (0.85 - 1.15)
   highContrast: false,
   textSize: "base", // base | lg | xl
   reduceMotion: false,

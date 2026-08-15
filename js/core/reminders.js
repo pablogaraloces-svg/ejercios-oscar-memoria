@@ -57,3 +57,9 @@ export async function isReminderDoneToday(profileId, reminderId) {
   const rec = await DB.get("settings", key);
   return !!rec?.done;
 }
+
+/** Permite corregir una marcación: si Óscar se equivoca, puede desmarcarla. */
+export async function unmarkReminderDoneToday(profileId, reminderId) {
+  const key = `done_${new Date().toDateString()}_${reminderId}`;
+  await DB.delete("settings", key);
+}

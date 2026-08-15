@@ -58,7 +58,7 @@
   <section class="screen" id="screen-admin-menu">
     <div class="top-bar">
       <button class="btn btn-icon btn-ghost" id="btn-admin-back" aria-label="Volver">←</button>
-      <h2 class="title-lg">Administración</h2>
+      <h2 class="title-lg title-admin">Administración</h2>
       <div style="width:88px;"></div>
     </div>
     <div class="col grow center" style="gap:20px;">
@@ -66,7 +66,7 @@
         <span class="emoji">⚙️</span><span>Ajustes</span>
       </button>
       <button class="option-card" id="btn-admin-reports" style="width:100%; max-width:420px;">
-        <span class="emoji">📈</span><span>Mi evolución</span>
+        <span class="emoji">📈</span><span>Estadísticas</span>
       </button>
       <button class="option-card" id="btn-admin-family" style="width:100%; max-width:420px;">
         <span class="emoji">👨‍👩‍👧</span><span>Editar familia</span>
@@ -82,7 +82,6 @@
         <div class="progress-track"><div class="progress-fill" id="session-progress" style="width:0%;"></div></div>
       </div>
       <span class="pill" id="session-step-label">1 / 8</span>
-      <button class="btn btn-success btn-continue-blink hidden" id="session-continue-btn">Continuamos ▶️</button>
     </div>
     <div class="row grow session-body">
       <div class="col" style="align-items:center; gap:8px; flex-shrink:0;">
@@ -97,7 +96,7 @@
   <section class="screen" id="screen-reports">
     <div class="top-bar">
       <button class="btn btn-icon btn-ghost" id="btn-reports-back" aria-label="Volver">←</button>
-      <h2 class="title-lg">Mi evolución</h2>
+      <h2 class="title-lg title-admin">Estadísticas</h2>
       <button class="btn btn-accent" id="btn-send-report">📧 Enviar resumen</button>
     </div>
     <div id="reports-root" class="col grow" style="gap:20px; overflow-y:auto;"></div>
@@ -117,7 +116,7 @@
   <section class="screen" id="screen-settings">
     <div class="top-bar">
       <button class="btn btn-icon btn-ghost" id="btn-settings-back" aria-label="Volver">←</button>
-      <h2 class="title-lg">Ajustes</h2>
+      <h2 class="title-lg title-admin">Ajustes</h2>
       <div style="width:88px;"></div>
     </div>
     <div class="row wrap" style="gap:12px; margin-bottom:20px;" id="settings-tabs"></div>

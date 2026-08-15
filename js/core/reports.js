@@ -12,6 +12,29 @@ export async function getSessionsForProfile(profileId) {
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
+/**
+ * Borra las estadísticas de evolución (sesiones, progreso/dificultad por
+ * categoría, estados de ánimo y cumplimiento de recordatorios) SIN tocar
+ * el perfil, la familia, las fotos, los recordatorios configurados ni
+ * ningún ajuste de la aplicación (voz, música, PIN, accesibilidad...).
+ */
+export async function resetStats(profileId) {
+  const [sessions, progress, settingsEntries] = await Promise.all([
+    DB.getAll("sessions"),
+    DB.getAll("progress"),
+    DB.getAll("settings"),
+  ]);
+
+  const deletions = [];
+  sessions.filter((s) => s.profileId === profileId).forEach((s) => deletions.push(DB.delete("sessions", s.id)));
+  progress.filter((p) => p.profileId === profileId).forEach((p) => deletions.push(DB.delete("progress", p.id)));
+  settingsEntries
+    .filter((e) => e.id?.startsWith("mood_") || e.id?.startsWith("done_"))
+    .forEach((e) => deletions.push(DB.delete("settings", e.id)));
+
+  await Promise.all(deletions);
+}
+
 export function summarize(sessions) {
   const last14 = sessions.slice(-14);
   const totalSessions = sessions.length;

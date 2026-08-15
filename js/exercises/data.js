@@ -21,7 +21,7 @@ export const COLORS = [
   { name: "Verde", hex: "#5FA463" }, { name: "Amarillo", hex: "#F2C230" },
   { name: "Naranja", hex: "#F0954D" }, { name: "Morado", hex: "#9B7EDB" },
   { name: "Rosa", hex: "#EF9FBB" }, { name: "Marrón", hex: "#8B5E3C" },
-  { name: "Blanco", hex: "#F4F1EA" }, { name: "Negro", hex: "#3A3A3A" },
+  { name: "Blanco", hex: "#FFFFFF" }, { name: "Negro", hex: "#3A3A3A" },
 ];
 
 export const OBJECTS = [
@@ -35,6 +35,19 @@ export const OBJECTS = [
   { name: "Pelota", emoji: "⚽" }, { name: "Manzana", emoji: "🍎" },
   { name: "Pan", emoji: "🥖" }, { name: "Pescado", emoji: "🐟" },
 ];
+
+/** Herramientas básicas y reconocibles para el ejercicio de puzle. */
+export const TOOLS = [
+  { name: "Martillo", emoji: "🔨" },
+  { name: "Destornillador", emoji: "🪛" },
+  { name: "Llave inglesa", emoji: "🔧" },
+  { name: "Alicates", emoji: "🗜️" },
+  { name: "Sierra", emoji: "🪚" },
+  { name: "Tornillo", emoji: "🔩" },
+];
+
+/** Objetos de "atrezzo" fijos que dan contexto de taller al puzle (no son la respuesta). */
+export const WORKSHOP_DECOR = ["🧰", "⚙️", "🪵"];
 
 /** Banco amplio para el ejercicio "encuentra las diferencias". */
 export const SCENE_ITEMS = [

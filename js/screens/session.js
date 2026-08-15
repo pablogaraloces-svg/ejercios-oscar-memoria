@@ -14,7 +14,8 @@ import { Voice } from "../core/voice.js";
 import { Sounds } from "../core/sounds.js";
 import { HintFlow } from "../core/hints.js";
 import { reportResult } from "../core/adaptiveDifficulty.js";
-import { getReminders, markReminderDoneToday, isReminderDoneToday } from "../core/reminders.js";
+import { getReminders, markReminderDoneToday, unmarkReminderDoneToday } from "../core/reminders.js";
+import { buildFamilyIdentityPhrase } from "../core/familyPhrase.js";
 import { buildSessionExercises, CATEGORY_LABELS } from "../exercises/index.js";
 import { burstConfetti, celebrateSuccess } from "../core/confetti.js";
 
@@ -30,13 +31,12 @@ function getPartOfDay() {
 }
 
 export class SessionRunner {
-  constructor({ contentEl, mascot, bubbleEl, progressFillEl, stepLabelEl, continueBtn, profile, settings }) {
+  constructor({ contentEl, mascot, bubbleEl, progressFillEl, stepLabelEl, profile, settings }) {
     this.contentEl = contentEl;
     this.mascot = mascot;
     this.bubbleEl = bubbleEl;
     this.progressFillEl = progressFillEl;
     this.stepLabelEl = stepLabelEl;
-    this.continueBtn = continueBtn;
     this.profile = profile;
     this.settings = settings;
     this.stats = { correct: 0, total: 0 };
@@ -87,31 +87,22 @@ export class SessionRunner {
 
   next() {
     this.clearInactivityTimer();
-    this.hideContinueBtn();
+    clearTimeout(this._advanceTimer);
     if (this.stepIndex < this.steps.length - 1) {
       this.stepIndex++;
       this.renderStep();
     }
   }
 
-  /* -------- Botón "Continuamos" arriba a la derecha -------- */
-  hideContinueBtn() {
-    this.continueBtn.classList.add("hidden");
-    this.continueBtn.onclick = null;
-    clearTimeout(this._continueTimer);
-  }
-
-  scheduleContinue(delayMs) {
-    let advanced = false;
-    const go = () => {
-      if (advanced) return;
-      advanced = true;
-      clearTimeout(this._continueTimer);
-      this.next();
-    };
-    this.continueBtn.onclick = go;
-    this.continueBtn.classList.remove("hidden");
-    this._continueTimer = setTimeout(go, delayMs);
+  /**
+   * Avance automático (sin botón): la app conduce a Óscar de una pantalla a
+   * la siguiente por sí sola, esperando lo necesario para que la voz y la
+   * animación terminen con calma (con un margen extra de ~3s) antes de
+   * seguir. Cada llamada reemplaza cualquier avance pendiente anterior.
+   */
+  scheduleAutoAdvance(delayMs) {
+    clearTimeout(this._advanceTimer);
+    this._advanceTimer = setTimeout(() => this.next(), delayMs + 3000);
   }
 
   /* -------- Aviso pasados 60s sin tocar nada -------- */
@@ -129,7 +120,7 @@ export class SessionRunner {
 
   renderStep() {
     this.clearInactivityTimer();
-    this.hideContinueBtn();
+    clearTimeout(this._advanceTimer);
     this.updateProgress();
     this.mascot.idle();
     this.contentEl.innerHTML = "";
@@ -199,7 +190,7 @@ export class SessionRunner {
         );
         this.mascot.celebrate();
         this.say(reaction);
-        this.scheduleContinue(Math.max(2200, Voice.estimateDurationMs(reaction)));
+        this.scheduleAutoAdvance(Math.max(2200, Voice.estimateDurationMs(reaction)));
       };
       options.appendChild(b);
     });
@@ -224,34 +215,43 @@ export class SessionRunner {
           <span style="font-size:1.8rem;">${rem.emoji}</span> ${rem.label}
         </span>`;
 
+      // Cada sesión empieza siempre con todo desmarcado (no se conserva el
+      // estado de sesiones anteriores, aunque sean del mismo día). Se puede
+      // marcar y desmarcar libremente para corregir un toque accidental.
       const doneBtn = document.createElement("button");
       doneBtn.type = "button";
       doneBtn.className = "btn btn-ghost reminder-done-btn";
       doneBtn.textContent = "Marcar hecho";
+      let isDone = false;
 
-      const setDoneVisual = () => {
-        doneBtn.textContent = "✔️ Hecho";
-        doneBtn.classList.remove("btn-ghost");
-        doneBtn.classList.add("reminder-done-btn-active");
+      const setVisual = () => {
+        if (isDone) {
+          doneBtn.textContent = "✔️ Hecho";
+          doneBtn.classList.remove("btn-ghost");
+          doneBtn.classList.add("reminder-done-btn-active");
+        } else {
+          doneBtn.textContent = "Marcar hecho";
+          doneBtn.classList.add("btn-ghost");
+          doneBtn.classList.remove("reminder-done-btn-active");
+        }
       };
 
-      isReminderDoneToday(this.profile.id, rem.id)
-        .then((done) => {
-          if (done) setDoneVisual();
-        })
-        .catch((err) => console.error("Error comprobando recordatorio:", err));
-
       doneBtn.addEventListener("click", async () => {
-        if (doneBtn.dataset.locked === "1") return;
-        doneBtn.dataset.locked = "1";
-        setDoneVisual();
-        this.mascot.celebrate();
-        Sounds.playPositive();
+        isDone = !isDone;
+        setVisual();
+        this.registerInteraction();
         try {
-          await markReminderDoneToday(this.profile.id, rem.id);
+          if (isDone) {
+            this.mascot.celebrate();
+            Sounds.playPositive();
+            await markReminderDoneToday(this.profile.id, rem.id);
+          } else {
+            await unmarkReminderDoneToday(this.profile.id, rem.id);
+          }
         } catch (err) {
-          console.error("No se pudo guardar el recordatorio:", err);
-          doneBtn.dataset.locked = "0";
+          console.error("No se pudo actualizar el recordatorio:", err);
+          isDone = !isDone;
+          setVisual();
         }
       });
 
@@ -260,14 +260,16 @@ export class SessionRunner {
     });
     box.appendChild(list);
 
-    const nextBtn = document.createElement("button");
-    nextBtn.className = "btn btn-huge btn-success";
-    nextBtn.style.marginTop = "20px";
-    nextBtn.textContent = "Continuar";
-    nextBtn.onclick = () => this.next();
-    box.appendChild(nextBtn);
-
     this.contentEl.appendChild(box);
+
+    // Sin botón "Continuar": avanza sola, dando tiempo de sobra para que
+    // Óscar pueda marcar (y corregir) sus recordatorios con calma.
+    this.registerInteraction();
+  }
+
+  /** Reinicia el tiempo de espera para avanzar tras la pantalla de recordatorios. */
+  registerInteraction() {
+    this.scheduleAutoAdvance(6000);
   }
 
   /* ---------------- Ejercicios ---------------- */
@@ -303,6 +305,7 @@ export class SessionRunner {
     if (ex.kind === "memory_recall") this.renderMemoryRecall(ex, hintFlow);
     else if (ex.kind === "photo_choice") this.renderPhotoChoice(ex, hintFlow);
     else if (ex.kind === "spot_diff") this.renderSpotDiff(ex, hintFlow);
+    else if (ex.kind === "puzzle_piece") this.renderPuzzlePiece(ex, hintFlow);
     else this.renderChoice(ex, hintFlow);
   }
 
@@ -320,11 +323,13 @@ export class SessionRunner {
     studyBox.className = "row wrap center fade-in";
     studyBox.style.gap = "20px";
     studyBox.style.marginTop = "18px";
-    ex.studyItems.forEach((item) => {
+    ex.studyItems.forEach((item, i) => {
       const card = document.createElement("div");
       card.className = "card col center";
       card.style.minWidth = "120px";
-      card.innerHTML = `<span style="font-size:3.4rem;">${item.emoji}</span>`;
+      // Animación suave e individual (tipo "genie"): cada dibujo respira a
+      // su propio ritmo, para invitar a mirarlos con calma sin marear.
+      card.innerHTML = `<span class="study-item-breathe" style="font-size:3.4rem; animation-delay:${(i * 0.35).toFixed(2)}s;">${item.emoji}</span>`;
       studyBox.appendChild(card);
     });
     this.contentEl.appendChild(studyBox);
@@ -360,7 +365,10 @@ export class SessionRunner {
       const btn = document.createElement("button");
       btn.className = "option-card";
       if (opt.color) {
-        btn.innerHTML = `<span style="width:52px;height:52px;border-radius:14px;background:${opt.color};border:3px solid rgba(0,0,0,0.1);display:block;"></span>`;
+        const isWhite = opt.color.toUpperCase() === "#FFFFFF";
+        const swatchBorder = isWhite ? "3px solid #9A9A9A" : "3px solid rgba(0,0,0,0.12)";
+        const swatchShadow = isWhite ? "box-shadow:inset 0 0 0 2px #E4E4E4;" : "";
+        btn.innerHTML = `<span style="width:52px;height:52px;border-radius:14px;background:${opt.color};border:${swatchBorder};${swatchShadow}display:block;"></span>`;
       } else if (opt.emoji) {
         btn.innerHTML = opt.hideLabel
           ? `<span class="emoji">${opt.emoji}</span>`
@@ -376,6 +384,57 @@ export class SessionRunner {
     this.contentEl.appendChild(grid);
 
     this.startInactivityTimer(() => this.showInactivityHint());
+  }
+
+  /* ---------------- Puzle de herramientas ---------------- */
+
+  renderPuzzlePiece(ex, hintFlow) {
+    const wrap = document.createElement("div");
+    wrap.className = "col";
+    wrap.style.gap = "12px";
+    wrap.style.marginTop = "12px";
+
+    const grid = document.createElement("div");
+    grid.className = "card puzzle-grid";
+    ex.cells.forEach((cell) => {
+      const cellEl = document.createElement("div");
+      cellEl.className = "puzzle-cell" + (cell.empty ? " puzzle-cell-empty" : "");
+      cellEl.textContent = cell.empty ? "" : cell.emoji;
+      grid.appendChild(cellEl);
+      if (cell.empty) ex.__slotEl = cellEl;
+    });
+    wrap.appendChild(grid);
+    this.contentEl.appendChild(wrap);
+
+    // Reutiliza el renderizado y la lógica de aciertos/errores de las
+    // opciones de elección múltiple; solo se añade la animación de encaje.
+    this.renderChoice(ex, hintFlow);
+  }
+
+  /** Anima el emoji elegido volando desde el botón hasta el hueco del puzle. */
+  animatePieceIntoSlot(fromBtn, slotEl, emoji) {
+    if (!slotEl) return;
+    const fromRect = fromBtn.getBoundingClientRect();
+    const toRect = slotEl.getBoundingClientRect();
+    const clone = document.createElement("div");
+    clone.textContent = emoji;
+    clone.className = "puzzle-flying-piece";
+    clone.style.left = `${fromRect.left + fromRect.width / 2 - 22}px`;
+    clone.style.top = `${fromRect.top + fromRect.height / 2 - 22}px`;
+    document.body.appendChild(clone);
+
+    const dx = toRect.left + toRect.width / 2 - (fromRect.left + fromRect.width / 2);
+    const dy = toRect.top + toRect.height / 2 - (fromRect.top + fromRect.height / 2);
+    requestAnimationFrame(() => {
+      clone.style.transform = `translate(${dx}px, ${dy}px) scale(1.15)`;
+      clone.style.opacity = "0.95";
+    });
+    setTimeout(() => {
+      slotEl.textContent = emoji;
+      slotEl.classList.remove("puzzle-cell-empty");
+      slotEl.classList.add("puzzle-cell-snap");
+      clone.remove();
+    }, 620);
   }
 
   renderPhotoChoice(ex, hintFlow) {
@@ -399,18 +458,22 @@ export class SessionRunner {
 
       let msg;
       if (ex.category === "fotos") {
-        msg = opt.relation
-          ? `Correcto, ${this.profile.name}. Esta es tu ${opt.relation}, ${opt.label}.`
-          : `Correcto, ${this.profile.name}. Esta es ${opt.label}.`;
+        msg = buildFamilyIdentityPhrase(
+          { name: opt.label, relation: opt.relation, gender: opt.gender },
+          { withCorrectPrefix: true, profileName: this.profile.name }
+        );
       } else {
         msg = fillName(pickMotivation(), this.profile.name);
       }
       this.say(msg);
       this.stats.correct++;
+      if (ex.category === "herramientas" && ex.__slotEl) {
+        this.animatePieceIntoSlot(btn, ex.__slotEl, opt.emoji);
+      }
       await reportResult(this.profile.id, ex.category, { success: true, usedHints: hintFlow.errorCount });
       burstConfetti(14);
       celebrateSuccess({ big: ["🎉", "⭐", "🥳", "👏"][Math.floor(Math.random() * 4)] });
-      this.scheduleContinue(Math.max(2400, Voice.estimateDurationMs(msg)));
+      this.scheduleAutoAdvance(Math.max(2400, Voice.estimateDurationMs(msg)));
     } else {
       btn.classList.add("wrong-flash");
       this.optionButtons.forEach((b) => (b.style.pointerEvents = "auto"));
@@ -445,7 +508,7 @@ export class SessionRunner {
     const msg = `No te preocupes, ${this.profile.name}. Era esta. La próxima vez seguro que la ves.`;
     this.mascot.encourage();
     this.say(msg);
-    this.scheduleContinue(Math.max(2800, Voice.estimateDurationMs(msg)));
+    this.scheduleAutoAdvance(Math.max(2800, Voice.estimateDurationMs(msg)));
   }
 
   /* ---------------- Encuentra las diferencias ---------------- */
@@ -518,7 +581,7 @@ export class SessionRunner {
           this.say(msg);
           burstConfetti(18);
           celebrateSuccess({ big: "🔍✨" });
-          this.scheduleContinue(Math.max(2400, Voice.estimateDurationMs(msg)));
+          this.scheduleAutoAdvance(Math.max(2400, Voice.estimateDurationMs(msg)));
         } else {
           this.startInactivityTimer(() => this.hintSpotDiffInactivity(panelB, ex, found));
         }

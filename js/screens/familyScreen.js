@@ -1,4 +1,6 @@
 import { DB } from "../core/db.js";
+import { Voice } from "../core/voice.js";
+import { buildFamilyIdentityPhrase } from "../core/familyPhrase.js";
 
 export function renderFamily(rootEl, ctx, openModalFn, editable = false) {
   rootEl.innerHTML = "";
@@ -22,12 +24,38 @@ export function renderFamily(rootEl, ctx, openModalFn, editable = false) {
   family.forEach((f, idx) => {
     const card = document.createElement("div");
     card.className = "card col center family-card";
-    card.innerHTML = `
-      <img src="${f.photo}" alt="${f.name}" class="family-photo" />
-      <p class="text-base" style="font-weight:700; margin-top:10px;">${f.name}</p>
-      <p class="text-md">${f.relation || ""}</p>
-    `;
-    if (editable) {
+    const photoEl = document.createElement("img");
+    photoEl.src = f.photo;
+    photoEl.alt = f.name;
+    photoEl.className = "family-photo";
+    card.appendChild(photoEl);
+
+    const nameEl = document.createElement("p");
+    nameEl.className = "text-base";
+    nameEl.style.fontWeight = "700";
+    nameEl.style.marginTop = "10px";
+    nameEl.textContent = f.name;
+    card.appendChild(nameEl);
+
+    const relEl = document.createElement("p");
+    relEl.className = "text-md";
+    relEl.textContent = f.relation || "";
+    card.appendChild(relEl);
+
+    if (!editable) {
+      // En la vista de Óscar (solo ver): tocar la foto la amplía un
+      // momento y la voz dice quién es y su parentesco, como pequeña
+      // ayuda de memoria voluntaria — no es un examen.
+      photoEl.style.cursor = "pointer";
+      photoEl.addEventListener("click", () => {
+        photoEl.classList.remove("family-photo-zoom");
+        void photoEl.offsetWidth;
+        photoEl.classList.add("family-photo-zoom");
+        setTimeout(() => photoEl.classList.remove("family-photo-zoom"), 900);
+        const phrase = buildFamilyIdentityPhrase(f, { profileName: ctx.profile.name });
+        Voice.say(phrase);
+      });
+    } else {
       const modBtn = document.createElement("button");
       modBtn.className = "btn btn-ghost";
       modBtn.style.marginTop = "8px";
@@ -38,6 +66,41 @@ export function renderFamily(rootEl, ctx, openModalFn, editable = false) {
     grid.appendChild(card);
   });
   rootEl.appendChild(grid);
+}
+
+function genderFieldHtml(idPrefix, current) {
+  return `
+    <div class="field">
+      <label>Género (para hablar de forma natural, opcional)</label>
+      <div class="row" style="gap:10px;">
+        <button type="button" class="btn btn-ghost gender-btn" id="${idPrefix}-gender-m" data-gender="M" style="flex:1;">Hombre</button>
+        <button type="button" class="btn btn-ghost gender-btn" id="${idPrefix}-gender-f" data-gender="F" style="flex:1;">Mujer</button>
+      </div>
+    </div>
+  `;
+}
+
+function wireGenderButtons(modalBox, idPrefix, initial, onChange) {
+  let current = initial || null;
+  const mBtn = modalBox.querySelector(`#${idPrefix}-gender-m`);
+  const fBtn = modalBox.querySelector(`#${idPrefix}-gender-f`);
+  function refresh() {
+    mBtn.classList.toggle("btn-success", current === "M");
+    mBtn.classList.toggle("btn-ghost", current !== "M");
+    fBtn.classList.toggle("btn-success", current === "F");
+    fBtn.classList.toggle("btn-ghost", current !== "F");
+  }
+  mBtn.onclick = () => {
+    current = current === "M" ? null : "M";
+    refresh();
+    onChange(current);
+  };
+  fBtn.onclick = () => {
+    current = current === "F" ? null : "F";
+    refresh();
+    onChange(current);
+  };
+  refresh();
 }
 
 export function openAddFamilyModal(modalBox, ctx, onDone) {
@@ -52,6 +115,7 @@ export function openAddFamilyModal(modalBox, ctx, onDone) {
         <label for="fam-relation">Parentesco (opcional)</label>
         <input type="text" id="fam-relation" placeholder="Ej: hija, nieto, hermana…" />
       </div>
+      ${genderFieldHtml("fam", null)}
       <div class="field">
         <label for="fam-photo">Foto</label>
         <input type="file" id="fam-photo" accept="image/*" style="min-height:auto; border:none; padding:8px 0;" />
@@ -63,6 +127,9 @@ export function openAddFamilyModal(modalBox, ctx, onDone) {
     </div>
   `;
   let photoData = null;
+  let gender = null;
+  wireGenderButtons(modalBox, "fam", null, (g) => (gender = g));
+
   const fileInput = modalBox.querySelector("#fam-photo");
   const saveBtn = modalBox.querySelector("#fam-save");
 
@@ -83,15 +150,15 @@ export function openAddFamilyModal(modalBox, ctx, onDone) {
     const relation = modalBox.querySelector("#fam-relation").value.trim();
     if (!name || !photoData) return;
     ctx.profile.family = ctx.profile.family || [];
-    ctx.profile.family.push({ name, relation, photo: photoData });
+    ctx.profile.family.push({ name, relation, gender, photo: photoData });
     await DB.put("profile", ctx.profile);
     onDone(ctx.profile);
   };
 }
 
 /**
- * Modal de edición: permite cambiar nombre, parentesco y foto de un
- * familiar ya guardado, y dentro incluye la opción de quitarlo.
+ * Modal de edición: permite cambiar nombre, parentesco, género y foto de
+ * un familiar ya guardado, y dentro incluye la opción de quitarlo.
  */
 export function openEditFamilyModal(modalBox, ctx, index, onDone) {
   const person = ctx.profile.family[index];
@@ -111,6 +178,7 @@ export function openEditFamilyModal(modalBox, ctx, index, onDone) {
         <label for="fam-edit-relation">Parentesco (opcional)</label>
         <input type="text" id="fam-edit-relation" value="${person.relation || ""}" />
       </div>
+      ${genderFieldHtml("fam-edit", person.gender)}
       <div class="field">
         <label for="fam-edit-photo">Cambiar foto (opcional)</label>
         <input type="file" id="fam-edit-photo" accept="image/*" style="min-height:auto; border:none; padding:8px 0;" />
@@ -126,6 +194,9 @@ export function openEditFamilyModal(modalBox, ctx, index, onDone) {
   `;
 
   let newPhotoData = null;
+  let gender = person.gender || null;
+  wireGenderButtons(modalBox, "fam-edit", person.gender, (g) => (gender = g));
+
   const fileInput = modalBox.querySelector("#fam-edit-photo");
   fileInput.addEventListener("change", () => {
     const file = fileInput.files[0];
@@ -146,6 +217,7 @@ export function openEditFamilyModal(modalBox, ctx, index, onDone) {
     if (!name) return;
     person.name = name;
     person.relation = relation;
+    person.gender = gender;
     if (newPhotoData) person.photo = newPhotoData;
     await DB.put("profile", ctx.profile);
     onDone(ctx.profile);

@@ -7,7 +7,7 @@ export function renderOnboarding(root, onComplete) {
   const data = {
     name: "",
     reminderKeys: ["medicacion", "agua"],
-    categories: [...ALL_CATEGORIES.filter((c) => c !== "fotos")],
+    categories: [...ALL_CATEGORIES.filter((c) => c !== "fotos" && c !== "herramientas")],
     textSize: "base",
     adminPin: "1234",
   };
@@ -114,11 +114,11 @@ export function renderOnboarding(root, onComplete) {
 
   function stepExercises(c) {
     c.innerHTML = `<h2 class="title-lg">¿Qué tipo de ejercicios prefieres?</h2>
-      <p class="text-md">Puedes elegir varios. Iremos variando para que no se haga repetitivo.</p>`;
+      <p class="text-md">Puedes elegir varios. Iremos variando para que no se haga repetitivo. (El reconocimiento de fotos familiares y el puzle de herramientas se incluyen siempre, sin necesidad de elegirlos aquí.)</p>`;
     const grid = document.createElement("div");
     grid.className = "grid-options cols-3";
     grid.style.marginTop = "20px";
-    ALL_CATEGORIES.filter((cat) => cat !== "fotos").forEach((cat) => {
+    ALL_CATEGORIES.filter((cat) => cat !== "fotos" && cat !== "herramientas").forEach((cat) => {
       const btn = document.createElement("button");
       btn.className = "option-card";
       const emojiMap = { memoria: "🧠", atencion: "👀", calculo: "➕", colores: "🎨", animales: "🐾", diferencias: "🔍" };

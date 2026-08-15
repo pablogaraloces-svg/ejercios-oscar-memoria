@@ -141,6 +141,9 @@ h1, h2, h3, p { margin: 0; }
 .title-huge { font-size: var(--font-huge); font-weight: 800; line-height: 1.15; }
 .title-xl   { font-size: var(--font-xl); font-weight: 800; line-height: 1.2; }
 .title-lg   { font-size: var(--font-lg); font-weight: 700; }
+/* Títulos de Administración (Ajustes, Estadísticas, Editar familia...):
+   un punto más grandes para que se lean mejor, sin llegar a provocar scroll. */
+.title-admin { font-size: calc(var(--font-lg) * 1.18); }
 .text-md    { font-size: var(--font-md); font-weight: 500; color: var(--color-text-soft); }
 .text-base  { font-size: var(--font-base); }
 .text-sm    { font-size: var(--font-sm); }
@@ -447,15 +450,6 @@ h1, h2, h3, p { margin: 0; }
 .admin-fab:hover, .admin-fab:focus-visible { opacity: 0.7; }
 .admin-fab:active { transform: scale(0.9); }
 
-/* ---------- Botón "Continuamos" parpadeante ---------- */
-.btn-continue-blink {
-  animation: continueBlink 1.1s ease-in-out infinite;
-}
-@keyframes continueBlink {
-  0%, 100% { transform: scale(1); box-shadow: var(--shadow-soft); }
-  50% { transform: scale(1.045); box-shadow: 0 0 0 14px rgba(111,191,139,0.22); }
-}
-
 /* ---------- Burst de celebración emotivo ---------- */
 .success-burst {
   position: fixed;
@@ -555,4 +549,66 @@ h1, h2, h3, p { margin: 0; }
 
 /* Nunca permitir que nada empuje scroll horizontal */
 img, canvas, svg, video { max-width: 100%; }
+
+/* ---------- Ejercicio "mira con calma": respiración suave por dibujo ---------- */
+/* Cada elemento respira a su propio ritmo (animation-delay distinto por
+   índice, aplicado desde JS) para invitar a observarlo con calma, sin
+   revelar la respuesta ni resultar mareante. */
+.study-item-breathe {
+  display: inline-block;
+  animation: studyBreathe 3.6s ease-in-out infinite;
+  transform-origin: center;
+}
+@keyframes studyBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
+/* ---------- Puzle de herramientas ---------- */
+.puzzle-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  max-width: 200px;
+  margin: 0 auto;
+}
+.puzzle-cell {
+  aspect-ratio: 1;
+  border-radius: 16px;
+  background: var(--color-bg-soft);
+  border: 3px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+}
+.puzzle-cell-empty {
+  border: 3px dashed var(--color-accent);
+  background: var(--color-accent-soft);
+}
+.puzzle-cell-snap {
+  animation: popGood var(--dur-med) var(--ease-gentle);
+  border-style: solid;
+  border-color: var(--color-success);
+  background: var(--color-success-soft);
+}
+.puzzle-flying-piece {
+  position: fixed;
+  font-size: 2.2rem;
+  z-index: 300;
+  pointer-events: none;
+  opacity: 1;
+  transition: transform 620ms cubic-bezier(0.22, 1, 0.36, 1), opacity 620ms;
+}
+
+/* ---------- Mi Familia: zoom al tocar una foto ---------- */
+.family-photo-zoom { animation: familyPhotoZoom 900ms var(--ease-gentle); }
+@keyframes familyPhotoZoom {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.18); box-shadow: var(--shadow-lift); }
+  100% { transform: scale(1); }
+}
+
+/* ---------- Botones de género (Mi Familia) ---------- */
+.gender-btn { min-height: 60px; }
 

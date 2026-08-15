@@ -12,6 +12,7 @@ import {
   drawHourChart,
   getMoodByDate,
   summarizeMoodByDate,
+  resetStats,
 } from "../core/reports.js";
 import { canvasesToPdfBlob, shareOrDownloadPdf } from "../core/pdfExport.js";
 
@@ -90,7 +91,7 @@ export async function renderReports(rootEl, ctx) {
   const moodCounts = await getMoodStats(ctx.profile.id);
   const moodCard = document.createElement("div");
   moodCard.className = "card";
-  moodCard.innerHTML = `<h3 class="title-lg">Cómo dice sentirse</h3><p class="text-md">Recuento de respuestas a "¿cómo estás?".</p>`;
+  moodCard.innerHTML = `<h3 class="title-lg">Cómo dice sentirse</h3><p class="text-md">Recuento de respuestas a "¿cómo te encuentras de humor hoy?".</p>`;
   const moodCanvas = document.createElement("canvas");
   moodCanvas.width = 900; moodCanvas.height = 220;
   moodCanvas.style.width = "100%"; moodCanvas.style.height = "auto";
@@ -132,11 +133,51 @@ export async function renderReports(rootEl, ctx) {
     : "Todavía no hay ejercicios registrados.";
   rootEl.appendChild(note);
 
+  // Botón de restablecer, claramente separado del resto para evitar toques
+  // accidentales, y siempre con confirmación explícita antes de borrar nada.
+  const dangerCard = document.createElement("div");
+  dangerCard.className = "card col center";
+  dangerCard.style.marginTop = "8px";
+  dangerCard.style.border = "2px dashed var(--color-warm)";
+  const resetBtn = document.createElement("button");
+  resetBtn.className = "btn btn-warm";
+  resetBtn.textContent = "🗑️ Restablecer estadísticas";
+  resetBtn.onclick = () => openResetConfirm(rootEl, ctx);
+  dangerCard.appendChild(resetBtn);
+  const resetNote = document.createElement("p");
+  resetNote.className = "text-sm";
+  resetNote.style.marginTop = "8px";
+  resetNote.style.color = "var(--color-text-soft)";
+  resetNote.textContent = "Borra sesiones, gráficas y calendario de ánimo. No afecta al perfil, la familia ni los ajustes.";
+  dangerCard.appendChild(resetNote);
+  rootEl.appendChild(dangerCard);
+
   lastCharts = {
     charts,
     stats: { totalSessions, totalExercises, avgAccuracy, streak },
     moodByDate,
     profileName: ctx.profile.name,
+  };
+}
+
+function openResetConfirm(rootEl, ctx) {
+  const modal = document.getElementById("generic-modal");
+  const box = document.getElementById("generic-modal-box");
+  box.innerHTML = `
+    <div style="font-size:2.4rem;">⚠️</div>
+    <h2 class="title-lg">¿Seguro que quieres borrar todas las estadísticas?</h2>
+    <p class="text-base" style="margin:12px 0 20px;">Se borrarán las sesiones, las gráficas y el calendario de ánimo. El perfil, la familia, las fotos, los recordatorios y los ajustes NO se ven afectados.</p>
+    <div class="row center" style="gap:16px;">
+      <button class="btn btn-ghost" id="reset-stats-cancel">Cancelar</button>
+      <button class="btn btn-warm" id="reset-stats-confirm">Sí, borrar estadísticas</button>
+    </div>
+  `;
+  modal.classList.add("active");
+  box.querySelector("#reset-stats-cancel").onclick = () => modal.classList.remove("active");
+  box.querySelector("#reset-stats-confirm").onclick = async () => {
+    await resetStats(ctx.profile.id);
+    modal.classList.remove("active");
+    await renderReports(rootEl, ctx);
   };
 }
 
@@ -186,11 +227,14 @@ function renderMoodCalendar(container, moodByDate) {
     cell.style.flexDirection = "column";
     cell.style.alignItems = "center";
     cell.style.justifyContent = "center";
-    cell.style.fontSize = "var(--font-sm)";
     cell.style.fontWeight = "700";
     cell.style.background = mood ? `${MOOD_COLORS[mood]}33` : "var(--color-bg-soft)";
     cell.style.border = `2px solid ${mood ? MOOD_COLORS[mood] : "var(--color-border)"}`;
-    cell.innerHTML = mood ? `<span>${MOOD_EMOJI[mood]}</span><span>${day}</span>` : `<span>${day}</span>`;
+    // Icono de cara bien grande (lo importante aquí es que se distinga a
+    // simple vista); el número del día queda pequeño, es secundario.
+    cell.innerHTML = mood
+      ? `<span style="font-size:1.9rem; line-height:1;">${MOOD_EMOJI[mood]}</span><span style="font-size:var(--font-sm); margin-top:2px;">${day}</span>`
+      : `<span style="font-size:var(--font-sm);">${day}</span>`;
     grid.appendChild(cell);
   }
   container.appendChild(grid);
@@ -203,7 +247,8 @@ function renderMoodCalendar(container, moodByDate) {
   Object.entries(counts).forEach(([label, count]) => {
     const item = document.createElement("span");
     item.className = "pill";
-    item.textContent = `${MOOD_EMOJI[label]} ${label}: ${count} día(s)`;
+    item.style.fontSize = "var(--font-base)";
+    item.innerHTML = `<span style="font-size:1.3rem;">${MOOD_EMOJI[label]}</span> ${label}: ${count} día(s)`;
     legend.appendChild(item);
   });
   container.appendChild(legend);
@@ -225,7 +270,7 @@ export async function exportReportPdf(ctx) {
   p1.fillRect(0, 0, page1.width, page1.height);
   p1.fillStyle = "#2E2E2E";
   p1.font = "bold 44px sans-serif";
-  p1.fillText(`Resumen de evolución`, 60, 90);
+  p1.fillText(`Resumen de estadísticas`, 60, 90);
   p1.font = "28px sans-serif";
   p1.fillText(`${profileName} — ${new Date().toLocaleDateString("es-ES")}`, 60, 140);
 
@@ -253,7 +298,7 @@ export async function exportReportPdf(ctx) {
   drawScaled(p2, charts.adherence, 60, 120 + 320, 1120);
 
   const blob = canvasesToPdfBlob([page1, page2]);
-  const filename = `evolucion_${profileName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  const filename = `estadisticas_${profileName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
   return { status: await shareOrDownloadPdf(blob, filename) };
 }
 

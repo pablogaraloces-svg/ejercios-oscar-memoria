@@ -3,6 +3,53 @@
 Aplicación web progresiva (PWA), pensada para tablets Android como la **Honor Pad X9a**,
 que funciona **completamente offline** una vez instalada.
 
+## 🆕 Novedades de la versión 4
+
+- **Pregunta de humor sin duplicar**: la tercera pantalla ahora pregunta
+  siempre "¿Cómo te encuentras de humor hoy?", sin repetir la pregunta del
+  saludo inicial.
+- **Navegación 100% automática**: eliminado el botón "Continuar" de
+  "Antes de seguir" y el botón "Continuamos" de los ejercicios. La app
+  conduce a Óscar de una pantalla a otra sola, esperando siempre ~3
+  segundos más de margen para que la voz y las animaciones no se corten.
+- **"Antes de seguir" corregido de verdad**: cada sesión empieza con todos
+  los recordatorios desmarcados (no arrastra el estado de sesiones
+  anteriores), se puede marcar y desmarcar libremente para corregir un
+  toque accidental, y al marcar "Hecho" el botón se pone completamente
+  verde de forma inequívoca.
+- **Ejercicio de memoria con animación suave**: cada dibujo "respira" a su
+  propio ritmo mientras se observa, para invitar a mirarlo con calma sin
+  revelar la respuesta ni resultar mareante.
+- **Nuevo ejercicio: Puzle de herramientas** — falta una pieza (martillo,
+  destornillador, llave inglesa, alicates, sierra, tornillo...) y, al
+  elegir la correcta, se anima volando hasta el hueco y encajando.
+- **Arreglado el fallo que impedía que apareciera "¿Adivinas quién es?"**:
+  antes nunca llegaba a salir en la rotación de ejercicios (dependía de una
+  lista fijada durante la configuración inicial, antes de cargar ninguna
+  foto). Ahora, tanto este ejercicio como el nuevo puzle de herramientas
+  aparecen siempre en cada sesión, con posiciones garantizadas.
+- **Frase de acierto con género y parentesco reales**: "Correcto, Óscar. Él
+  es Pablo, es tu yerno." — se puede indicar el género de cada familiar
+  (opcional) al añadirlo o modificarlo, para que la frase suene natural sin
+  inventar nunca un parentesco que no esté guardado.
+- **Mi Familia interactiva**: tocar una fotografía la amplía un momento y la
+  voz dice quién es y su parentesco — una ayuda de memoria voluntaria, no
+  un examen.
+- **Blanco corregido** en el ejercicio de colores: ahora es blanco puro,
+  con un borde gris bien visible para distinguirlo del fondo.
+- **Voz**: nuevos controles de velocidad (más lenta / normal / más rápida)
+  y tono, en Administración > Ajustes > Voz y música.
+- **"Mi evolución" renombrado a "Estadísticas"**, para que se entienda
+  como la zona de seguimiento de la familia.
+- **Botón "Restablecer estadísticas"**, claramente separado y con
+  confirmación explícita — borra sesiones, gráficas y calendario de ánimo,
+  pero nunca el perfil, la familia, las fotos, los recordatorios ni los
+  ajustes.
+- **Calendario de ánimo con iconos mucho más grandes**, para distinguir de
+  un vistazo cómo se ha sentido Óscar cada día del mes.
+- **Títulos de Administración** (Administración, Ajustes, Estadísticas,
+  Editar familia) un punto más grandes y legibles.
+
 ## 🆕 Novedades de la versión 3
 
 - **Pantalla de Óscar simplificada al máximo**: en la pantalla principal solo

@@ -92,16 +92,11 @@ export function getGreeting(name) {
   return options[Math.floor(Math.random() * options.length)];
 }
 
-export function getWellbeingQuestions(part) {
-  // 'part' = mañana | tarde | noche | madrugada — usado para adaptar el tono
-  if (part === "tarde" || part === "noche") {
-    return [
-      { key: "day_ok", text: "¿Cómo ha ido el día?", type: "mood" },
-    ];
-  }
-  return [
-    { key: "day_ok", text: "¿Cómo estás hoy?", type: "mood" },
-  ];
+export function getWellbeingQuestions() {
+  // Pregunta única y fija: el "¿cómo ha ido el día?" ya se cubre en el
+  // saludo inicial, así que aquí siempre se pregunta por el humor, sin
+  // duplicar la pregunta anterior.
+  return [{ key: "mood_today", text: "¿Cómo te encuentras de humor hoy?", type: "mood" }];
 }
 
 export function fillName(template, name) {

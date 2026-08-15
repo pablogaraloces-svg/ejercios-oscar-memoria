@@ -9,6 +9,8 @@ let enabled = false;
 let selectedVoice = null;
 let selectedURI = null;
 let voicesReadyCallbacks = [];
+let rate = 0.92; // velocidad: lenta ~0.75, normal ~0.92, rápida ~1.12
+let pitch = 1.0; // tono: se permite un margen pequeño para no sonar artificial
 
 function isSpanish(v) {
   return v.lang?.toLowerCase().startsWith("es");
@@ -98,6 +100,22 @@ export const Voice = {
     return selectedVoice?.voiceURI || null;
   },
 
+  /** Velocidad de habla. Se recomienda usar los presets: 0.75 (lenta), 0.92 (normal), 1.12 (rápida). */
+  setRate(v) {
+    rate = Math.max(0.5, Math.min(1.6, Number(v) || 0.92));
+  },
+  getRate() {
+    return rate;
+  },
+
+  /** Tono de voz. Margen deliberadamente pequeño para que no suene artificial. */
+  setPitch(v) {
+    pitch = Math.max(0.8, Math.min(1.2, Number(v) || 1.0));
+  },
+  getPitch() {
+    return pitch;
+  },
+
   say(text, { onEnd } = {}) {
     if (!enabled || typeof speechSynthesis === "undefined" || !text) {
       if (onEnd) onEnd();
@@ -106,8 +124,8 @@ export const Voice = {
     speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = "es-ES";
-    utter.rate = 0.92;
-    utter.pitch = 1.03;
+    utter.rate = rate;
+    utter.pitch = pitch;
     if (selectedVoice) utter.voice = selectedVoice;
     if (onEnd) utter.onend = onEnd;
     speechSynthesis.speak(utter);

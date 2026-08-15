@@ -30,6 +30,8 @@ function applySettings(settings) {
   }
   Voice.setEnabled(!!settings.voiceEnabled);
   if (settings.voiceURI) Voice.setVoiceURI(settings.voiceURI);
+  Voice.setRate(settings.voiceRate ?? 0.92);
+  Voice.setPitch(settings.voicePitch ?? 1.0);
 }
 
 // El audio en el navegador requiere un primer gesto del usuario:
@@ -103,7 +105,6 @@ document.getElementById("btn-start-session").addEventListener("click", () => {
     bubbleEl,
     progressFillEl: document.getElementById("session-progress"),
     stepLabelEl: document.getElementById("session-step-label"),
-    continueBtn: document.getElementById("session-continue-btn"),
     profile: ctx.profile,
     settings: ctx.settings,
   });
@@ -116,7 +117,9 @@ document.getElementById("btn-session-back").addEventListener("click", () => {
 
 /* ---------------- Familia (Óscar: solo ver / Administración: editable) ---------------- */
 function refreshFamilyScreen() {
-  document.getElementById("family-title").textContent = familyEditable ? "Editar familia" : "Mi familia";
+  const familyTitleEl = document.getElementById("family-title");
+  familyTitleEl.textContent = familyEditable ? "Editar familia" : "Mi familia";
+  familyTitleEl.classList.toggle("title-admin", familyEditable);
   document.getElementById("btn-add-family").classList.toggle("hidden", !familyEditable);
   renderFamily(document.getElementById("family-root"), ctx, openEditModal, familyEditable);
 }

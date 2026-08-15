@@ -244,6 +244,60 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
     };
     voiceCard.appendChild(select);
 
+    // Velocidad de la voz: selector sencillo de 3 opciones.
+    const speedTitle = document.createElement("p");
+    speedTitle.className = "text-md";
+    speedTitle.style.marginTop = "14px";
+    speedTitle.textContent = "Velocidad de la voz";
+    voiceCard.appendChild(speedTitle);
+
+    const speedGrid = document.createElement("div");
+    speedGrid.className = "grid-options cols-3";
+    const speedOptions = [
+      { key: "lenta", label: "Más lenta", rate: 0.75 },
+      { key: "normal", label: "Normal", rate: 0.92 },
+      { key: "rapida", label: "Más rápida", rate: 1.12 },
+    ];
+    speedOptions.forEach((opt) => {
+      const b = document.createElement("button");
+      b.className = "option-card";
+      b.style.minHeight = "68px";
+      b.textContent = opt.label;
+      const isActive = Math.abs((s.voiceRate ?? 0.92) - opt.rate) < 0.03;
+      b.style.borderColor = isActive ? "var(--color-success)" : "";
+      b.onclick = async () => {
+        s.voiceRate = opt.rate;
+        Voice.setRate(opt.rate);
+        await DB.put("settings", s);
+        [...speedGrid.children].forEach((c) => (c.style.borderColor = ""));
+        b.style.borderColor = "var(--color-success)";
+      };
+      speedGrid.appendChild(b);
+    });
+    voiceCard.appendChild(speedGrid);
+
+    // Tono de la voz: deslizador con margen pequeño para que no suene artificial.
+    const pitchTitle = document.createElement("p");
+    pitchTitle.className = "text-md";
+    pitchTitle.style.marginTop = "14px";
+    pitchTitle.textContent = "Tono de la voz";
+    voiceCard.appendChild(pitchTitle);
+
+    const pitchInput = document.createElement("input");
+    pitchInput.type = "range";
+    pitchInput.min = "0.85";
+    pitchInput.max = "1.15";
+    pitchInput.step = "0.05";
+    pitchInput.value = String(s.voicePitch ?? 1.0);
+    pitchInput.style.width = "100%";
+    pitchInput.style.height = "48px";
+    pitchInput.oninput = async () => {
+      s.voicePitch = Number(pitchInput.value);
+      Voice.setPitch(s.voicePitch);
+      await DB.put("settings", s);
+    };
+    voiceCard.appendChild(pitchInput);
+
     const tryBtn = document.createElement("button");
     tryBtn.className = "btn btn-ghost";
     tryBtn.style.marginTop = "10px";
