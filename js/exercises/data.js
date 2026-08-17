@@ -36,18 +36,18 @@ export const OBJECTS = [
   { name: "Pan", emoji: "🥖" }, { name: "Pescado", emoji: "🐟" },
 ];
 
-/** Herramientas básicas y reconocibles para el ejercicio de puzle. */
-export const TOOLS = [
-  { name: "Martillo", emoji: "🔨" },
-  { name: "Destornillador", emoji: "🪛" },
-  { name: "Llave inglesa", emoji: "🔧" },
-  { name: "Alicates", emoji: "🗜️" },
-  { name: "Sierra", emoji: "🪚" },
-  { name: "Tornillo", emoji: "🔩" },
+/**
+ * Parejas lógicas objeto → herramienta que lo necesita, para el ejercicio
+ * de puzle: se muestra el objeto y hay que elegir la herramienta que
+ * corresponde de verdad, no una cualquiera.
+ */
+export const TOOL_PAIRS = [
+  { context: "Tornillo", contextEmoji: "🔩", tool: "Destornillador", toolEmoji: "🪛", situation: "Hay un tornillo que apretar" },
+  { context: "Tronco de madera", contextEmoji: "🪵", tool: "Sierra", toolEmoji: "🪚", situation: "Hay que cortar este tronco" },
+  { context: "Clavo", contextEmoji: "📌", tool: "Martillo", toolEmoji: "🔨", situation: "Hay un clavo que clavar" },
+  { context: "Tuerca", contextEmoji: "⚙️", tool: "Llave inglesa", toolEmoji: "🔧", situation: "Hay una tuerca que apretar" },
+  { context: "Cable eléctrico", contextEmoji: "🔌", tool: "Alicates", toolEmoji: "🗜️", situation: "Hay un cable que cortar" },
 ];
-
-/** Objetos de "atrezzo" fijos que dan contexto de taller al puzle (no son la respuesta). */
-export const WORKSHOP_DECOR = ["🧰", "⚙️", "🪵"];
 
 /** Banco amplio para el ejercicio "encuentra las diferencias". */
 export const SCENE_ITEMS = [

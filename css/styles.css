@@ -450,6 +450,20 @@ h1, h2, h3, p { margin: 0; }
 .admin-fab:hover, .admin-fab:focus-visible { opacity: 0.7; }
 .admin-fab:active { transform: scale(0.9); }
 
+/* Crédito de autoría: mismo tono discreto que el botón de administración,
+   solo en la pantalla principal, sin interferir con el resto del diseño. */
+.home-credit {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  font-size: 0.7rem;
+  color: var(--color-text-soft);
+  opacity: 0.32;
+  margin: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
 /* ---------- Burst de celebración emotivo ---------- */
 .success-burst {
   position: fixed;
@@ -547,6 +561,10 @@ h1, h2, h3, p { margin: 0; }
   .grid-options.cols-3 { grid-template-columns: repeat(2, 1fr); }
 }
 
+/* ---------- Pantalla de cierre de sesión ---------- */
+.closing-celebration { text-align: center; padding: 0 var(--space-3); }
+.closing-party-icon { font-size: 6rem; line-height: 1; margin-bottom: 6px; }
+
 /* Nunca permitir que nada empuje scroll horizontal */
 img, canvas, svg, video { max-width: 100%; }
 
@@ -565,15 +583,24 @@ img, canvas, svg, video { max-width: 100%; }
 }
 
 /* ---------- Puzle de herramientas ---------- */
-.puzzle-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  max-width: 200px;
-  margin: 0 auto;
+.puzzle-scene {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
 }
+.puzzle-object {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.puzzle-object-emoji { font-size: 3.4rem; line-height: 1; }
+.puzzle-arrow { font-size: 1.8rem; color: var(--color-text-soft); }
 .puzzle-cell {
-  aspect-ratio: 1;
+  width: 84px;
+  height: 84px;
   border-radius: 16px;
   background: var(--color-bg-soft);
   border: 3px solid var(--color-border);
@@ -581,6 +608,7 @@ img, canvas, svg, video { max-width: 100%; }
   align-items: center;
   justify-content: center;
   font-size: 2.2rem;
+  flex-shrink: 0;
 }
 .puzzle-cell-empty {
   border: 3px dashed var(--color-accent);

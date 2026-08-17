@@ -72,6 +72,16 @@ export const pickInactivityHint = makePicker([
   "Tranquilo/a, vamos a mirarlo juntos con calma.",
 ]);
 
+/** Frase de transición entre un ejercicio y el siguiente (guía a Óscar sin necesitar botón). */
+export const pickNextExercisePhrase = makePicker([
+  "Vamos a continuar con el siguiente ejercicio, {name}.",
+  "Sigamos con otro ejercicio, {name}.",
+  "Vamos con el siguiente, {name}.",
+  "Un ejercicio más, {name}. Vamos allá.",
+  "Continuemos, {name}.",
+  "Muy bien, {name}. Ahora otro ejercicio.",
+]);
+
 function getPartOfDay() {
   const h = new Date().getHours();
   if (h < 6) return "madrugada";

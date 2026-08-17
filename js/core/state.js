@@ -26,7 +26,9 @@ export const DEFAULT_SETTINGS = {
   musicEnabled: true,
   musicVolume: 0.35,
   musicTrack: 0, // 0-4, ver core/music.js
-  adminPin: "1234", // PIN de administración (cambiable desde Ajustes > Perfil)
+  adminPin: "1234", // PIN de administración (cambiable desde Ajustes > Contraseña admin)
+  securityQuestion: "", // pregunta de recuperación si se olvida el PIN
+  securityAnswer: "",
 };
 
 export const DEFAULT_REMINDER_CATALOG = [

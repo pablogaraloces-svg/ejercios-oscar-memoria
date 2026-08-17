@@ -9,6 +9,7 @@ const TABS = [
   { key: "recordatorios", label: "✅ Recordatorios" },
   { key: "voz", label: "🔊 Voz y música" },
   { key: "accesibilidad", label: "🔎 Accesibilidad" },
+  { key: "password", label: "🔑 Contraseña admin" },
 ];
 
 export async function renderSettings(tabsEl, rootEl, ctx) {
@@ -34,18 +35,18 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
     if (activeTab === "perfil") await renderProfileTab();
     else if (activeTab === "recordatorios") await renderRemindersTab();
     else if (activeTab === "voz") await renderVoiceTab();
+    else if (activeTab === "password") await renderPasswordTab();
     else await renderAccessibilityTab();
   }
 
   async function renderProfileTab() {
     const p = ctx.profile;
-    const s = ctx.settings;
     const card = document.createElement("div");
     card.className = "card col";
     card.style.maxWidth = "640px";
     card.innerHTML = `
       <div class="field">
-        <label for="set-name">Nombre</label>
+        <label for="set-name">Nombre del paciente</label>
         <input type="text" id="set-name" value="${p.name || ""}" />
       </div>
       <div class="field">
@@ -62,10 +63,6 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
           <input type="number" id="set-height" value="${p.height ?? ""}" />
         </div>
       </div>
-      <div class="field">
-        <label for="set-pin">PIN de administración (para entrar en 🔐)</label>
-        <input type="text" id="set-pin" inputmode="numeric" maxlength="6" value="${s.adminPin || "1234"}" />
-      </div>
     `;
     const saveBtn = document.createElement("button");
     saveBtn.className = "btn btn-success btn-huge";
@@ -81,16 +78,74 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
       p.height = heightVal ? Number(heightVal) : null;
       await DB.put("profile", p);
 
-      const pinVal = card.querySelector("#set-pin").value.trim();
-      if (pinVal) s.adminPin = pinVal;
-      await DB.put("settings", s);
-
       ctx.onProfileUpdated?.(p);
       saveBtn.textContent = "¡Guardado! ✔️";
       setTimeout(() => (saveBtn.textContent = "Guardar cambios"), 1600);
     };
     card.appendChild(saveBtn);
     rootEl.appendChild(card);
+  }
+
+  async function renderPasswordTab() {
+    const s = ctx.settings;
+    const wrap = document.createElement("div");
+    wrap.className = "col";
+    wrap.style.maxWidth = "640px";
+    wrap.style.gap = "16px";
+
+    const pinCard = document.createElement("div");
+    pinCard.className = "card col";
+    pinCard.innerHTML = `
+      <p class="text-base" style="font-weight:700;">PIN de administración</p>
+      <p class="text-md">Se pide al tocar el candado 🔐 de la pantalla principal, para entrar en Ajustes, Estadísticas o editar la familia.</p>
+      <div class="field" style="margin-top:10px;">
+        <label for="set-pin">PIN (4-6 dígitos)</label>
+        <input type="text" id="set-pin" inputmode="numeric" maxlength="6" value="${s.adminPin || "1234"}" />
+      </div>
+    `;
+    const savePinBtn = document.createElement("button");
+    savePinBtn.className = "btn btn-success";
+    savePinBtn.style.marginTop = "12px";
+    savePinBtn.textContent = "Guardar PIN";
+    savePinBtn.onclick = async () => {
+      const pinVal = pinCard.querySelector("#set-pin").value.trim();
+      if (pinVal) s.adminPin = pinVal;
+      await DB.put("settings", s);
+      savePinBtn.textContent = "¡Guardado! ✔️";
+      setTimeout(() => (savePinBtn.textContent = "Guardar PIN"), 1600);
+    };
+    pinCard.appendChild(savePinBtn);
+    wrap.appendChild(pinCard);
+
+    const questionCard = document.createElement("div");
+    questionCard.className = "card col";
+    questionCard.innerHTML = `
+      <p class="text-base" style="font-weight:700;">Pregunta de recuperación</p>
+      <p class="text-md">Si alguien falla el PIN 5 veces seguidas, se le ofrecerá responder a esta pregunta para poder entrar y cambiar el PIN. Déjala en blanco si no la quieres usar.</p>
+      <div class="field" style="margin-top:10px;">
+        <label for="set-security-q">Pregunta</label>
+        <input type="text" id="set-security-q" placeholder="Ej: ¿En qué ciudad nació Óscar?" value="${s.securityQuestion || ""}" />
+      </div>
+      <div class="field">
+        <label for="set-security-a">Respuesta</label>
+        <input type="text" id="set-security-a" placeholder="Respuesta exacta" value="${s.securityAnswer || ""}" />
+      </div>
+    `;
+    const saveQBtn = document.createElement("button");
+    saveQBtn.className = "btn btn-success";
+    saveQBtn.style.marginTop = "12px";
+    saveQBtn.textContent = "Guardar pregunta";
+    saveQBtn.onclick = async () => {
+      s.securityQuestion = questionCard.querySelector("#set-security-q").value.trim();
+      s.securityAnswer = questionCard.querySelector("#set-security-a").value.trim();
+      await DB.put("settings", s);
+      saveQBtn.textContent = "¡Guardado! ✔️";
+      setTimeout(() => (saveQBtn.textContent = "Guardar pregunta"), 1600);
+    };
+    questionCard.appendChild(saveQBtn);
+    wrap.appendChild(questionCard);
+
+    rootEl.appendChild(wrap);
   }
 
   async function renderRemindersTab() {

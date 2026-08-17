@@ -5,6 +5,7 @@ import {
   getWellbeingQuestions,
   pickMotivation,
   pickClosing,
+  pickNextExercisePhrase,
   pickMoodPositiveReaction,
   pickMoodEncourageReaction,
   pickInactivityHint,
@@ -276,8 +277,14 @@ export class SessionRunner {
 
   renderExercise(ex) {
     this.stats.total++;
+    this._exerciseCount = (this._exerciseCount || 0) + 1;
     const catLabel = CATEGORY_LABELS[ex.category] || "";
     this.mascot.thinking();
+
+    // A partir del segundo ejercicio, la voz guía la transición (ya no hay
+    // botón "Siguiente"), con una frase distinta cada vez.
+    const transition =
+      this._exerciseCount > 1 ? `${fillName(pickNextExercisePhrase(), this.profile.name)} ` : "";
 
     if (ex.kind !== "memory_recall") {
       const header = document.createElement("div");
@@ -285,12 +292,13 @@ export class SessionRunner {
       header.innerHTML = `<span class="pill" style="align-self:flex-start;">${catLabel}</span>
         <h2 class="title-xl" style="margin-top:8px;">${ex.prompt}</h2>`;
       this.contentEl.appendChild(header);
-      this.sayVisibleVsSpoken(ex.prompt, ex.spokenPrompt);
+      this.sayVisibleVsSpoken(transition + ex.prompt, transition + (ex.spokenPrompt || ex.prompt));
     } else {
       const pill = document.createElement("span");
       pill.className = "pill";
       pill.textContent = catLabel;
       this.contentEl.appendChild(pill);
+      ex.__transitionPrefix = transition;
     }
 
     const hintFlow = new HintFlow({
@@ -310,7 +318,7 @@ export class SessionRunner {
   }
 
   renderMemoryRecall(ex, hintFlow) {
-    const introText = fillName(ex.introText, this.profile.name);
+    const introText = (ex.__transitionPrefix || "") + fillName(ex.introText, this.profile.name);
     const introEl = document.createElement("p");
     introEl.className = "title-lg fade-in";
     introEl.style.textAlign = "center";
@@ -394,16 +402,23 @@ export class SessionRunner {
     wrap.style.gap = "12px";
     wrap.style.marginTop = "12px";
 
-    const grid = document.createElement("div");
-    grid.className = "card puzzle-grid";
-    ex.cells.forEach((cell) => {
-      const cellEl = document.createElement("div");
-      cellEl.className = "puzzle-cell" + (cell.empty ? " puzzle-cell-empty" : "");
-      cellEl.textContent = cell.empty ? "" : cell.emoji;
-      grid.appendChild(cellEl);
-      if (cell.empty) ex.__slotEl = cellEl;
-    });
-    wrap.appendChild(grid);
+    // Objeto que necesita la herramienta, y a su lado el hueco donde
+    // "encajará" la herramienta correcta al elegirla.
+    const scene = document.createElement("div");
+    scene.className = "card puzzle-scene";
+    scene.innerHTML = `
+      <div class="puzzle-object">
+        <span class="puzzle-object-emoji">${ex.contextEmoji}</span>
+        <span class="text-md">${ex.contextLabel}</span>
+      </div>
+      <span class="puzzle-arrow">➜</span>
+    `;
+    const slotEl = document.createElement("div");
+    slotEl.className = "puzzle-cell puzzle-cell-empty";
+    scene.appendChild(slotEl);
+    ex.__slotEl = slotEl;
+
+    wrap.appendChild(scene);
     this.contentEl.appendChild(wrap);
 
     // Reutiliza el renderizado y la lógica de aciertos/errores de las
@@ -620,9 +635,9 @@ export class SessionRunner {
 
   async renderClosing() {
     const box = document.createElement("div");
-    box.className = "col center grow";
+    box.className = "col center grow closing-celebration";
     const text = fillName(pickClosing(), this.profile.name);
-    box.innerHTML = `<div style="font-size:4rem;">🎉</div>
+    box.innerHTML = `<div class="closing-party-icon">🎉</div>
       <h2 class="title-xl" style="text-align:center;">${text}</h2>`;
     this.say(text);
     burstConfetti(36);
@@ -642,12 +657,10 @@ export class SessionRunner {
       durationMin,
     });
 
-    const btn = document.createElement("button");
-    btn.className = "btn btn-huge btn-success";
-    btn.style.marginTop = "26px";
-    btn.textContent = "Volver al inicio";
-    btn.onclick = () => this.onFinish();
-    box.appendChild(btn);
     this.contentEl.appendChild(box);
+
+    // Sin botón: tras felicitar a Óscar, la app vuelve sola a la pantalla
+    // principal, dando tiempo de sobra a que la voz y la fiesta terminen.
+    setTimeout(() => this.onFinish(), Math.max(3800, Voice.estimateDurationMs(text)) + 3000);
   }
 }

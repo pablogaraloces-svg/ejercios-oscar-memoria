@@ -3,6 +3,30 @@
 Aplicación web progresiva (PWA), pensada para tablets Android como la **Honor Pad X9a**,
 que funciona **completamente offline** una vez instalada.
 
+## 🆕 Novedades de la versión 5 (correcciones puntuales tras testeo)
+
+- **Puzle de herramientas coherente**: ahora el objeto y la herramienta
+  correcta siempre tienen relación lógica real (tornillo→destornillador,
+  tronco de madera→sierra, clavo→martillo, tuerca→llave inglesa, cable
+  eléctrico→alicates), en vez de piezas de contexto sin sentido.
+- **Cálculo con algo más de reto**: ~30% de las veces aparecen operaciones
+  con números de dos cifras (tipo "12 + 12"), alternando con las fáciles.
+- **La voz guía de un ejercicio a otro**: frases variadas ("Vamos a
+  continuar con el siguiente ejercicio, Óscar"...) antes de cada nuevo
+  ejercicio (a partir del segundo), ya que no hay botón "Siguiente".
+- **Pantalla final sin botón**: felicita a Óscar, guarda la sesión y vuelve
+  sola a la pantalla principal; icono de fiesta más grande y mensaje
+  centrado.
+- **Crédito discreto** en la esquina superior derecha de la pantalla
+  principal: "© Diseñado y programado por Pablo Garaloces 2026", con la
+  misma sutileza visual que el botón de administración.
+- **Recuperación de PIN**: tras 5 intentos fallidos, se ofrece una pregunta
+  de seguridad configurable para poder entrar y definir un PIN nuevo.
+- **Ajustes reorganizados**: nueva pestaña "🔑 Contraseña admin" (PIN +
+  pregunta de seguridad), separada del Perfil; el campo de nombre ahora se
+  llama "Nombre del paciente" para evitar confusiones con el PIN de
+  administración.
+
 ## 🆕 Novedades de la versión 4
 
 - **Pregunta de humor sin duplicar**: la tercera pantalla ahora pregunta

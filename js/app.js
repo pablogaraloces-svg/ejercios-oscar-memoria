@@ -198,40 +198,123 @@ document.getElementById("btn-send-report").addEventListener("click", async () =>
 function openAdminPinModal() {
   const modal = document.getElementById("generic-modal");
   const box = document.getElementById("generic-modal-box");
-  box.innerHTML = `
-    <div style="font-size:2.4rem;">🔐</div>
-    <h2 class="title-lg">Acceso de administración</h2>
-    <p class="text-base" style="margin:10px 0 18px;">Introduce el PIN para entrar en Ajustes, Mi evolución o editar la familia.</p>
-    <input type="password" id="admin-pin-input" inputmode="numeric" maxlength="6"
-      style="min-height:64px; width:100%; text-align:center; letter-spacing:8px; font-size:1.6rem; border-radius:16px; border:3px solid var(--color-border); background:var(--color-bg-soft); color:var(--color-text);" />
-    <p class="text-sm" id="admin-pin-error" style="color:var(--color-warm); margin-top:8px; min-height:1.2em;"></p>
-    <div class="row center" style="gap:16px; margin-top:16px;">
-      <button class="btn btn-ghost" id="admin-pin-cancel">Cancelar</button>
-      <button class="btn btn-success" id="admin-pin-ok">Entrar</button>
-    </div>
-  `;
-  modal.classList.add("active");
-  const input = box.querySelector("#admin-pin-input");
-  const errorEl = box.querySelector("#admin-pin-error");
-  setTimeout(() => input.focus(), 200);
+  let failedAttempts = 0;
 
-  const tryEnter = () => {
-    const expected = ctx.settings.adminPin || "1234";
-    if (input.value === expected) {
+  function renderPinStep() {
+    box.innerHTML = `
+      <div style="font-size:2.4rem;">🔐</div>
+      <h2 class="title-lg">Acceso de administración</h2>
+      <p class="text-base" style="margin:10px 0 18px;">Introduce el PIN para entrar en Ajustes, Estadísticas o editar la familia.</p>
+      <input type="password" id="admin-pin-input" inputmode="numeric" maxlength="6"
+        style="min-height:64px; width:100%; text-align:center; letter-spacing:8px; font-size:1.6rem; border-radius:16px; border:3px solid var(--color-border); background:var(--color-bg-soft); color:var(--color-text);" />
+      <p class="text-sm" id="admin-pin-error" style="color:var(--color-warm); margin-top:8px; min-height:1.2em;"></p>
+      <div class="row center" style="gap:16px; margin-top:16px;">
+        <button class="btn btn-ghost" id="admin-pin-cancel">Cancelar</button>
+        <button class="btn btn-success" id="admin-pin-ok">Entrar</button>
+      </div>
+      <button class="btn btn-ghost hidden" id="admin-pin-forgot" style="margin-top:14px; font-size:var(--font-sm);">¿Has olvidado el PIN?</button>
+    `;
+    const input = box.querySelector("#admin-pin-input");
+    const errorEl = box.querySelector("#admin-pin-error");
+    const forgotBtn = box.querySelector("#admin-pin-forgot");
+    setTimeout(() => input.focus(), 200);
+
+    const tryEnter = () => {
+      const expected = ctx.settings.adminPin || "1234";
+      if (input.value === expected) {
+        modal.classList.remove("active");
+        showScreen("screen-admin-menu");
+      } else {
+        failedAttempts++;
+        input.value = "";
+        input.focus();
+        if (failedAttempts >= 5) {
+          errorEl.textContent = "Varios intentos fallidos.";
+          forgotBtn.classList.remove("hidden");
+        } else {
+          errorEl.textContent = "PIN incorrecto, inténtalo de nuevo.";
+        }
+      }
+    };
+
+    box.querySelector("#admin-pin-ok").onclick = tryEnter;
+    box.querySelector("#admin-pin-cancel").onclick = () => modal.classList.remove("active");
+    forgotBtn.onclick = renderRecoveryStep;
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") tryEnter();
+    });
+  }
+
+  function renderRecoveryStep() {
+    const question = ctx.settings.securityQuestion;
+    if (!question) {
+      box.innerHTML = `
+        <div style="font-size:2.4rem;">💛</div>
+        <h2 class="title-lg">No hay pregunta de recuperación configurada</h2>
+        <p class="text-base" style="margin:12px 0 20px;">Todavía no se ha creado ninguna pregunta para este caso. Como la aplicación no usa internet ni servidores, no hay otra forma de recuperar el PIN — habría que preguntar a quien lo configuró, o borrar los datos de la app desde los ajustes de Android (esto también borraría el progreso guardado).</p>
+        <div class="row center">
+          <button class="btn btn-success" id="recovery-back">Volver</button>
+        </div>
+      `;
+      box.querySelector("#recovery-back").onclick = renderPinStep;
+      return;
+    }
+
+    box.innerHTML = `
+      <div style="font-size:2.4rem;">🔑</div>
+      <h2 class="title-lg">Pregunta de recuperación</h2>
+      <p class="text-base" style="margin:10px 0 14px;">${question}</p>
+      <input type="text" id="recovery-answer-input"
+        style="min-height:64px; width:100%; text-align:center; font-size:1.3rem; border-radius:16px; border:3px solid var(--color-border); background:var(--color-bg-soft); color:var(--color-text);" />
+      <p class="text-sm" id="recovery-error" style="color:var(--color-warm); margin-top:8px; min-height:1.2em;"></p>
+      <div class="row center" style="gap:16px; margin-top:16px;">
+        <button class="btn btn-ghost" id="recovery-cancel">Cancelar</button>
+        <button class="btn btn-success" id="recovery-ok">Comprobar</button>
+      </div>
+    `;
+    const answerInput = box.querySelector("#recovery-answer-input");
+    const errorEl = box.querySelector("#recovery-error");
+    setTimeout(() => answerInput.focus(), 200);
+
+    box.querySelector("#recovery-cancel").onclick = () => modal.classList.remove("active");
+    box.querySelector("#recovery-ok").onclick = () => {
+      const expected = (ctx.settings.securityAnswer || "").trim().toLowerCase();
+      const given = answerInput.value.trim().toLowerCase();
+      if (expected && given === expected) {
+        renderNewPinStep();
+      } else {
+        errorEl.textContent = "Respuesta incorrecta, inténtalo de nuevo.";
+        answerInput.value = "";
+        answerInput.focus();
+      }
+    };
+  }
+
+  function renderNewPinStep() {
+    box.innerHTML = `
+      <div style="font-size:2.4rem;">✔️</div>
+      <h2 class="title-lg">Elige un nuevo PIN</h2>
+      <p class="text-base" style="margin:10px 0 14px;">Respuesta correcta. Ahora puedes crear un PIN nuevo.</p>
+      <input type="text" id="new-pin-input" inputmode="numeric" maxlength="6"
+        style="min-height:64px; width:100%; text-align:center; letter-spacing:8px; font-size:1.6rem; border-radius:16px; border:3px solid var(--color-border); background:var(--color-bg-soft); color:var(--color-text);" />
+      <div class="row center" style="gap:16px; margin-top:16px;">
+        <button class="btn btn-success" id="new-pin-save">Guardar y entrar</button>
+      </div>
+    `;
+    const newPinInput = box.querySelector("#new-pin-input");
+    setTimeout(() => newPinInput.focus(), 200);
+    box.querySelector("#new-pin-save").onclick = async () => {
+      const val = newPinInput.value.trim();
+      if (!val) return;
+      ctx.settings.adminPin = val;
+      await DB.put("settings", ctx.settings);
       modal.classList.remove("active");
       showScreen("screen-admin-menu");
-    } else {
-      errorEl.textContent = "PIN incorrecto, inténtalo de nuevo.";
-      input.value = "";
-      input.focus();
-    }
-  };
+    };
+  }
 
-  box.querySelector("#admin-pin-ok").onclick = tryEnter;
-  box.querySelector("#admin-pin-cancel").onclick = () => modal.classList.remove("active");
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") tryEnter();
-  });
+  renderPinStep();
+  modal.classList.add("active");
 }
 document.getElementById("btn-admin").addEventListener("click", openAdminPinModal);
 document.getElementById("btn-admin-back").addEventListener("click", goHome);

@@ -1,41 +1,33 @@
-import { TOOLS, WORKSHOP_DECOR, sample, shuffle, randInt } from "./data.js";
+import { TOOL_PAIRS, shuffle, sample, randInt } from "./data.js";
 
 /**
- * generatePuzzleExercise — Un pequeño "puzle" de taller (una cuadrícula
- * 2x2) con tres huecos ya rellenos con objetos de contexto y un hueco
- * vacío que corresponde a una herramienta. Óscar debe elegir, entre varias
- * opciones, la herramienta que falta para completar el puzle.
+ * generatePuzzleExercise — Se muestra un objeto (un tornillo, un tronco de
+ * madera, un clavo...) y Óscar debe elegir, entre varias herramientas, la
+ * que de verdad se necesita para ese objeto. Ya no hay "piezas de contexto"
+ * sueltas sin relación: cada objeto tiene una única herramienta lógica.
  */
 export function generatePuzzleExercise(level = 2) {
-  const optionCount = level < 4 ? 3 : level < 8 ? 4 : 5;
-  const chosen = sample(TOOLS, Math.min(optionCount, TOOLS.length));
-  const target = chosen[randInt(0, chosen.length - 1)];
+  const optionCount = level < 4 ? 3 : level < 8 ? 4 : Math.min(5, TOOL_PAIRS.length);
 
-  // Tres celdas de contexto fijas (no son la respuesta), siempre en el mismo
-  // orden visual salvo la posición del hueco, que varía.
-  const decor = sample(WORKSHOP_DECOR, 3);
-  const emptySlotIndex = randInt(0, 3);
+  const target = TOOL_PAIRS[randInt(0, TOOL_PAIRS.length - 1)];
+  const otherTools = TOOL_PAIRS.filter((p) => p.tool !== target.tool);
+  const decoys = sample(otherTools, Math.min(optionCount - 1, otherTools.length));
 
-  const cells = [];
-  let decorIdx = 0;
-  for (let i = 0; i < 4; i++) {
-    if (i === emptySlotIndex) cells.push({ empty: true });
-    else cells.push({ empty: false, emoji: decor[decorIdx++] });
-  }
+  const options = shuffle([target, ...decoys]).map((p) => ({
+    label: p.tool,
+    emoji: p.toolEmoji,
+    hideLabel: true,
+    correct: p.tool === target.tool,
+  }));
 
   return {
     category: "herramientas",
     kind: "puzzle_piece",
-    prompt: "Falta una pieza en el puzle. ¿Cuál encaja aquí?",
-    cells,
-    emptySlotIndex,
-    targetEmoji: target.emoji,
-    targetName: target.name,
-    options: shuffle(chosen).map((t) => ({
-      label: t.name,
-      emoji: t.emoji,
-      hideLabel: true,
-      correct: t.name === target.name,
-    })),
+    prompt: `${target.situation}. ¿Qué herramienta necesitas?`,
+    contextEmoji: target.contextEmoji,
+    contextLabel: target.context,
+    targetEmoji: target.toolEmoji,
+    targetName: target.tool,
+    options,
   };
 }

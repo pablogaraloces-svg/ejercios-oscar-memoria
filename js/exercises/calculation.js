@@ -4,8 +4,9 @@ const OP_WORDS = { "+": "más", "-": "menos" };
 
 /**
  * Cálculo muy básico y cálido: sumas y restas sencillas.
- * Nivel bajo: números de 1 a 5, solo sumas.
- * Nivel alto: números hasta 20, sumas y restas.
+ * La mayoría de las veces usa números pequeños y fáciles, pero de vez en
+ * cuando (para variar y poner un pequeño reto) alterna con números algo
+ * más grandes, tipo "12 + 12", independientemente del nivel adaptativo.
  *
  * Importante: el texto que se muestra usa el símbolo (+ / -), pero el
  * texto que se LEE en voz alta usa la palabra completa ("más"/"menos"),
@@ -13,12 +14,22 @@ const OP_WORDS = { "+": "más", "-": "menos" };
  * números (a veces suena como si dijera "a" en vez de "menos").
  */
 export function generateCalculationExercise(level = 2) {
-  const maxNum = Math.min(3 + level * 1.6, 20);
   const allowSubtraction = level > 3;
   const op = allowSubtraction && Math.random() > 0.5 ? "-" : "+";
 
-  let a = randInt(1, Math.floor(maxNum));
-  let b = randInt(1, Math.floor(maxNum));
+  // ~30% de las veces: números un poco más grandes (dos cifras) para
+  // variar y dar algo más de reto, alternando con los más sencillos.
+  const harder = Math.random() < 0.3;
+
+  let a, b;
+  if (harder) {
+    a = randInt(10, 20);
+    b = randInt(10, 20);
+  } else {
+    const maxNum = Math.min(3 + level * 1.6, 12);
+    a = randInt(1, Math.floor(maxNum));
+    b = randInt(1, Math.floor(maxNum));
+  }
   if (op === "-" && b > a) [a, b] = [b, a]; // evitar negativos
 
   const correct = op === "+" ? a + b : a - b;
