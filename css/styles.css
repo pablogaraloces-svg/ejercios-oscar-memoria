@@ -543,11 +543,9 @@ h1, h2, h3, p { margin: 0; }
    sin que aparezca nunca scroll lateral. */
 .session-body { align-items: flex-start; gap: var(--space-3); }
 .session-bubble-pos { align-self: flex-start; margin-left: 120px; }
-@media (orientation: portrait) {
-  .session-bubble-pos { margin-left: 0; align-self: center; }
-}
 
 @media (orientation: portrait) {
+  .session-bubble-pos { margin-left: 0; align-self: center; }
   .top-bar { flex-wrap: wrap; row-gap: var(--space-2); }
   .session-body { flex-direction: column; align-items: center; }
   .mascot { width: 76px; height: 76px; font-size: 2.4rem; }

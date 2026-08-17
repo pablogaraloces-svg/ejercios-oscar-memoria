@@ -172,7 +172,7 @@ function openSettingsScreen() {
 }
 document.getElementById("btn-settings-back").addEventListener("click", () => showScreen("screen-admin-menu"));
 
-/* ---------------- Mi evolución (solo desde Administración) ---------------- */
+/* ---------------- Estadísticas (solo desde Administración) ---------------- */
 document.getElementById("btn-reports-back").addEventListener("click", () => showScreen("screen-admin-menu"));
 document.getElementById("btn-send-report").addEventListener("click", async () => {
   const btn = document.getElementById("btn-send-report");

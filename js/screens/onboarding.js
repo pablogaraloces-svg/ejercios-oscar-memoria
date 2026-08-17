@@ -166,7 +166,7 @@ export function renderOnboarding(root, onComplete) {
 
   function stepAdminPin(c) {
     c.innerHTML = `<h2 class="title-lg">Un PIN solo para la familia</h2>
-      <p class="text-md">Con este PIN se podrá entrar en Ajustes, Mi evolución y editar la familia, sin que ${data.name || "él/ella"} tenga que ver esos botones. Se puede cambiar luego desde Administración.</p>
+      <p class="text-md">Con este PIN se podrá entrar en Ajustes, Estadísticas y editar la familia, sin que ${data.name || "él/ella"} tenga que ver esos botones. Se puede cambiar luego desde Administración.</p>
       <div class="field" style="margin-top:20px; max-width:260px;">
         <label for="ob-pin">PIN (4-6 dígitos)</label>
         <input type="text" id="ob-pin" inputmode="numeric" maxlength="6" value="${data.adminPin}" style="font-size:1.6rem; text-align:center; letter-spacing:6px;" />

@@ -137,8 +137,8 @@ export async function shareOrDownloadPdf(blob, filename) {
     try {
       await navigator.share({
         files: [file],
-        title: "Resumen de evolución",
-        text: "Resumen de evolución para compartir por correo u otra app.",
+        title: "Resumen de estadísticas",
+        text: "Resumen de estadísticas para compartir por correo u otra app.",
       });
       return "shared";
     } catch (err) {

@@ -493,6 +493,8 @@ export class SessionRunner {
       btn.classList.add("wrong-flash");
       this.optionButtons.forEach((b) => (b.style.pointerEvents = "auto"));
       Sounds.playSoftError();
+      const dir = this.optionButtons.indexOf(btn) < this.optionButtons.length / 2 ? "right" : "left";
+      this.mascot.pointTo(dir);
       const count = hintFlow.registerError();
       if (count >= 4) {
         this.clearInactivityTimer();
