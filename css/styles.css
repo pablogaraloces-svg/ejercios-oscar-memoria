@@ -1,29 +1,72 @@
 /* =========================================================
    SISTEMA DE DISEÑO — "Acompañante Diario"
-   Cálido, accesible, sin elementos pequeños ni bruscos.
+   ---------------------------------------------------------
+   Rediseño visual profesional. Cálido, sereno, con profundidad
+   sutil (Apple Health / Apple Photos / Calm / Headspace / Duolingo
+   como referencia de cercanía visual, no de copia literal).
+
+   Reglas de este sistema:
+   - Todo token de color vive en :root y se redefine en modo alto
+     contraste, para que TODO lo que dependa de un token se adapte
+     automáticamente sin tener que tocar cada componente.
+   - Los degradados son sutiles: nunca compiten con el contenido ni
+     bajan el contraste por debajo de lo accesible.
+   - Ni una sola clase existente ha cambiado de nombre: este archivo
+     es 100% compatible con el HTML/JS ya construido.
    ========================================================= */
 
 :root {
-  /* Paleta cálida y calmada, alto contraste */
-  --color-bg: #F4F1EA;
-  --color-bg-soft: #FBF9F5;
+  /* ---------- Paleta base ---------- */
+  --color-bg: #F6F2EA;
+  --color-bg-soft: #FDFBF7;
   --color-surface: #FFFFFF;
-  --color-primary: #5E81AC;
-  --color-primary-dark: #456082;
-  --color-primary-soft: #DCE7F2;
-  --color-accent: #FFB454;
-  --color-accent-soft: #FFEBCB;
-  --color-success: #6FBF8B;
-  --color-success-soft: #E1F3E7;
-  --color-warm: #EF798A;
-  --color-text: #2E2E2E;
-  --color-text-soft: #5A5A5A;
-  --color-border: #E4DFD3;
-  --color-focus: #FFB454;
 
-  --radius-lg: 32px;
-  --radius-md: 24px;
-  --radius-sm: 16px;
+  --color-primary: #4E7FBF;
+  --color-primary-dark: #395E91;
+  --color-primary-light: #7FA8DE;
+  --color-primary-soft: #E1EBF8;
+
+  --color-accent: #F5A93E;
+  --color-accent-light: #FFCB77;
+  --color-accent-soft: #FFF1D9;
+
+  --color-success: #4F9868;
+  --color-success-light: #7FCC9A;
+  --color-success-soft: #E3F5EA;
+
+  --color-warm: #E85F73;
+  --color-warm-light: #F4A0AC;
+  --color-warm-soft: #FCE7EA;
+
+  --color-text: #2B2B2E;
+  --color-text-soft: #63636B;
+  --color-border: #E9E2D4;
+  --color-focus: #F5A93E;
+
+  /* ---------- Degradados reutilizables (el corazón del rediseño) ---------- */
+  --gradient-bg: linear-gradient(160deg, #FBF7F0 0%, #F6F2EA 45%, #EFF2F6 100%);
+  --gradient-primary: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+  --gradient-success: linear-gradient(135deg, var(--color-success-light) 0%, var(--color-success) 100%);
+  --gradient-accent: linear-gradient(135deg, var(--color-accent-light) 0%, var(--color-accent) 100%);
+  --gradient-warm: linear-gradient(135deg, var(--color-warm-light) 0%, var(--color-warm) 100%);
+  --gradient-surface: linear-gradient(165deg, #FFFFFF 0%, #FCFAF6 100%);
+  --gradient-mascot: radial-gradient(circle at 32% 28%, #FFE9B8 0%, var(--color-accent) 72%);
+
+  /* ---------- Elevación (sombras estratificadas, con tinte cálido) ---------- */
+  --shadow-xs: 0 2px 6px rgba(46, 54, 74, 0.06);
+  --shadow-soft: 0 10px 26px rgba(46, 54, 74, 0.10);
+  --shadow-lift: 0 20px 44px rgba(46, 54, 74, 0.16);
+  --shadow-glow-success: 0 10px 26px rgba(79, 152, 104, 0.30);
+  --shadow-glow-accent: 0 10px 26px rgba(245, 169, 62, 0.32);
+  --shadow-glow-warm: 0 10px 26px rgba(232, 95, 115, 0.30);
+  --shadow-glow-primary: 0 10px 26px rgba(78, 127, 191, 0.30);
+  --shadow-inset: inset 0 1px 2px rgba(46, 54, 74, 0.06);
+
+  /* ---------- Radios (más generosos, look "iPad") ---------- */
+  --radius-sm: 18px;
+  --radius-md: 26px;
+  --radius-lg: 34px;
+  --radius-full: 999px;
 
   --space-1: 6px;
   --space-2: 12px;
@@ -32,29 +75,59 @@
   --space-5: 34px;
   --space-6: 48px;
 
-  --shadow-soft: 0 8px 24px rgba(60, 60, 60, 0.08);
-  --shadow-lift: 0 14px 36px rgba(60, 60, 60, 0.14);
-
+  /* ---------- Movimiento ---------- */
   --ease-gentle: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --dur-fast: 200ms;
   --dur-med: 400ms;
   --dur-slow: 700ms;
 
   --touch-min: 72px;
+
+  /* ---------- Tipografía fluida ---------- */
+  --font-huge: clamp(1.7rem, 2.9vw, 2.8rem);
+  --font-xl: clamp(1.4rem, 2.2vw, 2.2rem);
+  --font-lg: clamp(1.2rem, 1.8vw, 1.8rem);
+  --font-md: clamp(1rem, 1.4vw, 1.4rem);
+  --font-base: clamp(0.92rem, 1.2vw, 1.2rem);
+  --font-sm: clamp(0.82rem, 1vw, 1rem);
 }
 
-/* Modo alto contraste (accesibilidad) */
+/* Modo alto contraste (accesibilidad): todos los degradados se
+   "aplanan" automáticamente a colores sólidos de máximo contraste,
+   ya que dependen de estos mismos tokens. */
 body.high-contrast {
   --color-bg: #000000;
   --color-bg-soft: #111111;
   --color-surface: #101010;
   --color-primary: #7FB2FF;
+  --color-primary-light: #7FB2FF;
   --color-primary-soft: #1B2A3D;
   --color-accent: #FFD166;
+  --color-accent-light: #FFD166;
   --color-accent-soft: #3A2E12;
+  --color-success: #6FE39A;
+  --color-success-light: #6FE39A;
+  --color-warm: #FF8FA0;
+  --color-warm-light: #FF8FA0;
   --color-text: #FFFFFF;
   --color-text-soft: #E4E4E4;
   --color-border: #444444;
+
+  --gradient-bg: var(--color-bg);
+  --gradient-primary: var(--color-primary);
+  --gradient-success: var(--color-success);
+  --gradient-accent: var(--color-accent);
+  --gradient-warm: var(--color-warm);
+  --gradient-surface: var(--color-surface);
+  --gradient-mascot: var(--color-accent);
+
+  --shadow-soft: none;
+  --shadow-lift: 0 0 0 3px rgba(255, 255, 255, 0.25);
+  --shadow-glow-success: none;
+  --shadow-glow-accent: none;
+  --shadow-glow-warm: none;
+  --shadow-glow-primary: none;
 }
 
 /* Tamaño de texto ajustable */
@@ -73,13 +146,15 @@ html, body {
 }
 
 body {
-  font-family: "Atkinson Hyperlegible", "Segoe UI", Roboto, system-ui, sans-serif;
-  background: var(--color-bg);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Atkinson Hyperlegible", "Segoe UI", Roboto, system-ui, sans-serif;
+  background: var(--gradient-bg);
+  background-attachment: fixed;
   color: var(--color-text);
   overflow: hidden;
   overflow-x: hidden;
   width: 100dvw;
   height: 100dvh;
+  -webkit-font-smoothing: antialiased;
   transition: background var(--dur-med) var(--ease-gentle), color var(--dur-med) var(--ease-gentle);
 }
 
@@ -92,18 +167,6 @@ body {
   max-width: 100vw;
   overflow: hidden;
   overflow-x: hidden;
-}
-
-/* Escalado tipográfico fluido: se adapta a la anchura real del dispositivo,
-   con techo pensado para el ancho de 2508px de la Honor Pad X9a.
-   Tamaños más compactos para que toda la sesión quepa sin scroll. */
-:root {
-  --font-huge: clamp(1.7rem, 2.9vw, 2.8rem);
-  --font-xl: clamp(1.4rem, 2.2vw, 2.2rem);
-  --font-lg: clamp(1.2rem, 1.8vw, 1.8rem);
-  --font-md: clamp(1rem, 1.4vw, 1.4rem);
-  --font-base: clamp(0.92rem, 1.2vw, 1.2rem);
-  --font-sm: clamp(0.82rem, 1vw, 1rem);
 }
 
 .screen {
@@ -138,9 +201,9 @@ body.reduce-motion * { transition-duration: 1ms !important; animation-duration: 
 
 /* ---------- Tipografía ---------- */
 h1, h2, h3, p { margin: 0; }
-.title-huge { font-size: var(--font-huge); font-weight: 800; line-height: 1.15; }
-.title-xl   { font-size: var(--font-xl); font-weight: 800; line-height: 1.2; }
-.title-lg   { font-size: var(--font-lg); font-weight: 700; }
+.title-huge { font-size: var(--font-huge); font-weight: 800; line-height: 1.15; letter-spacing: -0.01em; }
+.title-xl   { font-size: var(--font-xl); font-weight: 800; line-height: 1.2; letter-spacing: -0.01em; }
+.title-lg   { font-size: var(--font-lg); font-weight: 700; letter-spacing: -0.005em; }
 /* Títulos de Administración (Ajustes, Estadísticas, Editar familia...):
    un punto más grandes para que se lean mejor, sin llegar a provocar scroll. */
 .title-admin { font-size: calc(var(--font-lg) * 1.18); }
@@ -161,24 +224,27 @@ h1, h2, h3, p { margin: 0; }
   align-items: center;
   justify-content: center;
   gap: var(--space-1);
-  box-shadow: var(--shadow-soft);
-  transition: transform var(--dur-fast) var(--ease-gentle), box-shadow var(--dur-fast) var(--ease-gentle), background var(--dur-fast) var(--ease-gentle), filter var(--dur-fast) var(--ease-gentle);
+  box-shadow: var(--shadow-glow-primary);
+  transition: transform var(--dur-fast) var(--ease-gentle), box-shadow var(--dur-fast) var(--ease-gentle), filter var(--dur-fast) var(--ease-gentle);
   color: white;
-  background: var(--color-primary);
+  background: var(--gradient-primary);
+  letter-spacing: -0.005em;
 }
-.btn:active { transform: scale(0.96); box-shadow: var(--shadow-soft); }
-.btn:hover { filter: brightness(1.05); }
+.btn:active { transform: scale(0.96); box-shadow: var(--shadow-xs); }
+.btn:hover { filter: brightness(1.04); transform: translateY(-1px); }
+.btn:hover:active { transform: scale(0.96); }
 .btn:focus-visible { outline: 5px solid var(--color-focus); outline-offset: 4px; }
 
-.btn-accent { background: var(--color-accent); color: #4A3300; }
-.btn-success { background: var(--color-success); color: #143B22; }
-.btn-warm { background: var(--color-warm); color: #4A0E17; }
+.btn-accent { background: var(--gradient-accent); color: #4A3300; box-shadow: var(--shadow-glow-accent); }
+.btn-success { background: var(--gradient-success); color: #0F3B20; box-shadow: var(--shadow-glow-success); }
+.btn-warm { background: var(--gradient-warm); color: #4A0E17; box-shadow: var(--shadow-glow-warm); }
 .btn-ghost {
-  background: var(--color-surface);
+  background: var(--gradient-surface);
   color: var(--color-primary-dark);
-  border: 3px solid var(--color-border);
-  box-shadow: none;
+  border: 2px solid var(--color-border);
+  box-shadow: var(--shadow-xs);
 }
+.btn-ghost:hover { filter: none; border-color: var(--color-primary-light); }
 .btn-huge {
   min-height: 92px;
   font-size: var(--font-lg);
@@ -194,19 +260,20 @@ h1, h2, h3, p { margin: 0; }
   padding: var(--space-2);
   border-radius: 50%;
 }
-.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
 
 /* ---------- Tarjetas ---------- */
 .card {
-  background: var(--color-surface);
+  background: var(--gradient-surface);
   border-radius: var(--radius-md);
   padding: var(--space-3);
   box-shadow: var(--shadow-soft);
-  border: 2px solid var(--color-border);
+  border: 1px solid rgba(233, 226, 212, 0.7);
+  transition: transform var(--dur-fast) var(--ease-gentle), box-shadow var(--dur-fast) var(--ease-gentle);
 }
 
 .option-card {
-  background: var(--color-surface);
+  background: var(--gradient-surface);
   border-radius: var(--radius-md);
   border: 3px solid var(--color-border);
   min-height: 108px;
@@ -219,16 +286,28 @@ h1, h2, h3, p { margin: 0; }
   font-weight: 700;
   cursor: pointer;
   box-shadow: var(--shadow-soft);
-  transition: transform var(--dur-fast) var(--ease-gentle), border-color var(--dur-fast) var(--ease-gentle), background var(--dur-med) var(--ease-gentle);
+  transition: transform var(--dur-fast) var(--ease-gentle), border-color var(--dur-fast) var(--ease-gentle), background var(--dur-med) var(--ease-gentle), box-shadow var(--dur-fast) var(--ease-gentle);
 }
+.option-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); border-color: var(--color-primary-light); }
 .option-card:active { transform: scale(0.96); }
 .option-card:focus-visible { outline: 5px solid var(--color-focus); outline-offset: 4px; }
-.option-card .emoji { font-size: 2.8rem; line-height: 1; }
-.family-photo { width: 110px; height: 110px; object-fit: cover; border-radius: 18px; box-shadow: var(--shadow-soft); }
-.family-card { transition: transform var(--dur-fast) var(--ease-gentle); }
-.family-card:hover { transform: translateY(-2px); }
-.option-card.correct-flash { background: var(--color-success-soft); border-color: var(--color-success); animation: popGood var(--dur-med) var(--ease-gentle); }
-.option-card.wrong-flash { background: var(--color-accent-soft); border-color: var(--color-accent); }
+.option-card .emoji {
+  font-size: 2.5rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-soft);
+  box-shadow: var(--shadow-inset);
+}
+.family-photo { width: 110px; height: 110px; object-fit: cover; border-radius: var(--radius-md); box-shadow: var(--shadow-soft); border: 3px solid var(--color-surface); }
+.family-card { transition: transform var(--dur-fast) var(--ease-gentle), box-shadow var(--dur-fast) var(--ease-gentle); }
+.family-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
+.option-card.correct-flash { background: var(--color-success-soft); border-color: var(--color-success); box-shadow: var(--shadow-glow-success); animation: popGood var(--dur-med) var(--ease-spring); }
+.option-card.wrong-flash { background: var(--color-warm-soft); border-color: var(--color-warm-light); }
 @keyframes popGood { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
 
 /* ---------- Layout utilitario ---------- */
@@ -260,24 +339,27 @@ h1, h2, h3, p { margin: 0; }
 .progress-track {
   height: 20px;
   background: var(--color-border);
-  border-radius: 20px;
+  border-radius: var(--radius-full);
   overflow: hidden;
   flex: 1;
+  box-shadow: var(--shadow-inset);
 }
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--color-accent), var(--color-success));
-  border-radius: 20px;
+  background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-success) 100%);
+  border-radius: var(--radius-full);
   transition: width var(--dur-slow) var(--ease-gentle);
+  box-shadow: 0 0 10px rgba(245, 169, 62, 0.5);
 }
 
 .pill {
   padding: 6px 18px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-primary-soft);
   color: var(--color-primary-dark);
   font-weight: 700;
   font-size: var(--font-sm);
+  box-shadow: var(--shadow-xs);
 }
 
 /* ---------- Mascota ---------- */
@@ -285,40 +367,41 @@ h1, h2, h3, p { margin: 0; }
   width: 76px;
   height: 76px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #FFE6A8, var(--color-accent));
+  background: var(--gradient-mascot);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 2.3rem;
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-glow-accent);
   transition: transform var(--dur-med) var(--ease-gentle);
   flex-shrink: 0;
   cursor: pointer;
+  border: 3px solid var(--color-surface);
 }
 .mascot.bounce { animation: mascotBounce 1.6s var(--ease-gentle) infinite; }
 @keyframes mascotBounce { 0%,100% { transform: translateY(0) rotate(0deg);} 50% { transform: translateY(-8px) rotate(-4deg);} }
 .mascot.point-left { transform: rotate(-14deg); }
 .mascot.point-right { transform: rotate(14deg); }
-.mascot.celebrate { animation: mascotCelebrate 700ms var(--ease-gentle); }
+.mascot.celebrate { animation: mascotCelebrate 700ms var(--ease-spring); }
 @keyframes mascotCelebrate { 0% {transform: scale(1);} 40% {transform: scale(1.3) rotate(12deg);} 70% { transform: scale(0.95) rotate(-6deg);} 100% {transform: scale(1);} }
 .mascot.shake-soft { animation: mascotShake 600ms var(--ease-gentle); }
 @keyframes mascotShake { 0%,100% { transform: translateX(0);} 25% { transform: translateX(-6px) rotate(-3deg);} 75% { transform: translateX(6px) rotate(3deg);} }
 
 /* Reacciones divertidas al tocar la mascota (varían cada vez) */
-.mascot.tap-spin { animation: mascotSpin 700ms var(--ease-gentle); }
+.mascot.tap-spin { animation: mascotSpin 700ms var(--ease-spring); }
 @keyframes mascotSpin { 0% { transform: rotate(0);} 100% { transform: rotate(360deg);} }
-.mascot.tap-jump { animation: mascotJump 600ms var(--ease-gentle); }
+.mascot.tap-jump { animation: mascotJump 600ms var(--ease-spring); }
 @keyframes mascotJump { 0%,100% { transform: translateY(0) scale(1);} 35% { transform: translateY(-26px) scale(1.1);} 60% { transform: translateY(4px) scale(0.94);} }
 .mascot.tap-wobble { animation: mascotWobble 650ms var(--ease-gentle); }
 @keyframes mascotWobble { 0%,100% { transform: rotate(0);} 20% { transform: rotate(-18deg);} 40% { transform: rotate(14deg);} 60% { transform: rotate(-10deg);} 80% { transform: rotate(6deg);} }
-.mascot.tap-grow { animation: mascotGrow 550ms var(--ease-gentle); }
+.mascot.tap-grow { animation: mascotGrow 550ms var(--ease-spring); }
 @keyframes mascotGrow { 0%,100% { transform: scale(1);} 50% { transform: scale(1.4); } }
 
 /* Pista visual FINAL (2º-3º error): parpadeo en el botón correcto */
 .btn-wiggle-hint { animation: wiggleGlow 1.1s var(--ease-gentle) infinite; }
 @keyframes wiggleGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255,180,84,0.0); transform: scale(1); }
-  50% { box-shadow: 0 0 0 16px rgba(255,180,84,0.28); transform: scale(1.035); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 169, 62, 0.0); transform: scale(1); }
+  50% { box-shadow: 0 0 0 16px rgba(245, 169, 62, 0.28); transform: scale(1.035); }
 }
 
 /* Pista de INACTIVIDAD (60s sin tocar nada): solo se mueve el dibujo, no el botón entero */
@@ -330,9 +413,11 @@ h1, h2, h3, p { margin: 0; }
   75% { transform: translateX(4px) rotate(6deg); }
 }
 
+/* Burbuja de voz con "colita", como un mensaje de chat cercano */
 .speech-bubble {
-  background: var(--color-surface);
-  border: 3px solid var(--color-border);
+  position: relative;
+  background: var(--gradient-surface);
+  border: 1px solid rgba(233, 226, 212, 0.8);
   border-radius: var(--radius-md);
   padding: var(--space-2) var(--space-3);
   font-size: var(--font-base);
@@ -340,11 +425,26 @@ h1, h2, h3, p { margin: 0; }
   box-shadow: var(--shadow-soft);
   max-width: 480px;
 }
+.speech-bubble::after {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 36px;
+  width: 16px;
+  height: 16px;
+  background: var(--color-surface);
+  border-left: 1px solid rgba(233, 226, 212, 0.8);
+  border-top: 1px solid rgba(233, 226, 212, 0.8);
+  transform: rotate(45deg);
+  border-radius: 3px 0 0 0;
+}
 
 /* ---------- Modales ---------- */
 .modal-backdrop {
   position: fixed; inset: 0;
-  background: rgba(30,30,30,0.45);
+  background: rgba(30, 32, 40, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex; align-items: center; justify-content: center;
   z-index: 100;
   opacity: 0;
@@ -353,14 +453,14 @@ h1, h2, h3, p { margin: 0; }
 }
 .modal-backdrop.active { opacity: 1; pointer-events: auto; }
 .modal-box {
-  background: var(--color-surface);
+  background: var(--gradient-surface);
   border-radius: var(--radius-lg);
   padding: var(--space-5);
   max-width: 640px;
   width: 90%;
   box-shadow: var(--shadow-lift);
   transform: translateY(24px) scale(0.96);
-  transition: transform var(--dur-med) var(--ease-gentle);
+  transition: transform var(--dur-med) var(--ease-spring);
   text-align: center;
 }
 .modal-backdrop.active .modal-box { transform: translateY(0) scale(1); }
@@ -371,15 +471,17 @@ h1, h2, h3, p { margin: 0; }
 .field input[type=text], .field input[type=number], .field select, .field textarea {
   min-height: var(--touch-min);
   border-radius: var(--radius-sm);
-  border: 3px solid var(--color-border);
+  border: 2px solid var(--color-border);
   padding: 0 var(--space-2);
   font-size: var(--font-base);
   background: var(--color-bg-soft);
   color: var(--color-text);
+  transition: border-color var(--dur-fast) var(--ease-gentle), box-shadow var(--dur-fast) var(--ease-gentle);
 }
 .field input:focus, .field select:focus, .field textarea:focus {
-  outline: 4px solid var(--color-focus);
+  outline: none;
   border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-soft);
 }
 .field textarea { padding: var(--space-2); min-height: 100px; }
 
@@ -389,30 +491,32 @@ h1, h2, h3, p { margin: 0; }
   padding: 0 var(--space-2);
   background: var(--color-bg-soft);
   border-radius: var(--radius-sm);
-  border: 2px solid var(--color-border);
+  border: 1px solid var(--color-border);
+  transition: box-shadow var(--dur-fast) var(--ease-gentle), background var(--dur-fast) var(--ease-gentle);
 }
+.reminder-row:hover { background: var(--color-surface); box-shadow: var(--shadow-xs); }
 
 /* Botón "Marcar hecho" de recordatorios: al confirmarse, se vuelve
    completamente verde para que no haya ninguna duda de que ha funcionado. */
 .reminder-done-btn-active {
-  background: var(--color-success) !important;
-  color: #143B22 !important;
+  background: var(--gradient-success) !important;
+  color: #0F3B20 !important;
   border-color: var(--color-success) !important;
-  box-shadow: var(--shadow-soft) !important;
-  animation: popGood var(--dur-med) var(--ease-gentle);
+  box-shadow: var(--shadow-glow-success) !important;
+  animation: popGood var(--dur-med) var(--ease-spring);
 }
 .switch { position: relative; width: 74px; height: 42px; flex-shrink: 0; }
 .switch input { opacity: 0; width: 100%; height: 100%; position: absolute; cursor: pointer; margin: 0; z-index: 2; }
 .switch .track {
-  position: absolute; inset: 0; border-radius: 999px; background: var(--color-border);
+  position: absolute; inset: 0; border-radius: var(--radius-full); background: var(--color-border);
   transition: background var(--dur-fast) var(--ease-gentle);
 }
 .switch .thumb {
   position: absolute; top: 4px; left: 4px; width: 34px; height: 34px; border-radius: 50%;
   background: white; box-shadow: var(--shadow-soft);
-  transition: transform var(--dur-fast) var(--ease-gentle);
+  transition: transform var(--dur-fast) var(--ease-spring);
 }
-.switch input:checked ~ .track { background: var(--color-success); }
+.switch input:checked ~ .track { background: var(--gradient-success); }
 .switch input:checked ~ .thumb { transform: translateX(32px); }
 
 .exit-fab {
@@ -422,13 +526,15 @@ h1, h2, h3, p { margin: 0; }
   z-index: 50;
   width: 64px; height: 64px;
   border-radius: 50%;
-  background: var(--color-surface);
-  border: 3px solid var(--color-border);
+  background: var(--gradient-surface);
+  border: 1px solid rgba(233, 226, 212, 0.8);
   box-shadow: var(--shadow-lift);
   display: flex; align-items: center; justify-content: center;
   font-size: 1.6rem;
   cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-gentle), box-shadow var(--dur-fast) var(--ease-gentle);
 }
+.exit-fab:hover { transform: translateY(-2px); }
 .exit-fab:active { transform: scale(0.94); }
 
 /* Botón discreto de administración: pequeño, poco visible, no distrae a Óscar */
@@ -472,7 +578,7 @@ h1, h2, h3, p { margin: 0; }
   font-size: 5rem;
   pointer-events: none;
   z-index: 210;
-  animation: burstPop 1000ms var(--ease-gentle) forwards;
+  animation: burstPop 1000ms var(--ease-spring) forwards;
 }
 @keyframes burstPop {
   0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
@@ -514,21 +620,22 @@ h1, h2, h3, p { margin: 0; }
   align-items: center;
   justify-content: center;
   font-size: 2rem;
-  border-radius: 14px;
+  border-radius: var(--radius-sm);
   background: var(--color-bg-soft);
   border: 3px solid var(--color-border);
   transition: transform var(--dur-fast) var(--ease-gentle), background var(--dur-fast) var(--ease-gentle), border-color var(--dur-fast) var(--ease-gentle);
 }
 .diff-cell-interactive { cursor: pointer; }
+.diff-cell-interactive:hover { transform: translateY(-2px); }
 .diff-cell-interactive:active { transform: scale(0.92); }
 .diff-cell-found {
   background: var(--color-success-soft);
   border-color: var(--color-success);
-  animation: popGood var(--dur-med) var(--ease-gentle);
+  animation: popGood var(--dur-med) var(--ease-spring);
 }
 .diff-cell-wrong {
-  background: var(--color-accent-soft);
-  border-color: var(--color-accent);
+  background: var(--color-warm-soft);
+  border-color: var(--color-warm-light);
 }
 
 /* Fade util */
@@ -599,7 +706,7 @@ img, canvas, svg, video { max-width: 100%; }
 .puzzle-cell {
   width: 84px;
   height: 84px;
-  border-radius: 16px;
+  border-radius: var(--radius-sm);
   background: var(--color-bg-soft);
   border: 3px solid var(--color-border);
   display: flex;
@@ -607,13 +714,15 @@ img, canvas, svg, video { max-width: 100%; }
   justify-content: center;
   font-size: 2.2rem;
   flex-shrink: 0;
+  box-shadow: var(--shadow-inset);
 }
 .puzzle-cell-empty {
   border: 3px dashed var(--color-accent);
   background: var(--color-accent-soft);
+  box-shadow: none;
 }
 .puzzle-cell-snap {
-  animation: popGood var(--dur-med) var(--ease-gentle);
+  animation: popGood var(--dur-med) var(--ease-spring);
   border-style: solid;
   border-color: var(--color-success);
   background: var(--color-success-soft);
@@ -624,11 +733,11 @@ img, canvas, svg, video { max-width: 100%; }
   z-index: 300;
   pointer-events: none;
   opacity: 1;
-  transition: transform 620ms cubic-bezier(0.22, 1, 0.36, 1), opacity 620ms;
+  transition: transform 620ms var(--ease-spring), opacity 620ms;
 }
 
 /* ---------- Mi Familia: zoom al tocar una foto ---------- */
-.family-photo-zoom { animation: familyPhotoZoom 900ms var(--ease-gentle); }
+.family-photo-zoom { animation: familyPhotoZoom 900ms var(--ease-spring); }
 @keyframes familyPhotoZoom {
   0% { transform: scale(1); }
   35% { transform: scale(1.18); box-shadow: var(--shadow-lift); }
@@ -637,4 +746,3 @@ img, canvas, svg, video { max-width: 100%; }
 
 /* ---------- Botones de género (Mi Familia) ---------- */
 .gender-btn { min-height: 60px; }
-

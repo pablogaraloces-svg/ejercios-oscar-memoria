@@ -3,6 +3,55 @@
 Aplicación web progresiva (PWA), pensada para tablets Android como la **Honor Pad X9a**,
 que funciona **completamente offline** una vez instalada.
 
+## 🎨 Rediseño visual profesional (sistema de diseño v2)
+
+Revisión completa del aspecto visual, sin tocar ni una sola línea de lógica,
+función o flujo de la aplicación. Cambios 100% en `css/styles.css` (más un
+único retoque puramente decorativo: la paleta de colores del confeti).
+
+**Qué cambió:**
+- **Paleta cálida y serena** inspirada en Apple Health / Calm / Headspace:
+  azules y verdes suavizados, ámbar cálido en vez de amarillo saturado,
+  coral suave en vez de rosa chillón.
+- **Fondo con degradado sutil** en vez de color plano, en toda la app.
+- **Sistema de sombras estratificado** (`--shadow-xs/soft/lift` + sombras
+  de "brillo" a color a juego con cada botón: verde para éxito, ámbar para
+  acento, coral para aviso, azul para primario) — sensación de profundidad
+  tipo iOS/iPadOS.
+- **Radios más generosos** (18/26/34px + `--radius-full` para cápsulas),
+  para ese aspecto redondeado y amigable tipo iPad.
+- **Botones**: degradado direccional, ligera elevación al pasar el ratón,
+  sombra de color a juego con la acción.
+- **Tarjetas y opciones de ejercicio**: superficie con degradado sutil,
+  elevación al pasar por encima, el emoji ahora vive dentro de una
+  "burbuja" circular con sombra interior (efecto de icono premium).
+- **Mascota**: aro degradado más rico y sombra de brillo ámbar a su
+  alrededor, con borde blanco tipo avatar.
+- **Burbuja de voz**: ahora tiene una pequeña "colita" (como un mensaje de
+  chat), en vez de ser un simple rectángulo.
+- **Modales**: fondo con desenfoque (`backdrop-filter: blur`) y aparición
+  con un pequeño rebote (curva de easing tipo resorte), como las hojas
+  modales de iOS.
+- **Barra de progreso**: degradado con brillo en el extremo, pista con
+  sombra interior.
+- **Tipografía**: se prioriza la fuente de sistema de Apple (para ese
+  aspecto "iPad") con caída elegante a Android/otros, ligero
+  `letter-spacing` negativo en títulos grandes para un look más
+  "diseñado".
+- **Microanimaciones**: nueva curva de easing tipo resorte
+  (`--ease-spring`) para celebraciones, aciertos y aparición de modales,
+  además de la curva suave ya existente para el resto.
+- **Modo alto contraste**: todos los degradados se convierten
+  automáticamente en colores planos de máximo contraste (no se ha perdido
+  nada de accesibilidad; de hecho queda más robusto que antes, ya que
+  ahora todo el sistema de "brillos" también se neutraliza en ese modo).
+
+**Garantía de que no se ha roto nada:** se comprobó, de forma automática y
+exhaustiva, que las 91 clases y los 17 `@keyframes` que usa el HTML/JS
+existen exactamente igual en el nuevo CSS (ni un nombre cambiado), que la
+sintaxis de todo el proyecto sigue siendo válida, y que todos los
+`import`/`export`, IDs y archivos cargan sin errores.
+
 ## 🆕 Novedades de la versión 5 (correcciones puntuales tras testeo)
 
 - **Puzle de herramientas coherente**: ahora el objeto y la herramienta

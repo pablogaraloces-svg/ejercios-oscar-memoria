@@ -1,4 +1,6 @@
-const COLORS = ["#FFB454", "#6FBF8B", "#5E81AC", "#EF798A", "#F2C230"];
+// Paleta alineada con el nuevo sistema de diseño (solo estética, sin
+// ningún cambio de lógica ni de comportamiento).
+const COLORS = ["#F5A93E", "#4F9868", "#4E7FBF", "#E85F73", "#FFCB77"];
 
 export function burstConfetti(count = 24) {
   for (let i = 0; i < count; i++) {
