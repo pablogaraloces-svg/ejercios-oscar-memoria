@@ -77,6 +77,33 @@ ni sustituir ninguna pantalla, ejercicio ni sistema que ya funcionaba.
   separado, nunca mezclados, pensado para poder consultarse o mostrarse a
   un médico.
 
+## 🆕 Novedades de la versión 9 ("Antes de seguir" sin prisa + transición a ejercicios)
+
+**"Antes de seguir" ya no avanza sola**
+- Eliminado por completo el avance automático de esta pantalla. Ahora
+  Óscar tiene todo el tiempo que necesite para leer, pensar y marcar
+  cuantos recordatorios quiera, sin ningún límite de tiempo detrás.
+- Nuevo botón **"Seguir ▶️"**, grande y con un parpadeo suave y continuo
+  (ni agresivo ni molesto), situado debajo de los recordatorios, centrado.
+  Es él quien decide cuándo continuar.
+
+**Nueva transición: "Vamos a comenzar los ejercicios de hoy"**
+- Al pulsar "Seguir", Cerebrín aparece a pantalla completa (misma
+  estética cálida que la pantalla de inicio) y la voz dice "Vamos a
+  comenzar los ejercicios de hoy".
+- Dura unos 3 segundos (o algo más si la frase tarda más en leerse) y
+  pasa sola automáticamente al primer ejercicio — sin botón, sin que haga
+  falta tocar nada.
+- Este mismo paso se muestra también aunque la familia no tenga
+  configurado ningún recordatorio ese día, justo antes de empezar.
+
+**Revisado a fondo para evitar fallos**: se comprobó que el nuevo
+temporizador de esta transición se cancela correctamente si el paso se
+abandona por cualquier motivo (evitando que un temporizador "huérfano"
+pudiera saltar sobre el paso equivocado más tarde), que el orden de
+pasos es correcto tanto con recordatorios como sin ellos, y que no queda
+ningún resto del sistema de avance automático anterior.
+
 ## 🆕 Novedades de la versión 8 (inicio, Cerebrín vivo, familia y climatología)
 
 **Pantalla de inicio: causa raíz corregida**

@@ -61,6 +61,7 @@ export class SessionRunner {
       { type: "greeting" },
       ...wellbeing.map((q) => ({ type: "wellbeing", question: q })),
       ...(reminders.length ? [{ type: "reminders", reminders }] : []),
+      { type: "exercises_intro" },
       ...exercises.map((ex) => ({ type: "exercise", exercise: ex })),
       { type: "closing" },
     ];
@@ -149,6 +150,7 @@ export class SessionRunner {
   renderStep() {
     this.clearInactivityTimer();
     clearTimeout(this._advanceTimer);
+    clearTimeout(this._introTimer);
     // Presupuesto de nombre: como máximo se dice "Óscar" una vez por
     // pantalla/ejercicio (se reinicia limpio en cada paso nuevo).
     this._nameBudget = { used: false };
@@ -163,6 +165,7 @@ export class SessionRunner {
     if (step.type === "greeting") this.renderGreeting();
     else if (step.type === "wellbeing") this.renderWellbeing(step.question);
     else if (step.type === "reminders") this.renderReminders(step.reminders);
+    else if (step.type === "exercises_intro") this.renderExercisesIntro();
     else if (step.type === "exercise") this.renderExercise(step.exercise);
     else if (step.type === "closing") this.renderClosing();
   }
@@ -245,25 +248,6 @@ export class SessionRunner {
     list.style.marginTop = "16px";
     list.style.gap = "12px";
 
-    // Estado compartido de todos los recordatorios de este paso: mientras
-    // no haya NINGUNO marcado, la pantalla no debe avanzar sola.
-    const doneStates = {};
-    const anyDone = () => Object.values(doneStates).some(Boolean);
-    const evaluateAdvance = () => {
-      if (anyDone()) {
-        // Tras marcar algo, se da tiempo de sobra para leer el resto de
-        // recordatorios con calma, pensarlos y poder ir marcando varios
-        // más antes de continuar (cada toque nuevo vuelve a alargar esta
-        // espera desde cero).
-        this.scheduleExactAdvance(14000);
-      } else {
-        // Nada marcado todavía: no avanzar. Aun así, dejamos una red de
-        // seguridad muy larga para que la pantalla nunca quede bloqueada
-        // del todo si un día no hay ninguna actividad que marcar.
-        this.scheduleExactAdvance(45000);
-      }
-    };
-
     reminders.forEach((rem) => {
       const row = document.createElement("div");
       row.className = "switch-row reminder-row";
@@ -278,10 +262,10 @@ export class SessionRunner {
       doneBtn.type = "button";
       doneBtn.className = "btn btn-ghost reminder-done-btn";
       doneBtn.textContent = "Marcar hecho";
-      doneStates[rem.id] = false;
+      let isDone = false;
 
       const setVisual = () => {
-        if (doneStates[rem.id]) {
+        if (isDone) {
           doneBtn.textContent = "✔️ Hecho";
           doneBtn.classList.remove("btn-ghost");
           doneBtn.classList.add("reminder-done-btn-active");
@@ -293,11 +277,10 @@ export class SessionRunner {
       };
 
       doneBtn.addEventListener("click", async () => {
-        doneStates[rem.id] = !doneStates[rem.id];
+        isDone = !isDone;
         setVisual();
-        evaluateAdvance();
         try {
-          if (doneStates[rem.id]) {
+          if (isDone) {
             this.mascot.celebrate();
             Sounds.playPositive();
             await markReminderDoneToday(this.profile.id, rem.id);
@@ -306,7 +289,7 @@ export class SessionRunner {
           }
         } catch (err) {
           console.error("No se pudo actualizar el recordatorio:", err);
-          doneStates[rem.id] = !doneStates[rem.id];
+          isDone = !isDone;
           setVisual();
         }
       });
@@ -316,14 +299,49 @@ export class SessionRunner {
     });
     box.appendChild(list);
 
-    this.contentEl.appendChild(box);
+    // Sin avance automático: Óscar decide cuándo continuar, con todo el
+    // tiempo que necesite para leer, pensar y marcar lo que corresponda.
+    // El botón "Seguir" parpadea suavemente para que quede claro cómo
+    // avanzar cuando esté listo.
+    const followRow = document.createElement("div");
+    followRow.className = "row center";
+    followRow.style.marginTop = "28px";
+    const followBtn = document.createElement("button");
+    followBtn.className = "btn btn-huge btn-success btn-follow-blink";
+    followBtn.textContent = "Seguir ▶️";
+    followBtn.onclick = () => this.next();
+    followRow.appendChild(followBtn);
+    box.appendChild(followRow);
 
-    // Sin botón "Continuar": mientras no haya nada marcado, la pantalla
-    // espera. En cuanto Óscar marque algo, avanza sola poco después.
-    evaluateAdvance();
+    this.contentEl.appendChild(box);
   }
 
   /* ---------------- Ejercicios ---------------- */
+
+  /**
+   * "Vamos a comenzar los ejercicios de hoy" — Cerebrín a pantalla
+   * completa durante unos segundos, para que los ejercicios no empiecen
+   * de golpe justo después de "Antes de seguir". Avanza sola, sin botón.
+   */
+  renderExercisesIntro() {
+    const overlay = document.getElementById("session-intro-overlay");
+    const msg = "Vamos a comenzar los ejercicios de hoy.";
+
+    overlay.classList.remove("hidden");
+    void overlay.offsetWidth; // fuerza el reflow para que la transición de entrada se vea
+    overlay.classList.add("active");
+    Voice.say(msg);
+
+    const delay = Math.max(3000, Voice.estimateDurationMs(msg) + 400);
+    clearTimeout(this._introTimer);
+    this._introTimer = setTimeout(() => {
+      overlay.classList.remove("active");
+      this.next();
+      // Se oculta del todo un poco después del fundido, para no dejarlo
+      // interceptando toques por error mientras se desvanece.
+      setTimeout(() => overlay.classList.add("hidden"), 750);
+    }, delay);
+  }
 
   renderExercise(ex) {
     this.stats.total++;
