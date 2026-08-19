@@ -7,7 +7,7 @@ export function renderOnboarding(root, onComplete) {
   const data = {
     name: "",
     reminderKeys: ["medicacion", "agua"],
-    categories: [...ALL_CATEGORIES.filter((c) => c !== "fotos" && c !== "herramientas")],
+    categories: [...ALL_CATEGORIES.filter((c) => !["fotos", "herramientas", "intruso", "compra"].includes(c))],
     textSize: "base",
     adminPin: "1234",
   };
@@ -63,7 +63,7 @@ export function renderOnboarding(root, onComplete) {
   function stepWelcome(c) {
     c.innerHTML = `
       <div class="col center grow">
-        <div style="font-size:5rem;">🐵</div>
+        <img src="assets/mascot/cerebrin.png" alt="Cerebrín" style="width:110px; height:auto; margin:0 auto;" />
         <h1 class="title-huge" style="text-align:center;">¡Hola! Vamos a preparar tu espacio</h1>
         <p class="text-base" style="text-align:center; max-width:560px;">
           Solo te voy a pedir un par de cosas muy sencillas. Tranquilo/a, no hay prisa.
@@ -114,11 +114,11 @@ export function renderOnboarding(root, onComplete) {
 
   function stepExercises(c) {
     c.innerHTML = `<h2 class="title-lg">¿Qué tipo de ejercicios prefieres?</h2>
-      <p class="text-md">Puedes elegir varios. Iremos variando para que no se haga repetitivo. (El reconocimiento de fotos familiares y el puzle de herramientas se incluyen siempre, sin necesidad de elegirlos aquí.)</p>`;
+      <p class="text-md">Puedes elegir varios. Iremos variando para que no se haga repetitivo. (El reconocimiento de fotos familiares, el puzle de herramientas, "El intruso" y "La compra" se incluyen siempre, sin necesidad de elegirlos aquí.)</p>`;
     const grid = document.createElement("div");
     grid.className = "grid-options cols-3";
     grid.style.marginTop = "20px";
-    ALL_CATEGORIES.filter((cat) => cat !== "fotos" && cat !== "herramientas").forEach((cat) => {
+    ALL_CATEGORIES.filter((cat) => !["fotos", "herramientas", "intruso", "compra"].includes(cat)).forEach((cat) => {
       const btn = document.createElement("button");
       btn.className = "option-card";
       const emojiMap = { memoria: "🧠", atencion: "👀", calculo: "➕", colores: "🎨", animales: "🐾", diferencias: "🔍" };

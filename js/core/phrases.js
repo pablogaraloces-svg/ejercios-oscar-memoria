@@ -67,9 +67,7 @@ export const pickMemoryIntro = makePicker([
 ]);
 
 export const pickInactivityHint = makePicker([
-  "Tómate tu tiempo. Cuando quieras, fíjate en las opciones.",
-  "Aquí sigo, sin prisa. Cuando estés listo, elige una opción.",
-  "Tranquilo/a, vamos a mirarlo juntos con calma.",
+  "Tranquilo, tómate tu tiempo.",
 ]);
 
 /** Frase de transición entre un ejercicio y el siguiente (guía a Óscar sin necesitar botón). */

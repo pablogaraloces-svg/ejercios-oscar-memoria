@@ -116,7 +116,7 @@ export const Voice = {
     return pitch;
   },
 
-  say(text, { onEnd } = {}) {
+  say(text, { onEnd, onStart } = {}) {
     if (!enabled || typeof speechSynthesis === "undefined" || !text) {
       if (onEnd) onEnd();
       return;
@@ -127,6 +127,7 @@ export const Voice = {
     utter.rate = rate;
     utter.pitch = pitch;
     if (selectedVoice) utter.voice = selectedVoice;
+    if (onStart) utter.onstart = onStart;
     if (onEnd) utter.onend = onEnd;
     speechSynthesis.speak(utter);
   },

@@ -386,6 +386,27 @@ h1, h2, h3, p { margin: 0; }
   flex-shrink: 0;
   cursor: pointer;
   border: 3px solid var(--color-surface);
+  overflow: hidden;
+}
+.mascot-img {
+  width: 84%;
+  height: 84%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  transform-origin: 50% 62%;
+}
+/* Boca "hablando": ligero balanceo mientras suena la voz; nada complejo,
+   solo lo suficiente para transmitir que Cerebrín está hablando. */
+.mascot.talking .mascot-img { animation: mascotTalk 340ms ease-in-out infinite; }
+@keyframes mascotTalk {
+  0%, 100% { transform: scaleY(1) scaleX(1); }
+  50% { transform: scaleY(0.93) scaleX(1.03); }
+}
+.mascot.bounce.thinking-tilt { animation: mascotThinkTilt 2.4s ease-in-out infinite; }
+@keyframes mascotThinkTilt {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-6deg); }
 }
 .mascot.bounce { animation: mascotBounce 1.6s var(--ease-gentle) infinite; }
 @keyframes mascotBounce { 0%,100% { transform: translateY(0) rotate(0deg);} 50% { transform: translateY(-8px) rotate(-4deg);} }
@@ -658,10 +679,8 @@ h1, h2, h3, p { margin: 0; }
    En vertical reordenamos cabecera y mascota para aprovechar la altura,
    sin que aparezca nunca scroll lateral. */
 .session-body { align-items: flex-start; gap: var(--space-3); }
-.session-bubble-pos { align-self: flex-start; margin-left: 120px; }
 
 @media (orientation: portrait) {
-  .session-bubble-pos { margin-left: 0; align-self: center; }
   .top-bar { flex-wrap: wrap; row-gap: var(--space-2); }
   .session-body { flex-direction: column; align-items: center; }
   .mascot { width: 76px; height: 76px; font-size: 2.4rem; }
@@ -677,7 +696,7 @@ h1, h2, h3, p { margin: 0; }
 
 /* ---------- Pantalla de cierre de sesión ---------- */
 .closing-celebration { text-align: center; padding: 0 var(--space-3); }
-.closing-party-icon { font-size: 6rem; line-height: 1; margin-bottom: 6px; }
+.closing-party-icon { font-size: 5rem; line-height: 1; margin-bottom: 6px; }
 
 /* Nunca permitir que nada empuje scroll horizontal */
 img, canvas, svg, video { max-width: 100%; }
@@ -844,4 +863,70 @@ body.high-contrast .home-screen-bg { background: var(--color-bg); }
   background: var(--color-bg-soft);
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
+}
+
+/* ---------- Meteorología (portada) ---------- */
+.weather-widget {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  background: var(--gradient-surface);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-soft), var(--btn-bevel-ghost);
+  border: 1px solid rgba(233, 226, 212, 0.7);
+  animation: fadeIn var(--dur-slow) var(--ease-gentle);
+}
+.weather-icon { font-size: 2rem; line-height: 1; }
+.weather-temp { font-size: var(--font-lg); font-weight: 800; line-height: 1.1; }
+.weather-desc { font-size: var(--font-sm); color: var(--color-text-soft); }
+
+/* ---------- "Toca aquí" del ejercicio de diferencias ---------- */
+.spot-diff-touch {
+  font-weight: 800;
+  font-size: var(--font-sm);
+  color: var(--color-accent);
+  letter-spacing: 0.03em;
+  animation: spotDiffPulse 1.6s ease-in-out infinite;
+}
+@keyframes spotDiffPulse {
+  0%, 100% { opacity: 0.75; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
+/* ---------- Pantalla de inicio (splash) ---------- */
+.splash-screen { justify-content: center; }
+.splash-content { gap: var(--space-4); }
+.splash-mascot {
+  width: min(46vw, 300px);
+  height: auto;
+  filter: drop-shadow(0 18px 34px rgba(46, 54, 74, 0.18));
+  animation: splashIn 700ms var(--ease-spring) both;
+}
+@keyframes splashIn {
+  0% { opacity: 0; transform: scale(0.82) translateY(10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.splash-credit {
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--color-text-soft);
+  text-align: center;
+  animation: fadeIn var(--dur-slow) var(--ease-gentle) 300ms both;
+}
+
+/* ---------- Sesión: columna de Cerebrín + su globo ---------- */
+/* El globo vive SIEMPRE dentro de la columna de la mascota: así nunca
+   puede solaparse con el ejercicio, las imágenes ni los botones, y crece
+   verticalmente sin límite si el mensaje es largo. */
+.session-mascot-col {
+  width: 220px;
+  max-width: 32vw;
+}
+.session-mascot-col .speech-bubble {
+  width: 100%;
+  max-width: 100%;
+}
+@media (orientation: portrait) {
+  .session-mascot-col { width: 100%; max-width: 420px; }
 }

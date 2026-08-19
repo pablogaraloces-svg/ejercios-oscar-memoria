@@ -2,7 +2,7 @@
  * service-worker.js — Cache-first para uso 100% offline.
  * Sube CACHE_VERSION cuando se publiquen cambios para forzar actualización.
  */
-const CACHE_VERSION = "acompanante-v5";
+const CACHE_VERSION = "acompanante-v6";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -17,6 +17,7 @@ const CORE_ASSETS = [
   "./js/core/sounds.js",
   "./js/core/pdfExport.js",
   "./js/core/health.js",
+  "./js/core/weather.js",
   "./js/core/mascot.js",
   "./js/core/adaptiveDifficulty.js",
   "./js/core/hints.js",
@@ -32,6 +33,8 @@ const CORE_ASSETS = [
   "./js/exercises/familyPhotos.js",
   "./js/exercises/spotDifference.js",
   "./js/exercises/puzzleTools.js",
+  "./js/exercises/intruso.js",
+  "./js/exercises/compra.js",
   "./js/exercises/toolIcons.js",
   "./js/core/familyPhrase.js",
   "./js/exercises/index.js",
@@ -52,6 +55,7 @@ const CORE_ASSETS = [
   "./assets/icons/icon-512.png",
   "./assets/icons/icon-maskable-192.png",
   "./assets/icons/icon-maskable-512.png",
+  "./assets/mascot/cerebrin.png",
 ];
 
 self.addEventListener("install", (event) => {

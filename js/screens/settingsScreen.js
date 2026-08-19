@@ -458,7 +458,7 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
       })
     );
     wrap.appendChild(
-      switchRow("🐵 Mostrar mascota", s.mascotEnabled, async (v) => {
+      switchRow("🧠 Mostrar mascota", s.mascotEnabled, async (v) => {
         s.mascotEnabled = v;
         await DB.put("settings", s);
       })

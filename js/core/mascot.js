@@ -1,17 +1,10 @@
 /**
- * mascot.js — Mono/macaco simpático y discreto. Cambia de cara según
- * cómo le va a Óscar en el ejercicio: contento al acertar, animando
- * con cariño si falla, pensativo mientras espera respuesta.
+ * mascot.js — Cerebrín, la mascota oficial de la aplicación (sustituye al
+ * mono anterior). Usa la imagen real del personaje; las reacciones ya no
+ * cambian de "cara" (solo hay una imagen), sino que animan el conjunto
+ * mediante CSS: rebote, celebración, ánimo, señalar y, ahora, una
+ * animación sencilla de boca mientras habla por voz.
  */
-const FACES = {
-  idle: "🐵",
-  thinking: "🤔",
-  happy: "🙉",
-  veryHappy: "🐒",
-  encouraging: "🙈",
-  pointing: "🐵",
-};
-
 const TAP_ANIMATIONS = ["tap-spin", "tap-jump", "tap-wobble", "tap-grow"];
 const TAP_PHRASES = [
   "¡Hola! ¿Jugamos un rato?",
@@ -45,60 +38,48 @@ export class Mascot {
     this.root.classList.remove(...TAP_ANIMATIONS);
     void this.root.offsetWidth;
     this.root.classList.add(anim);
-    this.setFace(Math.random() > 0.5 ? "happy" : "veryHappy");
     clearTimeout(this.tapTimer);
-    this.tapTimer = setTimeout(() => {
-      this.root.classList.remove(anim);
-      this.setFace("idle");
-    }, 750);
+    this.tapTimer = setTimeout(() => this.root.classList.remove(anim), 750);
     if (this.bubble) {
       const phrase = TAP_PHRASES[Math.floor(Math.random() * TAP_PHRASES.length)].replace("{name}", this.name);
       this.say(phrase, { duration: 2200 });
     }
   }
 
-  setFace(face) {
-    if (this.root) this.root.textContent = FACES[face] || FACES.idle;
-  }
-
   idle() {
     this.root.className = "mascot bounce";
-    this.setFace("idle");
   }
 
   thinking() {
-    this.root.className = "mascot bounce";
-    this.setFace("thinking");
+    this.root.className = "mascot bounce thinking-tilt";
   }
 
   pointTo(direction) {
     this.root.className = `mascot bounce point-${direction}`;
-    this.setFace("pointing");
     clearTimeout(this.faceTimer);
-    this.faceTimer = setTimeout(() => {
-      this.root.className = "mascot bounce";
-      this.setFace("idle");
-    }, 1600);
+    this.faceTimer = setTimeout(() => (this.root.className = "mascot bounce"), 1600);
   }
 
   celebrate() {
     this.root.className = "mascot celebrate";
-    this.setFace(Math.random() > 0.5 ? "happy" : "veryHappy");
     clearTimeout(this.faceTimer);
-    this.faceTimer = setTimeout(() => {
-      this.root.className = "mascot bounce";
-      this.setFace("idle");
-    }, 1400);
+    this.faceTimer = setTimeout(() => (this.root.className = "mascot bounce"), 1400);
   }
 
   encourage() {
     this.root.className = "mascot bounce shake-soft";
-    this.setFace("encouraging");
     clearTimeout(this.faceTimer);
-    this.faceTimer = setTimeout(() => {
-      this.root.className = "mascot bounce";
-      this.setFace("idle");
-    }, 1400);
+    this.faceTimer = setTimeout(() => (this.root.className = "mascot bounce"), 1400);
+  }
+
+  /** Se llama cuando empieza a sonar la voz: anima la boca mientras habla. */
+  startTalking() {
+    this.root?.classList.add("talking");
+  }
+
+  /** Se llama cuando termina la voz (o no hay voz activada): vuelve al reposo. */
+  stopTalking() {
+    this.root?.classList.remove("talking");
   }
 
   say(text, { duration = 4200 } = {}) {

@@ -18,19 +18,21 @@ export function burstConfetti(count = 24) {
 const CELEBRATION_EMOJIS = ["⭐", "🎉", "💛", "✨", "🌟", "👏"];
 
 /**
- * Celebración más emotiva: un emoji grande "explota" en el centro y
- * pequeñas partículas salen volando hacia fuera. Pensado para reforzar
- * el acierto de forma cálida, sin resultar excesivo.
+ * Celebración más emotiva: un emoji grande "explota" y pequeñas partículas
+ * salen volando hacia fuera. Por defecto se centra en la pantalla, pero
+ * admite anclarse a un punto concreto (p.ej. más abajo, para no tapar
+ * nunca un texto ya centrado, como en la pantalla de cierre de sesión).
  */
-export function celebrateSuccess({ big = "🎉", particles = 10 } = {}) {
+export function celebrateSuccess({ big = "🎉", particles = 10, anchorY = null } = {}) {
   const burst = document.createElement("div");
   burst.className = "success-burst";
   burst.textContent = big;
+  if (anchorY !== null) burst.style.top = `${anchorY}px`;
   document.body.appendChild(burst);
   setTimeout(() => burst.remove(), 1100);
 
   const cx = window.innerWidth / 2;
-  const cy = window.innerHeight / 2;
+  const cy = anchorY !== null ? anchorY : window.innerHeight / 2;
   for (let i = 0; i < particles; i++) {
     const p = document.createElement("div");
     p.className = "success-particle";

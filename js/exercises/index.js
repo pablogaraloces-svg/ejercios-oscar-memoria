@@ -6,6 +6,8 @@ import { generateAnimalExercise } from "./animals.js";
 import { generateFamilyPhotoExercise } from "./familyPhotos.js";
 import { generateDifferencesExercise } from "./spotDifference.js";
 import { generatePuzzleExercise } from "./puzzleTools.js";
+import { generateIntrusoExercise } from "./intruso.js";
+import { generateCompraExercise } from "./compra.js";
 import { getLevel } from "../core/adaptiveDifficulty.js";
 
 const GENERATORS = {
@@ -16,6 +18,8 @@ const GENERATORS = {
   animales: generateAnimalExercise,
   diferencias: generateDifferencesExercise,
   herramientas: generatePuzzleExercise,
+  intruso: generateIntrusoExercise,
+  compra: generateCompraExercise,
 };
 
 export const ALL_CATEGORIES = [
@@ -26,6 +30,8 @@ export const ALL_CATEGORIES = [
   "animales",
   "diferencias",
   "herramientas",
+  "intruso",
+  "compra",
   "fotos",
 ];
 
@@ -37,6 +43,8 @@ export const CATEGORY_LABELS = {
   animales: "Animales",
   diferencias: "Diferencias",
   herramientas: "Herramientas",
+  intruso: "El intruso",
+  compra: "La compra",
   fotos: "Familia",
 };
 
@@ -45,23 +53,24 @@ export const CATEGORY_LABELS = {
  * categorías (evita dos seguidas iguales) y respetando el nivel
  * adaptativo guardado por categoría para este perfil.
  *
- * IMPORTANTE: "fotos" (reconocimiento familiar) y "herramientas" (puzle) no
- * se pueden elegir/desmarcar durante la configuración inicial (una porque
- * depende de fotos que aún no existen en ese momento, la otra por ser una
- * incorporación posterior). Por eso aquí se incluyen SIEMPRE de forma
- * automática cuando corresponda, en vez de depender de
+ * IMPORTANTE: "fotos" (reconocimiento familiar), "herramientas" (puzle),
+ * "intruso" y "compra" no se pueden elegir/desmarcar durante la
+ * configuración inicial (son incorporaciones posteriores, o dependen de
+ * fotos que aún no existen en ese momento). Por eso aquí se incluyen
+ * SIEMPRE de forma automática cuando corresponda, en vez de depender de
  * profile.enabledCategories — si no, nunca llegarían a aparecer en la
  * rotación de ejercicios aunque la familia ya hubiera cargado fotos.
  */
 export async function buildSessionExercises(profile, count = 20) {
   const hasFamily = !!(profile.family && profile.family.length >= 2);
+  const ALWAYS_ON = ["herramientas", "intruso", "compra"];
 
   const baseCategories = (profile.enabledCategories && profile.enabledCategories.length
     ? profile.enabledCategories
     : ALL_CATEGORIES
-  ).filter((c) => c !== "fotos" && c !== "herramientas");
+  ).filter((c) => c !== "fotos" && !ALWAYS_ON.includes(c));
 
-  const enabledCategories = [...baseCategories, "herramientas", ...(hasFamily ? ["fotos"] : [])];
+  const enabledCategories = [...baseCategories, ...ALWAYS_ON, ...(hasFamily ? ["fotos"] : [])];
 
   const exercises = [];
   let lastCategory = null;
@@ -82,14 +91,19 @@ export async function buildSessionExercises(profile, count = 20) {
     return category;
   }
 
-  // Posiciones garantizadas para que "fotos" (si hay familia cargada) y
-  // "herramientas" formen parte SIEMPRE de la sesión, no solo por azar.
+  // Posiciones garantizadas para que "fotos" (si hay familia cargada) y el
+  // resto de categorías siempre activas formen parte SIEMPRE de la sesión,
+  // no solo por azar.
   const forcedSlots = {};
   if (hasFamily) {
-    forcedSlots[Math.floor(count * 0.25)] = "fotos";
-    if (count >= 10) forcedSlots[Math.floor(count * 0.7)] = "fotos";
+    forcedSlots[Math.floor(count * 0.2)] = "fotos";
+    if (count >= 10) forcedSlots[Math.floor(count * 0.65)] = "fotos";
   }
-  forcedSlots[Math.floor(count * 0.5)] = forcedSlots[Math.floor(count * 0.5)] || "herramientas";
+  const spare = [Math.floor(count * 0.35), Math.floor(count * 0.5), Math.floor(count * 0.85)];
+  ALWAYS_ON.forEach((cat, i) => {
+    const slot = spare[i];
+    if (slot !== undefined && forcedSlots[slot] === undefined) forcedSlots[slot] = cat;
+  });
 
   for (let i = 0; i < count; i++) {
     const category = pickCategory(forcedSlots[i]);

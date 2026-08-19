@@ -71,7 +71,10 @@ export class SessionRunner {
     this.bubbleEl.textContent = text;
     this.bubbleEl.classList.remove("hidden");
     this.bubbleEl.classList.add("fade-in");
-    Voice.say(text);
+    Voice.say(text, {
+      onStart: () => this.mascot.startTalking(),
+      onEnd: () => this.mascot.stopTalking(),
+    });
   }
 
   /** Habla `spoken` (si existe) pero muestra `visible` en la burbuja de texto. */
@@ -79,7 +82,10 @@ export class SessionRunner {
     this.bubbleEl.textContent = visible;
     this.bubbleEl.classList.remove("hidden");
     this.bubbleEl.classList.add("fade-in");
-    Voice.say(spoken || visible);
+    Voice.say(spoken || visible, {
+      onStart: () => this.mascot.startTalking(),
+      onEnd: () => this.mascot.stopTalking(),
+    });
   }
 
   updateProgress() {
@@ -93,6 +99,17 @@ export class SessionRunner {
     clearTimeout(this._advanceTimer);
     if (this.stepIndex < this.steps.length - 1) {
       this.stepIndex++;
+      this.renderStep();
+    }
+  }
+
+  /** Vuelve al paso inmediatamente anterior de la sesión (ejercicio, saludo,
+   * recordatorios...), reutilizando el mismo render que usa "siguiente". */
+  back() {
+    this.clearInactivityTimer();
+    clearTimeout(this._advanceTimer);
+    if (this.stepIndex > 0) {
+      this.stepIndex--;
       this.renderStep();
     }
   }
@@ -322,8 +339,7 @@ export class SessionRunner {
     if (ex.kind !== "memory_recall") {
       const header = document.createElement("div");
       header.className = "col";
-      header.innerHTML = `<span class="pill" style="align-self:flex-start;">${catLabel}</span>
-        <h2 class="title-xl" style="margin-top:8px;">${ex.prompt}</h2>`;
+      header.innerHTML = `<span class="pill" style="align-self:flex-start;">${catLabel}</span>`;
       this.contentEl.appendChild(header);
       this.sayVisibleVsSpoken(transition + ex.prompt, transition + (ex.spokenPrompt || ex.prompt));
     } else {
@@ -583,7 +599,15 @@ export class SessionRunner {
     labels.className = "row";
     labels.style.justifyContent = "center";
     labels.style.gap = "40px";
-    labels.innerHTML = `<span class="pill">Imagen A</span><span class="pill">Imagen B — toca aquí</span>`;
+    labels.innerHTML = `
+      <div class="col center" style="gap:4px;">
+        <span class="pill">Imagen 1</span>
+      </div>
+      <div class="col center" style="gap:4px;">
+        <span class="pill">Imagen 2</span>
+        <span class="spot-diff-touch">TOCA AQUÍ</span>
+      </div>
+    `;
     wrap.appendChild(labels);
 
     const panels = document.createElement("div");
@@ -686,7 +710,9 @@ export class SessionRunner {
       <h2 class="title-xl" style="text-align:center;">${text}</h2>`;
     this.say(text);
     burstConfetti(36);
-    celebrateSuccess({ big: "🏆" });
+    // La copa se ancla más abajo del centro para no tapar nunca el
+    // mensaje de felicitación, que ya ocupa el centro de la pantalla.
+    celebrateSuccess({ big: "🏆", anchorY: window.innerHeight * 0.74 });
 
     const accuracy = this.stats.total ? this.stats.correct / this.stats.total : 0;
     const endedAt = Date.now();

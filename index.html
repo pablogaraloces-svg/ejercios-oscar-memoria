@@ -14,11 +14,11 @@
 <body>
 <div id="app">
 
-  <!-- Pantalla de carga -->
-  <section class="screen active" id="screen-loading">
-    <div class="col center grow">
-      <div class="mascot bounce" style="width:140px;height:140px;font-size:4.4rem;">🐵</div>
-      <p class="title-lg" style="margin-top:24px;">Preparando todo con cariño…</p>
+  <!-- Pantalla de inicio: Cerebrín a pantalla completa, ~3s, con sonido de bienvenida -->
+  <section class="screen active home-screen-bg splash-screen" id="screen-loading">
+    <div class="col center grow splash-content">
+      <img src="assets/mascot/cerebrin.png" alt="Cerebrín" class="splash-mascot" />
+      <p class="splash-credit">Diseñado y programado por Pablo Garaloces · 2026</p>
     </div>
   </section>
 
@@ -31,10 +31,17 @@
   <section class="screen home-screen-bg" id="screen-home">
     <div class="top-bar">
       <div class="row">
-        <div class="mascot bounce" id="home-mascot">🐵</div>
+        <div class="mascot bounce" id="home-mascot"><img src="assets/mascot/cerebrin.png" alt="Cerebrín" class="mascot-img" /></div>
         <div class="col" style="gap:2px;">
           <h1 class="title-huge" id="home-time">--:--</h1>
           <p class="text-md" id="home-date" style="text-transform:capitalize;"></p>
+        </div>
+      </div>
+      <div class="weather-widget hidden" id="home-weather">
+        <span class="weather-icon" id="weather-icon">🌤️</span>
+        <div class="col" style="gap:0;">
+          <span class="weather-temp" id="weather-temp">--°</span>
+          <span class="weather-desc" id="weather-desc"></span>
         </div>
       </div>
     </div>
@@ -88,12 +95,12 @@
       <span class="pill" id="session-step-label">1 / 8</span>
     </div>
     <div class="row grow session-body">
-      <div class="col" style="align-items:center; gap:8px; flex-shrink:0;">
-        <div class="mascot bounce" id="session-mascot">🐵</div>
+      <div class="col session-mascot-col" style="align-items:center; gap:10px; flex-shrink:0;">
+        <div class="mascot bounce" id="session-mascot"><img src="assets/mascot/cerebrin.png" alt="Cerebrín" class="mascot-img" /></div>
+        <div id="session-bubble" class="speech-bubble hidden"></div>
       </div>
       <div id="session-content" class="col grow fade-in" style="justify-content:center;"></div>
     </div>
-    <div id="session-bubble" class="speech-bubble hidden session-bubble-pos"></div>
   </section>
 
   <!-- Informes -->
@@ -143,7 +150,7 @@
   <!-- Modal de confirmación de salida -->
   <div class="modal-backdrop" id="exit-modal">
     <div class="modal-box">
-      <div style="font-size:3.2rem;">🐵</div>
+      <img src="assets/mascot/cerebrin.png" alt="Cerebrín" style="width:80px; height:auto; margin:0 auto;" />
       <h2 class="title-lg">¿Quieres salir por ahora?</h2>
       <p class="text-base" style="margin:16px 0 28px;">Hemos guardado todo tu progreso. Puedes volver cuando quieras, aquí te espero.</p>
       <div class="row center" style="gap:16px;">

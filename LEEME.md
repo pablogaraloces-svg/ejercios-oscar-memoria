@@ -77,6 +77,55 @@ ni sustituir ninguna pantalla, ejercicio ni sistema que ya funcionaba.
   separado, nunca mezclados, pensado para poder consultarse o mostrarse a
   un médico.
 
+## 🆕 Novedades de la versión 7 (Cerebrín + nuevos ejercicios)
+
+**Cerebrín, la nueva mascota oficial**
+- Sustituye por completo al mono anterior en toda la aplicación (sesión,
+  portada, pantalla de inicio, modal de salida, configuración inicial).
+- Ya no hay texto grande duplicado arriba repitiendo lo que dice la
+  mascota: el mensaje vive únicamente en el globo de diálogo de Cerebrín.
+- El globo ahora sale de su propia columna, junto a Cerebrín — nunca
+  puede solaparse con el ejercicio, las imágenes ni los botones, y crece
+  verticalmente sin romper el diseño si el mensaje es largo.
+- Boca animada mientras habla por voz (sincronizada con el propio sistema
+  de texto a voz) y en reposo cuando termina.
+- Animación de "pensando" propia al empezar cada ejercicio.
+
+**Pantalla de inicio nueva**
+- Cerebrín a pantalla completa, centrado, con el crédito "Diseñado y
+  programado por Pablo Garaloces · 2026" debajo. Dura ~3 segundos,
+  preparando la app en segundo plano, con una transición final suave
+  (sin pantalla negra ni saltos).
+- Pequeña melodía de bienvenida (se salta silenciosamente, sin errores,
+  si el navegador bloquea el sonido automático).
+
+**Página principal**
+- Nuevo bloque de meteorología (icono, temperatura y descripción sencilla)
+  integrado junto al reloj. Usa la ubicación del dispositivo si se
+  autoriza y un servicio meteorológico sin necesidad de clave de API; si
+  no hay datos disponibles, simplemente se oculta sin afectar al resto de
+  la aplicación.
+
+**Navegación corregida**
+- El botón de volver atrás de los ejercicios ahora vuelve siempre al paso
+  inmediatamente anterior de la sesión (no al principio de la app).
+
+**Ejercicios**
+- Mensaje de espera por inactividad simplificado a "Tranquilo, tómate tu
+  tiempo."
+- La animación de la copa final ya no se superpone al texto de
+  felicitación: se ancla más abajo y es ligeramente más pequeña.
+- El ejercicio de "encuentra las diferencias" ahora dice claramente
+  "Imagen 1" / "Imagen 2" y "TOCA AQUÍ" en vez de letras A/B.
+- **Nuevo ejercicio "El intruso"**: 4 imágenes, 3 de una misma categoría
+  (animales, cocina, herramientas, frutas, transporte) y 1 que no
+  pertenece al grupo.
+- **Nuevo ejercicio "La compra"**: Cerebrín dice qué hay que comprar
+  ("Hoy vamos a comprar leche") y Óscar elige el producto correcto entre
+  varios cotidianos.
+- Ambos ejercicios nuevos usan exactamente el mismo sistema visual,
+  botones, voz y resultados que el resto — no son una interfaz aparte.
+
 ## 🎨 Rediseño visual profesional (sistema de diseño v2)
 
 Revisión completa del aspecto visual, sin tocar ni una sola línea de lógica,

@@ -2,6 +2,7 @@ import { DB } from "./core/db.js";
 import { DEFAULT_SETTINGS } from "./core/state.js";
 import { Voice } from "./core/voice.js";
 import { Music } from "./core/music.js";
+import { Sounds } from "./core/sounds.js";
 import { Mascot } from "./core/mascot.js";
 import { renderOnboarding } from "./screens/onboarding.js";
 import { SessionRunner } from "./screens/session.js";
@@ -10,6 +11,7 @@ import { renderFamily, openAddFamilyModal, openEditFamilyModal } from "./screens
 import { renderReports, exportReportPdf } from "./screens/reportsScreen.js";
 import { renderHealth } from "./screens/healthScreen.js";
 import { getCurrentTimeText, getCurrentDateText } from "./core/phrases.js";
+import { getWeather } from "./core/weather.js";
 
 const screens = {};
 document.querySelectorAll(".screen").forEach((el) => (screens[el.id] = el));
@@ -47,6 +49,20 @@ function primeMusicOnFirstTouch() {
 document.addEventListener("pointerdown", primeMusicOnFirstTouch);
 
 async function boot() {
+  // La pantalla de inicio (Cerebrín) se muestra un mínimo de ~3s mientras
+  // se prepara todo en segundo plano, para una transición fluida sin
+  // pantalla negra ni contenido a medio cargar.
+  const minSplashTime = new Promise((resolve) => setTimeout(resolve, 3000));
+
+  // Sonido de bienvenida: si el navegador bloquea el autoplay (lo normal
+  // en una primera carga sin gesto previo del usuario), simplemente no
+  // suena — nunca debe romper el arranque de la aplicación.
+  try {
+    Sounds.playWelcome();
+  } catch (err) {
+    console.warn("Sonido de bienvenida no disponible:", err);
+  }
+
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./service-worker.js").catch(() => {});
   }
@@ -60,18 +76,28 @@ async function boot() {
   ctx.settings = settings;
   applySettings(settings);
 
+  let reveal;
   if (profiles.length === 0) {
-    showScreen("screen-onboarding");
-    renderOnboarding(document.getElementById("onboarding-root"), (profile, newSettings) => {
-      ctx.profile = profile;
-      ctx.settings = newSettings;
-      applySettings(newSettings);
-      goHome();
-    });
+    reveal = () => {
+      showScreen("screen-onboarding");
+      renderOnboarding(document.getElementById("onboarding-root"), (profile, newSettings) => {
+        ctx.profile = profile;
+        ctx.settings = newSettings;
+        applySettings(newSettings);
+        goHome();
+      });
+    };
   } else {
     ctx.profile = profiles[0];
-    goHome();
+    reveal = () => goHome();
   }
+
+  // Todo lo necesario ya está preparado; ahora solo falta esperar a que
+  // se cumpla el tiempo mínimo de la pantalla de inicio antes de revelar
+  // la siguiente pantalla (el propio sistema de pantallas ya hace un fade
+  // suave al cambiar de "active").
+  await minSplashTime;
+  reveal();
 }
 
 // Las instancias de mascota se crean UNA sola vez (no en cada sesión) para
@@ -94,6 +120,26 @@ function goHome() {
   updateHomeClock();
   homeMascot.setName(ctx.profile.name);
   showScreen("screen-home");
+  loadHomeWeather();
+}
+
+let weatherLoaded = false;
+function loadHomeWeather() {
+  // Se pide una sola vez por sesión de uso de la app (se cachea internamente
+  // además), y nunca bloquea ni interfiere si no hay datos disponibles.
+  if (weatherLoaded) return;
+  weatherLoaded = true;
+  getWeather().then((data) => {
+    const widget = document.getElementById("home-weather");
+    if (!data) {
+      widget.classList.add("hidden");
+      return;
+    }
+    document.getElementById("weather-icon").textContent = data.icon;
+    document.getElementById("weather-temp").textContent = `${data.temp}°`;
+    document.getElementById("weather-desc").textContent = data.label;
+    widget.classList.remove("hidden");
+  });
 }
 
 /* ---------------- Sesión diaria ---------------- */
@@ -119,7 +165,15 @@ document.getElementById("btn-start-session").addEventListener("click", () => {
 });
 
 document.getElementById("btn-session-back").addEventListener("click", () => {
-  goHome();
+  // Vuelve siempre a la pantalla/ejercicio inmediatamente anterior dentro
+  // de la sesión (no al principio de la app), salvo que ya estemos en el
+  // primer paso, en cuyo caso "atrás" significa salir a la pantalla
+  // principal — ahí no hay ningún paso anterior al que volver.
+  if (sessionRunner && sessionRunner.stepIndex > 0) {
+    sessionRunner.back();
+  } else {
+    goHome();
+  }
 });
 
 /* ---------------- Familia (Óscar: solo ver / Administración: editable) ---------------- */

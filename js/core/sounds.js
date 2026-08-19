@@ -67,4 +67,8 @@ export const Sounds = {
   playSoftError() {
     blip(300, 220, 0.25, "sine");
   },
+  /** Melodía muy corta y alegre para la pantalla de inicio (una sola vez). */
+  playWelcome() {
+    [392, 523, 659, 784].forEach((f, i) => setTimeout(() => blip(f, f, 0.22, "triangle"), i * 110));
+  },
 };
