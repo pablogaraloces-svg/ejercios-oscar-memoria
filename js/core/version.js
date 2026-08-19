@@ -8,4 +8,4 @@
  * mirar la pantalla de inicio, se sabe exactamente qué versión hay
  * instalada en la tablet.
  */
-export const APP_VERSION = "10";
+export const APP_VERSION = "11";

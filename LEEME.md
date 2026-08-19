@@ -104,6 +104,49 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 11 (correcciones de detalle y ajuste fino)
+
+**Familia**
+- Corregido un fallo real de rendimiento: el scroll de la pantalla iba
+  lento y tardaba en reaccionar porque `touch-action: none` (pensado solo
+  para el icono de arrastre ⠿) se estaba aplicando sin querer a toda la
+  tarjeta, desactivando el gesto de scroll nativo del navegador en
+  cualquier punto que se tocara. Ya solo afecta al asa de arrastre.
+- El título "Mi familia" / "Editar familia" ha salido de la barra
+  superior (que ahora solo tiene los botones) y es ahora un titular
+  propio, grande, centrado arriba, con un sutil degradado de color en el
+  propio texto.
+
+**Portada**
+- Añadida la versión de la aplicación justo debajo del crédito de
+  autoría, alineada con él por la izquierda, mismo gris, un punto de
+  letra más grande.
+
+**Pantalla "Estoy listo"**
+- El saludo de arriba y el calendario de abajo ahora comparten el mismo
+  eje central (antes el botón "Estoy listo" al lado del calendario
+  desplazaba su centro visual). El botón ahora "flota" a la derecha sin
+  descentrar nada.
+
+**"Antes de seguir"**
+- El botón "Seguir" se ha subido un poco para que el brillo de su
+  parpadeo no invada visualmente la lista de recordatorios de justo
+  debajo.
+
+**Pantalla final**
+- Sustituida la copa por Cerebrín a buen tamaño, despidiéndose con una
+  entrada animada suave — una despedida más elegante y sutil.
+
+**Icono de la aplicación**
+- Corregido de verdad esta vez: en vez de recomponer un diseño nuevo, se
+  ha adaptado el diseño ORIGINAL (el que se subió al proyecto, con su
+  tarjeta y el texto "CEREBRÍN") extendiendo matemáticamente sus propios
+  colores hacia las esquinas transparentes mediante relleno por vecino
+  más cercano + un desenfoque suave solo en esa zona extendida — sin
+  tocar ni un píxel del diseño original en sí. El resultado es un icono
+  a sangre completa, sin ninguna costura visible, que respeta al 100% la
+  identidad visual original.
+
 ## 🆕 Novedades de la versión 10 (calendario, diferencias, familia y transiciones)
 
 **Calendario de "Estoy listo"**

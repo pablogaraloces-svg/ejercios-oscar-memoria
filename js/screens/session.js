@@ -799,13 +799,11 @@ export class SessionRunner {
     const box = document.createElement("div");
     box.className = "col center grow closing-celebration";
     const text = applyNameBudget(pickClosing(), this.profile.name, this._nameBudget);
-    box.innerHTML = `<div class="closing-party-icon">🎉</div>
+    box.innerHTML = `
+      <img src="assets/mascot/cerebrin.png" alt="Cerebrín" class="closing-mascot" />
       <h2 class="title-xl" style="text-align:center;">${text}</h2>`;
     this.say(text);
     burstConfetti(36);
-    // La copa se ancla más abajo del centro para no tapar nunca el
-    // mensaje de felicitación, que ya ocupa el centro de la pantalla.
-    celebrateSuccess({ big: "🏆", anchorY: window.innerHeight * 0.74 });
 
     const accuracy = this.stats.total ? this.stats.correct / this.stats.total : 0;
     const endedAt = Date.now();

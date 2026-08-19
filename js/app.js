@@ -118,6 +118,8 @@ const homeMascot = new Mascot(document.getElementById("home-mascot"), null);
 
 const versionEl = document.getElementById("splash-version");
 if (versionEl) versionEl.textContent = `Versión ${APP_VERSION}`;
+const homeVersionEl = document.getElementById("home-version");
+if (homeVersionEl) homeVersionEl.textContent = `Versión ${APP_VERSION}`;
 const sessionMascot = new Mascot(document.getElementById("session-mascot"), document.getElementById("session-bubble"));
 
 // Portada: en vez de una frase fija, se muestra la hora y la fecha reales

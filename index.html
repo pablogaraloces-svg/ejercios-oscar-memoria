@@ -57,7 +57,10 @@
       </button>
     </div>
     <p class="text-md" style="text-align:center;">Estoy aquí para acompañarte, sin prisa. 💛</p>
-    <p class="home-credit">© Diseñado y programado por Pablo Garaloces 2026</p>
+    <div class="home-credit-block">
+      <p class="home-credit">© Diseñado y programado por Pablo Garaloces 2026</p>
+      <p class="home-version" id="home-version"></p>
+    </div>
   </section>
 
   <!-- Botón discreto de administración (solo familia, con contraseña) -->
@@ -126,9 +129,10 @@
   <section class="screen" id="screen-family">
     <div class="top-bar">
       <button class="btn btn-icon btn-ghost" id="btn-family-back" aria-label="Volver">←</button>
-      <h2 class="title-lg" id="family-title">Mi familia</h2>
+      <div style="width:88px;"></div>
       <button class="btn btn-accent hidden" id="btn-add-family">➕ Añadir</button>
     </div>
+    <h2 class="family-title-elegant" id="family-title">Mi familia</h2>
     <div id="family-root" class="col grow" style="gap:16px; overflow-y:auto;"></div>
   </section>
 
