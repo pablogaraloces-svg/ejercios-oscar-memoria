@@ -508,9 +508,9 @@ export class SessionRunner {
 
   renderPhotoChoice(ex, hintFlow) {
     const photoBox = document.createElement("div");
-    photoBox.className = "col center";
+    photoBox.className = "col center family-photo-stage";
     photoBox.style.marginTop = "12px";
-    photoBox.innerHTML = `<img src="${ex.photo}" alt="Foto familiar" style="width:220px;height:220px;object-fit:cover;border-radius:28px;box-shadow:var(--shadow-lift);" />`;
+    photoBox.innerHTML = `<img src="${ex.photo}" alt="Foto familiar" class="family-photo-elevated" />`;
     this.contentEl.appendChild(photoBox);
     this.renderChoice(ex, hintFlow, { compact: true });
   }

@@ -49,10 +49,20 @@ function primeMusicOnFirstTouch() {
 document.addEventListener("pointerdown", primeMusicOnFirstTouch);
 
 async function boot() {
-  // La pantalla de inicio (Cerebrín) se muestra un mínimo de ~3s mientras
-  // se prepara todo en segundo plano, para una transición fluida sin
-  // pantalla negra ni contenido a medio cargar.
-  const minSplashTime = new Promise((resolve) => setTimeout(resolve, 3000));
+  // Secuencia de la pantalla de inicio: entrada animada de Cerebrín →
+  // pequeña pausa en su pose final → despedida → se revela la app. La
+  // duración exacta no es lo importante — lo importante es que se vea
+  // fluida, aunque dure algo más de 3 segundos.
+  const ENTRANCE_MS = 1400;
+  const PAUSE_MS = 1100;
+  const EXIT_MS = 750;
+  const splashSequence = new Promise((resolve) => {
+    setTimeout(() => {
+      document.querySelector(".splash-mascot")?.classList.add("exiting");
+      document.querySelector(".splash-credit")?.classList.add("exiting");
+      setTimeout(resolve, EXIT_MS);
+    }, ENTRANCE_MS + PAUSE_MS);
+  });
 
   // Sonido de bienvenida: si el navegador bloquea el autoplay (lo normal
   // en una primera carga sin gesto previo del usuario), simplemente no
@@ -93,10 +103,10 @@ async function boot() {
   }
 
   // Todo lo necesario ya está preparado; ahora solo falta esperar a que
-  // se cumpla el tiempo mínimo de la pantalla de inicio antes de revelar
-  // la siguiente pantalla (el propio sistema de pantallas ya hace un fade
-  // suave al cambiar de "active").
-  await minSplashTime;
+  // termine la secuencia visual de Cerebrín (entrada + pausa + despedida)
+  // antes de revelar la siguiente pantalla (el propio sistema de
+  // pantallas ya hace un fundido suave al cambiar de "active").
+  await splashSequence;
   reveal();
 }
 
@@ -123,23 +133,31 @@ function goHome() {
   loadHomeWeather();
 }
 
-let weatherLoaded = false;
+let weatherRequestInFlight = false;
 function loadHomeWeather() {
-  // Se pide una sola vez por sesión de uso de la app (se cachea internamente
-  // además), y nunca bloquea ni interfiere si no hay datos disponibles.
-  if (weatherLoaded) return;
-  weatherLoaded = true;
-  getWeather().then((data) => {
-    const widget = document.getElementById("home-weather");
-    if (!data) {
-      widget.classList.add("hidden");
-      return;
-    }
-    document.getElementById("weather-icon").textContent = data.icon;
-    document.getElementById("weather-temp").textContent = `${data.temp}°`;
-    document.getElementById("weather-desc").textContent = data.label;
-    widget.classList.remove("hidden");
-  });
+  // Se evita lanzar dos peticiones a la vez, pero SÍ se reintenta cada vez
+  // que se vuelve a la portada (el propio módulo de meteorología ya
+  // cachea internamente 20 minutos, así que esto no supone pedir permiso
+  // ni hacer red de más). Antes, un único fallo inicial (permiso aún no
+  // concedido, GPS lento...) dejaba el bloque oculto para siempre; ahora
+  // se puede recuperar solo con volver a la pantalla principal.
+  if (weatherRequestInFlight) return;
+  weatherRequestInFlight = true;
+  getWeather()
+    .then((data) => {
+      const widget = document.getElementById("home-weather");
+      if (!data) {
+        widget.classList.add("hidden");
+        return;
+      }
+      document.getElementById("weather-icon").textContent = data.icon;
+      document.getElementById("weather-temp").textContent = `${data.temp}°`;
+      document.getElementById("weather-desc").textContent = data.label;
+      widget.classList.remove("hidden");
+    })
+    .finally(() => {
+      weatherRequestInFlight = false;
+    });
 }
 
 /* ---------------- Sesión diaria ---------------- */

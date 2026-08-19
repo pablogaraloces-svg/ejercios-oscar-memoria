@@ -2,7 +2,7 @@
  * service-worker.js — Cache-first para uso 100% offline.
  * Sube CACHE_VERSION cuando se publiquen cambios para forzar actualización.
  */
-const CACHE_VERSION = "acompanante-v6";
+const CACHE_VERSION = "acompanante-v7";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -75,6 +75,33 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+
+  // El documento HTML principal (la "carcasa" de la app, incluida la
+  // pantalla de inicio de Cerebrín) se sirve SIEMPRE con estrategia
+  // "red primero": así, en cuanto hay conexión, se ve de inmediato la
+  // versión más reciente en vez de una copia cacheada antigua — que es
+  // justo lo que causaba que a veces se viera brevemente una pantalla de
+  // precarga de una versión anterior antes de que el nuevo Service Worker
+  // tomara el control. Si no hay red, se cae automáticamente al caché
+  // (offline sigue funcionando igual que antes).
+  const isDocumentRequest =
+    event.request.mode === "navigate" || event.request.url.endsWith("/index.html") || event.request.url.endsWith("/");
+
+  if (isDocumentRequest) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match("./index.html")))
+    );
+    return;
+  }
+
+  // Todo lo demás (JS, CSS, imágenes...) sigue con caché primero, para un
+  // arranque instantáneo y funcionamiento 100% offline.
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;

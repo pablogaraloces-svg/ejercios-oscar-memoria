@@ -77,6 +77,60 @@ ni sustituir ninguna pantalla, ejercicio ni sistema que ya funcionaba.
   separado, nunca mezclados, pensado para poder consultarse o mostrarse a
   un médico.
 
+## 🆕 Novedades de la versión 8 (inicio, Cerebrín vivo, familia y climatología)
+
+**Pantalla de inicio: causa raíz corregida**
+- Encontrado y corregido el motivo real de que a veces se vieran pantallas
+  antiguas antes de Cerebrín: el Service Worker servía el HTML principal
+  en modo "caché primero" para todo, incluido el propio documento. Ahora
+  el documento HTML se sirve siempre en modo "red primero" (con caché
+  como respaldo si no hay conexión), así que la app carga siempre la
+  versión más reciente desde el primer instante — no era un problema de
+  "tapar" nada, sino de qué versión se estaba sirviendo.
+- Secuencia de entrada/pausa/salida de Cerebrín: aparece con un suave
+  acercamiento, hace un pequeño balanceo (simulando saludo), se asienta en
+  su pose oficial (pulgar arriba), una pequeña pausa, y una despedida
+  animada antes de pasar a la página principal — todo por transform y
+  opacity (ligero para la tablet). La duración prioriza la fluidez sobre
+  cumplir exactamente 3 segundos.
+- Nuevo sonido de bienvenida: un colchón cálido de fondo + un pequeño
+  destello mágico ascendente, en vez del pitido anterior.
+
+**Cerebrín, más vivo**
+- Halo/onda de voz detrás de Cerebrín mientras habla: dos anillos que se
+  expanden y desvanecen en bucle, sutiles y semitransparentes, que
+  desaparecen en cuanto deja de hablar. Reutiliza el mismo estado que ya
+  activaba la animación de la boca, sin tocar el sistema de voz.
+- Globo de diálogo ahora se adapta de verdad al contenido: compacto si el
+  mensaje es corto, crece (y ajusta el texto) si es largo, sin desbordarse
+  nunca. Tipografía algo más cálida sin sacrificar legibilidad.
+
+**Ejercicio de familia**
+- La fotografía ahora se presenta sobre un "escenario" con degradado
+  sutil y sombra ambiental (inspirado en interfaces tipo Apple), dando
+  sensación de profundidad. La foto sigue siendo la protagonista.
+
+**Página principal**
+- **Corregido un fallo real** por el que la climatología nunca llegaba a
+  aparecer: la aplicación solo lo intentaba una vez por sesión y, si ese
+  primer intento fallaba (permiso aún no concedido, GPS lento…), se
+  quedaba oculta para siempre. Ahora se reintenta cada vez que se vuelve
+  a la portada, sin pedir permisos de más gracias a la caché interna de
+  20 minutos ya existente. Los datos siguen siendo reales (Open-Meteo +
+  ubicación del dispositivo), nunca simulados.
+- El botón "Mi familia" ahora tiene su propia animación de respiración,
+  igual de discreta que la de "Empezar el ratito de hoy" pero con un
+  ritmo y un desfase distintos, para que nunca "respiren" los dos a la
+  vez.
+
+**Una honestidad técnica**: la mascota es una única imagen estática (no
+hay fotogramas separados de ojos cerrados o distintas sonrisas), así que
+el "parpadeo" y el "cambio de sonrisa" de la entrada no están animados
+literalmente — en su lugar, la sensación de vida se consigue con el
+balanceo de brazo/cuerpo, el acercamiento y el asentamiento final. Si en
+algún momento se genera una versión de Cerebrín con los ojos en una capa
+separada, se podría añadir un parpadeo real sin tocar el resto.
+
 ## 🆕 Novedades de la versión 7 (Cerebrín + nuevos ejercicios)
 
 **Cerebrín, la nueva mascota oficial**

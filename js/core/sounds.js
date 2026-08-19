@@ -31,6 +31,41 @@ function blip(freqStart, freqEnd, duration, type = "sine") {
   osc.stop(t0 + duration + 0.05);
 }
 
+/** Colchón cálido y suave (ataque/caída lentos), para el fondo del sonido de bienvenida. */
+function warmPad(freq, duration, startTime, gainPeak = 0.1) {
+  const c = ctx();
+  if (!c) return;
+  const osc = c.createOscillator();
+  const gain = c.createGain();
+  osc.type = "sine";
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.exponentialRampToValueAtTime(gainPeak, startTime + duration * 0.35);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+  osc.connect(gain);
+  gain.connect(c.destination);
+  osc.start(startTime);
+  osc.stop(startTime + duration + 0.05);
+}
+
+/** Nota "destello" brillante y corta, con un ligero deslizamiento ascendente. */
+function sparkle(freq, duration, startTime, gainPeak = 0.2) {
+  const c = ctx();
+  if (!c) return;
+  const osc = c.createOscillator();
+  const gain = c.createGain();
+  osc.type = "triangle";
+  osc.frequency.setValueAtTime(freq, startTime);
+  osc.frequency.exponentialRampToValueAtTime(freq * 1.4, startTime + duration);
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.exponentialRampToValueAtTime(gainPeak, startTime + 0.035);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+  osc.connect(gain);
+  gain.connect(c.destination);
+  osc.start(startTime);
+  osc.stop(startTime + duration + 0.05);
+}
+
 /** Patrón sonoro simple y simpático asociado a cada tipo de animal. */
 const PATTERNS = {
   Perro: () => { blip(300, 180, 0.14); setTimeout(() => blip(300, 180, 0.14), 160); },
@@ -67,8 +102,19 @@ export const Sounds = {
   playSoftError() {
     blip(300, 220, 0.25, "sine");
   },
-  /** Melodía muy corta y alegre para la pantalla de inicio (una sola vez). */
+  /** Sonido de bienvenida: colchón cálido + pequeño destello mágico
+   * ascendente. Nada de pitidos ni alarmas — debe sentirse como
+   * "la aplicación se está despertando". Una sola vez por sesión. */
   playWelcome() {
-    [392, 523, 659, 784].forEach((f, i) => setTimeout(() => blip(f, f, 0.22, "triangle"), i * 110));
+    const c = ctx();
+    if (!c) return;
+    const t0 = c.currentTime;
+    // Colchón cálido de fondo (dos notas suaves y sostenidas)
+    warmPad(261.63, 1.7, t0, 0.09); // Do
+    warmPad(392.0, 1.5, t0 + 0.06, 0.07); // Sol
+    // Pequeño destello mágico ascendente por encima
+    [523.25, 659.25, 784.0, 987.77, 1174.66].forEach((freq, i) =>
+      sparkle(freq, 0.5, t0 + 0.12 + i * 0.085, 0.15)
+    );
   },
 };

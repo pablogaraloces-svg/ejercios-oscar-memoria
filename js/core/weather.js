@@ -42,7 +42,7 @@ function getPosition() {
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve(pos),
       () => resolve(null), // permiso denegado o error: no bloquear, seguir sin tiempo
-      { timeout: 6000, maximumAge: 20 * 60 * 1000 }
+      { timeout: 10000, maximumAge: 20 * 60 * 1000 }
     );
   });
 }
