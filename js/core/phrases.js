@@ -113,6 +113,49 @@ export function fillName(template, name) {
   return template.replaceAll("{name}", name || "");
 }
 
+/**
+ * applyNameBudget — Limita el nombre de Óscar a como máximo una vez por
+ * pantalla/ejercicio. Si el "presupuesto" (budget) ya se ha usado en este
+ * paso, se retira el nombre de la frase con una limpieza gramatical básica
+ * en vez de dejar huecos raros ("Correcto, . Esta es...").
+ *
+ * @param {string} template - frase con el marcador {name}
+ * @param {string} name - nombre real de la persona
+ * @param {{used:boolean}} budget - objeto compartido para todo el paso actual
+ */
+export function applyNameBudget(template, name, budget) {
+  if (!template.includes("{name}")) return template;
+  if (budget && !budget.used) {
+    budget.used = true;
+    return fillName(template, name);
+  }
+  let result = template
+    .replaceAll(", {name},", ",")
+    .replaceAll(", {name}.", ".")
+    .replaceAll(", {name}!", "!")
+    .replaceAll(", {name}?", "?")
+    .replaceAll(", {name}", "")
+    .replaceAll("{name}, ", "")
+    .replaceAll("{name}.", ".")
+    .replaceAll("{name}", "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  if (result) result = result.charAt(0).toUpperCase() + result.slice(1);
+  return result;
+}
+
+/** Hora actual en formato "HH:MM", para mostrar y leer en voz alta. */
+export function getCurrentTimeText() {
+  const now = new Date();
+  return now.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+}
+
+/** Fecha corta actual (para la portada), ej. "martes, 19 de agosto". */
+export function getCurrentDateText() {
+  const now = new Date();
+  return now.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+}
+
 /** Frase hablada con el día, mes y año de hoy, para que la voz lo recuerde al empezar. */
 export function getSpokenDate() {
   const now = new Date();

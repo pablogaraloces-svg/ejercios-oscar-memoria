@@ -2,6 +2,7 @@ import { DB, uid } from "../core/db.js";
 import {
   getGreeting,
   getSpokenDate,
+  getCurrentTimeText,
   getWellbeingQuestions,
   pickMotivation,
   pickClosing,
@@ -10,6 +11,7 @@ import {
   pickMoodEncourageReaction,
   pickInactivityHint,
   fillName,
+  applyNameBudget,
 } from "../core/phrases.js";
 import { Voice } from "../core/voice.js";
 import { Sounds } from "../core/sounds.js";
@@ -106,6 +108,14 @@ export class SessionRunner {
     this._advanceTimer = setTimeout(() => this.next(), delayMs + 3000);
   }
 
+  /** Igual que scheduleAutoAdvance pero sin el margen extra de 3s: para
+   * pantallas donde el tiempo pedido debe cumplirse tal cual (p.ej. "Antes
+   * de seguir", que no lleva voz larga de por medio). */
+  scheduleExactAdvance(delayMs) {
+    clearTimeout(this._advanceTimer);
+    this._advanceTimer = setTimeout(() => this.next(), delayMs);
+  }
+
   /* -------- Aviso pasados 60s sin tocar nada -------- */
   startInactivityTimer(onTrigger) {
     this.clearInactivityTimer();
@@ -122,6 +132,9 @@ export class SessionRunner {
   renderStep() {
     this.clearInactivityTimer();
     clearTimeout(this._advanceTimer);
+    // Presupuesto de nombre: como máximo se dice "Óscar" una vez por
+    // pantalla/ejercicio (se reinicia limpio en cada paso nuevo).
+    this._nameBudget = { used: false };
     this.updateProgress();
     this.mascot.idle();
     this.contentEl.innerHTML = "";
@@ -140,12 +153,14 @@ export class SessionRunner {
   renderGreeting() {
     const greetText = getGreeting(this.profile.name);
     const dateText = getSpokenDate();
-    this.say(`${greetText} ${dateText}`);
+    const timeText = `Ahora son las ${getCurrentTimeText()}.`;
+    this._nameBudget.used = true; // el saludo ya dice el nombre una vez
+    this.say(`${greetText} ${dateText} ${timeText}`);
     const box = document.createElement("div");
     box.className = "col center grow";
     box.innerHTML = `<div style="font-size:3.2rem;">👋</div>
       <h2 class="title-xl" style="text-align:center;">${greetText}</h2>
-      <p class="text-md" style="text-align:center;">${dateText}</p>`;
+      <p class="text-md" style="text-align:center;">${dateText} · ${getCurrentTimeText()}</p>`;
     const btn = document.createElement("button");
     btn.className = "btn btn-success btn-huge btn-start-bigger";
     btn.style.marginTop = "28px";
@@ -170,11 +185,14 @@ export class SessionRunner {
       { emoji: "😐", label: "Regular" },
       { emoji: "😕", label: "No muy bien" },
     ];
-    moods.forEach((m) => {
+    moods.forEach((m, i) => {
       const b = document.createElement("button");
       b.className = "option-card";
       b.style.minWidth = "150px";
-      b.innerHTML = `<span class="emoji">${m.emoji}</span><span>${m.label}</span>`;
+      // Animación individual y escalonada: cada emoticono "respira" a su
+      // propio ritmo, para que parezca vivo sin distraer ni moverse todos
+      // a la vez.
+      b.innerHTML = `<span class="emoji study-item-breathe" style="animation-delay:${(i * 0.28).toFixed(2)}s;">${m.emoji}</span><span>${m.label}</span>`;
       b.onclick = async () => {
         options.querySelectorAll("button").forEach((x) => (x.style.pointerEvents = "none"));
         b.classList.add("correct-flash");
@@ -185,9 +203,10 @@ export class SessionRunner {
           value: m.label,
         });
         const isPositive = POSITIVE_MOODS.has(m.label);
-        const reaction = fillName(
+        const reaction = applyNameBudget(
           isPositive ? pickMoodPositiveReaction() : pickMoodEncourageReaction(),
-          this.profile.name
+          this.profile.name,
+          this._nameBudget
         );
         this.mascot.celebrate();
         this.say(reaction);
@@ -209,6 +228,23 @@ export class SessionRunner {
     list.style.marginTop = "16px";
     list.style.gap = "12px";
 
+    // Estado compartido de todos los recordatorios de este paso: mientras
+    // no haya NINGUNO marcado, la pantalla no debe avanzar sola.
+    const doneStates = {};
+    const anyDone = () => Object.values(doneStates).some(Boolean);
+    const evaluateAdvance = () => {
+      if (anyDone()) {
+        // Al terminar de marcar (o corregir), esperamos un momento breve
+        // antes de continuar, por si quiere marcar alguna cosita más.
+        this.scheduleExactAdvance(1200);
+      } else {
+        // Nada marcado todavía: no avanzar. Aun así, dejamos una red de
+        // seguridad muy larga para que la pantalla nunca quede bloqueada
+        // del todo si un día no hay ninguna actividad que marcar.
+        this.scheduleExactAdvance(45000);
+      }
+    };
+
     reminders.forEach((rem) => {
       const row = document.createElement("div");
       row.className = "switch-row reminder-row";
@@ -223,10 +259,10 @@ export class SessionRunner {
       doneBtn.type = "button";
       doneBtn.className = "btn btn-ghost reminder-done-btn";
       doneBtn.textContent = "Marcar hecho";
-      let isDone = false;
+      doneStates[rem.id] = false;
 
       const setVisual = () => {
-        if (isDone) {
+        if (doneStates[rem.id]) {
           doneBtn.textContent = "✔️ Hecho";
           doneBtn.classList.remove("btn-ghost");
           doneBtn.classList.add("reminder-done-btn-active");
@@ -238,11 +274,11 @@ export class SessionRunner {
       };
 
       doneBtn.addEventListener("click", async () => {
-        isDone = !isDone;
+        doneStates[rem.id] = !doneStates[rem.id];
         setVisual();
-        this.registerInteraction();
+        evaluateAdvance();
         try {
-          if (isDone) {
+          if (doneStates[rem.id]) {
             this.mascot.celebrate();
             Sounds.playPositive();
             await markReminderDoneToday(this.profile.id, rem.id);
@@ -251,7 +287,7 @@ export class SessionRunner {
           }
         } catch (err) {
           console.error("No se pudo actualizar el recordatorio:", err);
-          isDone = !isDone;
+          doneStates[rem.id] = !doneStates[rem.id];
           setVisual();
         }
       });
@@ -263,14 +299,9 @@ export class SessionRunner {
 
     this.contentEl.appendChild(box);
 
-    // Sin botón "Continuar": avanza sola, dando tiempo de sobra para que
-    // Óscar pueda marcar (y corregir) sus recordatorios con calma.
-    this.registerInteraction();
-  }
-
-  /** Reinicia el tiempo de espera para avanzar tras la pantalla de recordatorios. */
-  registerInteraction() {
-    this.scheduleAutoAdvance(6000);
+    // Sin botón "Continuar": mientras no haya nada marcado, la pantalla
+    // espera. En cuanto Óscar marque algo, avanza sola poco después.
+    evaluateAdvance();
   }
 
   /* ---------------- Ejercicios ---------------- */
@@ -284,7 +315,9 @@ export class SessionRunner {
     // A partir del segundo ejercicio, la voz guía la transición (ya no hay
     // botón "Siguiente"), con una frase distinta cada vez.
     const transition =
-      this._exerciseCount > 1 ? `${fillName(pickNextExercisePhrase(), this.profile.name)} ` : "";
+      this._exerciseCount > 1
+        ? `${applyNameBudget(pickNextExercisePhrase(), this.profile.name, this._nameBudget)} `
+        : "";
 
     if (ex.kind !== "memory_recall") {
       const header = document.createElement("div");
@@ -303,6 +336,7 @@ export class SessionRunner {
 
     const hintFlow = new HintFlow({
       name: this.profile.name,
+      nameBudget: this._nameBudget,
       onSoft: (msg) => this.say(msg),
       onPistaVoice: (msg) => this.say(msg),
       onVisualHint: () => this.showVisualHint(),
@@ -318,7 +352,7 @@ export class SessionRunner {
   }
 
   renderMemoryRecall(ex, hintFlow) {
-    const introText = (ex.__transitionPrefix || "") + fillName(ex.introText, this.profile.name);
+    const introText = (ex.__transitionPrefix || "") + applyNameBudget(ex.introText, this.profile.name, this._nameBudget);
     const introEl = document.createElement("p");
     introEl.className = "title-lg fade-in";
     introEl.style.textAlign = "center";
@@ -329,15 +363,15 @@ export class SessionRunner {
 
     const studyBox = document.createElement("div");
     studyBox.className = "row wrap center fade-in";
-    studyBox.style.gap = "20px";
-    studyBox.style.marginTop = "18px";
+    studyBox.style.gap = "26px";
+    studyBox.style.marginTop = "20px";
     ex.studyItems.forEach((item, i) => {
       const card = document.createElement("div");
       card.className = "card col center";
-      card.style.minWidth = "120px";
+      card.style.minWidth = "132px";
       // Animación suave e individual (tipo "genie"): cada dibujo respira a
       // su propio ritmo, para invitar a mirarlos con calma sin marear.
-      card.innerHTML = `<span class="study-item-breathe" style="font-size:3.4rem; animation-delay:${(i * 0.35).toFixed(2)}s;">${item.emoji}</span>`;
+      card.innerHTML = `<span class="study-item-breathe" style="font-size:3.9rem; animation-delay:${(i * 0.35).toFixed(2)}s;">${item.emoji}</span>`;
       studyBox.appendChild(card);
     });
     this.contentEl.appendChild(studyBox);
@@ -363,7 +397,7 @@ export class SessionRunner {
     }, ex.studySeconds * 1000);
   }
 
-  renderChoice(ex, hintFlow) {
+  renderChoice(ex, hintFlow, { compact = false } = {}) {
     const grid = document.createElement("div");
     grid.className = `grid-options ${ex.options.length > 4 ? "cols-3" : ""}`;
     grid.style.marginTop = "18px";
@@ -371,8 +405,12 @@ export class SessionRunner {
 
     ex.options.forEach((opt) => {
       const btn = document.createElement("button");
-      btn.className = "option-card";
-      if (opt.color) {
+      btn.className = compact ? "option-card option-card-compact" : "option-card";
+      if (opt.svgIcon) {
+        btn.innerHTML = opt.hideLabel
+          ? `<span class="emoji tool-icon">${opt.svgIcon}</span>`
+          : `<span class="emoji tool-icon">${opt.svgIcon}</span><span>${opt.label}</span>`;
+      } else if (opt.color) {
         const isWhite = opt.color.toUpperCase() === "#FFFFFF";
         const swatchBorder = isWhite ? "3px solid #9A9A9A" : "3px solid rgba(0,0,0,0.12)";
         const swatchShadow = isWhite ? "box-shadow:inset 0 0 0 2px #E4E4E4;" : "";
@@ -408,7 +446,7 @@ export class SessionRunner {
     scene.className = "card puzzle-scene";
     scene.innerHTML = `
       <div class="puzzle-object">
-        <span class="puzzle-object-emoji">${ex.contextEmoji}</span>
+        <span class="puzzle-object-emoji">${ex.contextSvg || ex.contextEmoji}</span>
         <span class="text-md">${ex.contextLabel}</span>
       </div>
       <span class="puzzle-arrow">➜</span>
@@ -456,9 +494,9 @@ export class SessionRunner {
     const photoBox = document.createElement("div");
     photoBox.className = "col center";
     photoBox.style.marginTop = "12px";
-    photoBox.innerHTML = `<img src="${ex.photo}" alt="Foto familiar" style="width:170px;height:170px;object-fit:cover;border-radius:24px;box-shadow:var(--shadow-lift);" />`;
+    photoBox.innerHTML = `<img src="${ex.photo}" alt="Foto familiar" style="width:220px;height:220px;object-fit:cover;border-radius:28px;box-shadow:var(--shadow-lift);" />`;
     this.contentEl.appendChild(photoBox);
-    this.renderChoice(ex, hintFlow);
+    this.renderChoice(ex, hintFlow, { compact: true });
   }
 
   async handleAnswer(ex, btn, opt, hintFlow) {
@@ -473,12 +511,13 @@ export class SessionRunner {
 
       let msg;
       if (ex.category === "fotos") {
-        msg = buildFamilyIdentityPhrase(
-          { name: opt.label, relation: opt.relation, gender: opt.gender },
-          { withCorrectPrefix: true, profileName: this.profile.name }
+        msg = applyNameBudget(
+          buildFamilyIdentityPhrase({ name: opt.label, relation: opt.relation, gender: opt.gender }, { withCorrectPrefix: true }),
+          this.profile.name,
+          this._nameBudget
         );
       } else {
-        msg = fillName(pickMotivation(), this.profile.name);
+        msg = applyNameBudget(pickMotivation(), this.profile.name, this._nameBudget);
       }
       this.say(msg);
       this.stats.correct++;
@@ -522,7 +561,11 @@ export class SessionRunner {
   revealCorrect(ex) {
     const correctBtn = this.optionButtons?.find((b) => b.dataset.correct === "1");
     correctBtn?.classList.add("correct-flash");
-    const msg = `No te preocupes, ${this.profile.name}. Era esta. La próxima vez seguro que la ves.`;
+    const msg = applyNameBudget(
+      "No te preocupes, {name}. Era esta. La próxima vez seguro que la ves.",
+      this.profile.name,
+      this._nameBudget
+    );
     this.mascot.encourage();
     this.say(msg);
     this.scheduleAutoAdvance(Math.max(2800, Voice.estimateDurationMs(msg)));
@@ -594,7 +637,7 @@ export class SessionRunner {
 
         if (found.size === ex.diffPositions.length) {
           await reportResult(this.profile.id, ex.category, { success: true, usedHints: hintFlow.errorCount });
-          const msg = fillName(pickMotivation(), this.profile.name);
+          const msg = applyNameBudget(pickMotivation(), this.profile.name, this._nameBudget);
           this.say(msg);
           burstConfetti(18);
           celebrateSuccess({ big: "🔍✨" });
@@ -638,7 +681,7 @@ export class SessionRunner {
   async renderClosing() {
     const box = document.createElement("div");
     box.className = "col center grow closing-celebration";
-    const text = fillName(pickClosing(), this.profile.name);
+    const text = applyNameBudget(pickClosing(), this.profile.name, this._nameBudget);
     box.innerHTML = `<div class="closing-party-icon">🎉</div>
       <h2 class="title-xl" style="text-align:center;">${text}</h2>`;
     this.say(text);
@@ -646,14 +689,18 @@ export class SessionRunner {
     celebrateSuccess({ big: "🏆" });
 
     const accuracy = this.stats.total ? this.stats.correct / this.stats.total : 0;
-    const durationMin = Math.round((Date.now() - this.startedAt) / 60000);
+    const endedAt = Date.now();
+    const durationMin = Math.round((endedAt - this.startedAt) / 60000);
+    const timeFmt = { hour: "2-digit", minute: "2-digit" };
 
     await DB.put("sessions", {
       id: uid("session"),
       profileId: this.profile.id,
       date: new Date().toDateString(),
-      timestamp: Date.now(),
+      timestamp: endedAt,
       hour: new Date().getHours(),
+      startTime: new Date(this.startedAt).toLocaleTimeString("es-ES", timeFmt),
+      endTime: new Date(endedAt).toLocaleTimeString("es-ES", timeFmt),
       exercisesCompleted: this.stats.total,
       accuracy,
       durationMin,

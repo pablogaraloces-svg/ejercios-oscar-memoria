@@ -25,6 +25,7 @@ export function generatePuzzleExercise(level = 2) {
     kind: "puzzle_piece",
     prompt: `${target.situation}. ¿Qué herramienta necesitas?`,
     contextEmoji: target.contextEmoji,
+    contextSvg: target.contextSvg,
     contextLabel: target.context,
     targetEmoji: target.toolEmoji,
     targetName: target.tool,

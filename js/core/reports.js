@@ -115,6 +115,62 @@ export function drawAccuracyChart(canvas, sessions) {
   });
 }
 
+/** ---------- Tiempo total dedicado por día (varias sesiones se suman) ---------- */
+export function getDailyDurationTotals(sessions) {
+  const byDate = {};
+  sessions.forEach((s) => {
+    byDate[s.date] = (byDate[s.date] || 0) + (s.durationMin || 0);
+  });
+  return Object.entries(byDate)
+    .map(([date, minutes]) => ({ date, minutes }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export function drawDurationChart(canvas, series) {
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  const data = series.slice(-10);
+  if (!data.length) {
+    ctx.fillStyle = "#5A5A5A";
+    ctx.font = "20px sans-serif";
+    ctx.fillText("Todavía no hay sesiones registradas", 20, h / 2);
+    return;
+  }
+  const padding = 44;
+  const chartW = w - padding * 2;
+  const chartH = h - padding * 2;
+  const barGap = 16;
+  const barW = chartW / data.length - barGap;
+  const max = Math.max(...data.map((d) => d.minutes), 1);
+
+  ctx.strokeStyle = "#E4DFD3";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(padding, padding);
+  ctx.lineTo(padding, h - padding);
+  ctx.lineTo(w - padding, h - padding);
+  ctx.stroke();
+
+  data.forEach((d, i) => {
+    const barH = (d.minutes / max) * chartH;
+    const x = padding + i * (barW + barGap);
+    const y = h - padding - barH;
+    const grad = ctx.createLinearGradient(0, y, 0, h - padding);
+    grad.addColorStop(0, "#F5A93E");
+    grad.addColorStop(1, "#4E7FBF");
+    ctx.fillStyle = grad;
+    roundRect(ctx, x, y, barW, Math.max(barH, 2), 8);
+    ctx.fill();
+    ctx.fillStyle = "#5A5A5A";
+    ctx.font = "14px sans-serif";
+    ctx.textAlign = "center";
+    const label = d.date.split(" ").slice(1, 3).join(" ");
+    ctx.fillText(label, x + barW / 2, h - padding + 20);
+    ctx.fillText(`${d.minutes} min`, x + barW / 2, y - 8);
+  });
+}
+
 /** ---------- Distribución de sesiones por hora del día ---------- */
 export function getSessionHourDistribution(sessions) {
   const buckets = new Array(24).fill(0);

@@ -16,10 +16,15 @@ function pronoun(gender) {
 
 /**
  * @param {{name:string, relation?:string, gender?:'M'|'F'|null}} person
- * @param {{withCorrectPrefix?:boolean, profileName?:string}} opts
+ * @param {{withCorrectPrefix?:boolean}} opts
+ *
+ * Nota: cuando withCorrectPrefix es true, el prefijo usa el marcador
+ * {name} (no el nombre ya interpolado) para que quien llame a esta función
+ * pueda pasarlo por applyNameBudget() y así no repetir "Óscar" si ya se
+ * había dicho antes en el mismo ejercicio.
  */
-export function buildFamilyIdentityPhrase(person, { withCorrectPrefix = false, profileName = "" } = {}) {
-  const prefix = withCorrectPrefix ? `Correcto, ${profileName}. ` : "";
+export function buildFamilyIdentityPhrase(person, { withCorrectPrefix = false } = {}) {
+  const prefix = withCorrectPrefix ? `Correcto, {name}. ` : "";
   const p = pronoun(person.gender);
 
   if (person.relation) {

@@ -19,11 +19,30 @@ export function renderFamily(rootEl, ctx, openModalFn, editable = false) {
     return;
   }
 
+  if (editable) {
+    const hint = document.createElement("p");
+    hint.className = "text-sm";
+    hint.style.color = "var(--color-text-soft)";
+    hint.style.marginBottom = "4px";
+    hint.textContent = "Mantén pulsado el icono ⠿ de una persona y arrástrala para cambiar el orden.";
+    rootEl.appendChild(hint);
+  }
+
   const grid = document.createElement("div");
   grid.className = "grid-options cols-3";
   family.forEach((f, idx) => {
     const card = document.createElement("div");
     card.className = "card col center family-card";
+
+    if (editable) {
+      const handle = document.createElement("div");
+      handle.className = "drag-handle";
+      handle.textContent = "⠿";
+      handle.setAttribute("aria-label", "Arrastrar para reordenar");
+      card.appendChild(handle);
+      wireDragHandle(handle, card, grid, idx, ctx, () => renderFamily(rootEl, ctx, openModalFn, editable));
+    }
+
     const photoEl = document.createElement("img");
     photoEl.src = f.photo;
     photoEl.alt = f.name;
@@ -52,7 +71,7 @@ export function renderFamily(rootEl, ctx, openModalFn, editable = false) {
         void photoEl.offsetWidth;
         photoEl.classList.add("family-photo-zoom");
         setTimeout(() => photoEl.classList.remove("family-photo-zoom"), 900);
-        const phrase = buildFamilyIdentityPhrase(f, { profileName: ctx.profile.name });
+        const phrase = buildFamilyIdentityPhrase(f);
         Voice.say(phrase);
       });
     } else {
@@ -66,6 +85,75 @@ export function renderFamily(rootEl, ctx, openModalFn, editable = false) {
     grid.appendChild(card);
   });
   rootEl.appendChild(grid);
+}
+
+/**
+ * wireDragHandle — "Pulsar y mantener → arrastrar → soltar" para
+ * reordenar a un familiar (con toda su información: foto, nombre,
+ * parentesco...) dentro de Administración > Editar familia.
+ *
+ * Se implementa con Pointer Events (en vez del Drag & Drop nativo de
+ * HTML5, poco fiable con el dedo en tablets Android) para que funcione
+ * bien al tacto. El array `ctx.profile.family` es la ÚNICA fuente de
+ * datos del orden: al reordenarlo aquí y guardarlo, "Mi familia" (la
+ * vista de Óscar) lo hereda automáticamente, porque lee ese mismo array.
+ */
+function wireDragHandle(handle, card, grid, idx, ctx, onReordered) {
+  let dragging = false;
+  let startX = 0;
+  let startY = 0;
+  let overIdx = null;
+
+  const onPointerMove = (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    card.style.transform = `translate(${dx}px, ${dy}px) scale(1.05) rotate(1deg)`;
+
+    const cards = [...grid.children];
+    let hoverIdx = null;
+    cards.forEach((c, i) => {
+      if (c === card) return;
+      const r = c.getBoundingClientRect();
+      if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+        hoverIdx = i;
+      }
+    });
+    cards.forEach((c) => c.classList.remove("drag-over"));
+    if (hoverIdx !== null) cards[hoverIdx].classList.add("drag-over");
+    overIdx = hoverIdx;
+  };
+
+  const finishDrag = async () => {
+    dragging = false;
+    card.classList.remove("dragging");
+    card.style.transform = "";
+    document.removeEventListener("pointermove", onPointerMove);
+    document.removeEventListener("pointerup", finishDrag);
+    document.removeEventListener("pointercancel", finishDrag);
+    [...grid.children].forEach((c) => c.classList.remove("drag-over"));
+
+    if (overIdx !== null && overIdx !== idx) {
+      const family = ctx.profile.family;
+      const [moved] = family.splice(idx, 1);
+      family.splice(overIdx, 0, moved);
+      await DB.put("profile", ctx.profile);
+    }
+    onReordered();
+  };
+
+  handle.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragging = true;
+    overIdx = null;
+    startX = e.clientX;
+    startY = e.clientY;
+    card.classList.add("dragging");
+    document.addEventListener("pointermove", onPointerMove);
+    document.addEventListener("pointerup", finishDrag);
+    document.addEventListener("pointercancel", finishDrag);
+  });
 }
 
 function genderFieldHtml(idPrefix, current) {

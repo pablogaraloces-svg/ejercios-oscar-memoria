@@ -3,6 +3,80 @@
 Aplicación web progresiva (PWA), pensada para tablets Android como la **Honor Pad X9a**,
 que funciona **completamente offline** una vez instalada.
 
+## 🆕 Novedades de la versión 6 (actualización incremental)
+
+Todo lo siguiente se ha añadido **sobre** el código existente, sin reescribir
+ni sustituir ninguna pantalla, ejercicio ni sistema que ya funcionaba.
+
+**Página principal**
+- Ya no aparece la frase de saludo arriba: ahora se muestra la hora actual
+  (grande, como un reloj) y la fecha, actualizándose solas cada 15s.
+- Fondo propio y exclusivo de la portada (varios degradados suaves de
+  color superpuestos sobre una base cálida), distinto al resto de
+  pantallas, que conservan su fondo general.
+- Botón "Empezar el ratito de hoy" más estrecho, con una respiración
+  suave y continua (cambio muy leve de tamaño y brillo) para que se
+  identifique de un vistazo, sin parpadeos bruscos.
+- Crédito de autoría discreto en la esquina, como ya existía.
+
+**Relieve en todos los botones**
+- Nuevo sistema de "bisel" compartido por todos los botones y tarjetas de
+  respuesta de la aplicación (empezar, familia, ejercicios, administración,
+  confirmación, selección...): un brillo superior sutil y una sombra
+  inferior dan sensación de botón físico, y al pulsar se hunde ligeramente.
+
+**Primera pantalla de la sesión**
+- Se mantiene el saludo de siempre, y ahora también dice la hora actual.
+
+**Estado de ánimo**
+- Cada emoticono tiene su propia animación de "respiración" suave y
+  escalonada (no se mueven todos a la vez), para que se sientan vivos sin
+  distraer.
+
+**"¿Has hecho alguna cosita hoy?"**
+- Corregido: ya no avanza sola si Óscar no ha marcado nada. En cuanto
+  marca (o corrige) algo, espera un momento breve y continúa. Sigue
+  pudiendo marcar varias cosas y desmarcarlas libremente.
+
+**Ejercicio de herramientas**
+- Corregida la confusión visual: cortar un cable ahora usa **tijeras**
+  (se elimina el icono de pinza/prensa que generaba confusión). El
+  **tornillo** y la **tuerca** ahora usan un dibujo propio inequívoco (ya
+  no dependen de emojis ambiguos como 🔩 o del engranaje ⚙️).
+
+**Familia (ejercicio) y memoria**
+- El reconocimiento familiar ahora usa 4 respuestas (antes 3) cuando hay
+  familiares suficientes cargados, con la foto más grande y los botones
+  algo más compactos para que todo quepa bien equilibrado.
+- Los ejercicios de memoria ("recuerda cuál vimos antes") ahora muestran
+  siempre 4 opciones de respuesta (antes podían ser solo 3), con las
+  imágenes iniciales más grandes, mejor centradas y más separadas.
+
+**Voz más natural**
+- El nombre "Óscar" ya no se repite varias veces seguidas dentro de un
+  mismo ejercicio o pantalla: como máximo se dice una vez por paso,
+  incluso combinando la frase de transición, las pistas y el mensaje de
+  acierto.
+
+**Administración → Editar familia**
+- Se puede mantener pulsado el icono ⠿ de una persona y arrastrarla para
+  cambiar el orden (se mueve todo su bloque: foto, nombre, parentesco...).
+  El nuevo orden se guarda y es la única fuente de verdad: "Mi familia"
+  (la vista de Óscar) usa automáticamente ese mismo orden.
+
+**Administración → Estadísticas**
+- Nueva gráfica de "tiempo dedicado cada día": si hay varias sesiones el
+  mismo día, se suman todas (nunca se sobrescriben entre sí).
+- Nuevo apartado de Salud dentro de Estadísticas, con historial
+  cronológico y promedios mensuales.
+
+**Nuevo apartado: Administración → Salud**
+- Formulario sencillo para oxígeno en sangre y tensión arterial (alta y
+  baja). Cada medición se guarda con fecha y hora, sin sobrescribir las
+  anteriores. Los promedios de oxígeno y tensión se calculan siempre por
+  separado, nunca mezclados, pensado para poder consultarse o mostrarse a
+  un médico.
+
 ## 🎨 Rediseño visual profesional (sistema de diseño v2)
 
 Revisión completa del aspecto visual, sin tocar ni una sola línea de lógica,

@@ -13,7 +13,9 @@ export function generateFamilyPhotoExercise(family, level = 2) {
   const prompts = ["¿Reconoces a esta persona?", "¿Quién es?", "¿Sabes quién es esta persona?"];
   const prompt = prompts[randInt(0, prompts.length - 1)];
 
-  const optionCount = Math.min(family.length, 3);
+  // Mantenemos siempre 4 respuestas cuando hay suficientes familiares
+  // cargados; con menos disponibles, se usan los que haya (mínimo 2).
+  const optionCount = Math.min(family.length, 4);
   const chosen = shuffle(family).slice(0, optionCount);
   const target = chosen[randInt(0, chosen.length - 1)];
 

@@ -2,7 +2,7 @@
  * service-worker.js — Cache-first para uso 100% offline.
  * Sube CACHE_VERSION cuando se publiquen cambios para forzar actualización.
  */
-const CACHE_VERSION = "acompanante-v4";
+const CACHE_VERSION = "acompanante-v5";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -16,6 +16,7 @@ const CORE_ASSETS = [
   "./js/core/music.js",
   "./js/core/sounds.js",
   "./js/core/pdfExport.js",
+  "./js/core/health.js",
   "./js/core/mascot.js",
   "./js/core/adaptiveDifficulty.js",
   "./js/core/hints.js",
@@ -31,6 +32,7 @@ const CORE_ASSETS = [
   "./js/exercises/familyPhotos.js",
   "./js/exercises/spotDifference.js",
   "./js/exercises/puzzleTools.js",
+  "./js/exercises/toolIcons.js",
   "./js/core/familyPhrase.js",
   "./js/exercises/index.js",
   "./js/screens/onboarding.js",
@@ -38,6 +40,7 @@ const CORE_ASSETS = [
   "./js/screens/settingsScreen.js",
   "./js/screens/familyScreen.js",
   "./js/screens/reportsScreen.js",
+  "./js/screens/healthScreen.js",
   "./assets/icons/icon-72.png",
   "./assets/icons/icon-96.png",
   "./assets/icons/icon-128.png",

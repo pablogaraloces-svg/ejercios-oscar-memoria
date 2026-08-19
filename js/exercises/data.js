@@ -41,12 +41,24 @@ export const OBJECTS = [
  * de puzle: se muestra el objeto y hay que elegir la herramienta que
  * corresponde de verdad, no una cualquiera.
  */
+import { SCREW_ICON, NUT_ICON } from "./toolIcons.js";
+
+/**
+ * Parejas lógicas objeto → herramienta que lo necesita, para el ejercicio
+ * de puzle: se muestra el objeto y hay que elegir la herramienta que
+ * corresponde de verdad, no una cualquiera.
+ *
+ * Tornillo y tuerca usan un dibujo SVG propio (contextSvg) en vez de un
+ * emoji, porque 🔩 (tornillo con tuerca) y ⚙️ (engranaje) generaban
+ * confusión al no distinguirse bien entre sí. El resto usa emoji estándar,
+ * ya inequívocos.
+ */
 export const TOOL_PAIRS = [
-  { context: "Tornillo", contextEmoji: "🔩", tool: "Destornillador", toolEmoji: "🪛", situation: "Hay un tornillo que apretar" },
+  { context: "Tornillo", contextSvg: SCREW_ICON, tool: "Destornillador", toolEmoji: "🪛", situation: "Hay un tornillo que apretar" },
   { context: "Tronco de madera", contextEmoji: "🪵", tool: "Sierra", toolEmoji: "🪚", situation: "Hay que cortar este tronco" },
   { context: "Clavo", contextEmoji: "📌", tool: "Martillo", toolEmoji: "🔨", situation: "Hay un clavo que clavar" },
-  { context: "Tuerca", contextEmoji: "⚙️", tool: "Llave inglesa", toolEmoji: "🔧", situation: "Hay una tuerca que apretar" },
-  { context: "Cable eléctrico", contextEmoji: "🔌", tool: "Alicates", toolEmoji: "🗜️", situation: "Hay un cable que cortar" },
+  { context: "Tuerca", contextSvg: NUT_ICON, tool: "Llave inglesa", toolEmoji: "🔧", situation: "Hay una tuerca que apretar" },
+  { context: "Cable eléctrico", contextEmoji: "🔌", tool: "Tijeras", toolEmoji: "✂️", situation: "Hay un cable que cortar" },
 ];
 
 /** Banco amplio para el ejercicio "encuentra las diferencias". */

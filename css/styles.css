@@ -62,6 +62,12 @@
   --shadow-glow-primary: 0 10px 26px rgba(78, 127, 191, 0.30);
   --shadow-inset: inset 0 1px 2px rgba(46, 54, 74, 0.06);
 
+  /* Bisel sutil compartido por TODOS los botones: da sensación de botón
+     físico (relieve) sin resultar anticuado ni excesivamente 3D. */
+  --btn-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -3px 5px rgba(20, 24, 34, 0.14);
+  --btn-bevel-ghost: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -2px 3px rgba(20, 24, 34, 0.05);
+  --btn-pressed: inset 0 3px 8px rgba(20, 24, 34, 0.22);
+
   /* ---------- Radios (más generosos, look "iPad") ---------- */
   --radius-sm: 18px;
   --radius-md: 26px;
@@ -128,6 +134,9 @@ body.high-contrast {
   --shadow-glow-accent: none;
   --shadow-glow-warm: none;
   --shadow-glow-primary: none;
+  --btn-bevel: none;
+  --btn-bevel-ghost: none;
+  --btn-pressed: inset 0 0 0 3px rgba(255, 255, 255, 0.5);
 }
 
 /* Tamaño de texto ajustable */
@@ -224,25 +233,25 @@ h1, h2, h3, p { margin: 0; }
   align-items: center;
   justify-content: center;
   gap: var(--space-1);
-  box-shadow: var(--shadow-glow-primary);
+  box-shadow: var(--shadow-glow-primary), var(--btn-bevel);
   transition: transform var(--dur-fast) var(--ease-gentle), box-shadow var(--dur-fast) var(--ease-gentle), filter var(--dur-fast) var(--ease-gentle);
   color: white;
   background: var(--gradient-primary);
   letter-spacing: -0.005em;
 }
-.btn:active { transform: scale(0.96); box-shadow: var(--shadow-xs); }
+.btn:active { transform: scale(0.96) translateY(1px); box-shadow: var(--btn-pressed); }
 .btn:hover { filter: brightness(1.04); transform: translateY(-1px); }
-.btn:hover:active { transform: scale(0.96); }
+.btn:hover:active { transform: scale(0.96) translateY(1px); }
 .btn:focus-visible { outline: 5px solid var(--color-focus); outline-offset: 4px; }
 
-.btn-accent { background: var(--gradient-accent); color: #4A3300; box-shadow: var(--shadow-glow-accent); }
-.btn-success { background: var(--gradient-success); color: #0F3B20; box-shadow: var(--shadow-glow-success); }
-.btn-warm { background: var(--gradient-warm); color: #4A0E17; box-shadow: var(--shadow-glow-warm); }
+.btn-accent { background: var(--gradient-accent); color: #4A3300; box-shadow: var(--shadow-glow-accent), var(--btn-bevel); }
+.btn-success { background: var(--gradient-success); color: #0F3B20; box-shadow: var(--shadow-glow-success), var(--btn-bevel); }
+.btn-warm { background: var(--gradient-warm); color: #4A0E17; box-shadow: var(--shadow-glow-warm), var(--btn-bevel); }
 .btn-ghost {
   background: var(--gradient-surface);
   color: var(--color-primary-dark);
   border: 2px solid var(--color-border);
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--shadow-xs), var(--btn-bevel-ghost);
 }
 .btn-ghost:hover { filter: none; border-color: var(--color-primary-light); }
 .btn-huge {
@@ -285,11 +294,11 @@ h1, h2, h3, p { margin: 0; }
   font-size: var(--font-md);
   font-weight: 700;
   cursor: pointer;
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-soft), var(--btn-bevel-ghost);
   transition: transform var(--dur-fast) var(--ease-gentle), border-color var(--dur-fast) var(--ease-gentle), background var(--dur-med) var(--ease-gentle), box-shadow var(--dur-fast) var(--ease-gentle);
 }
 .option-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); border-color: var(--color-primary-light); }
-.option-card:active { transform: scale(0.96); }
+.option-card:active { transform: scale(0.96); box-shadow: var(--btn-pressed); }
 .option-card:focus-visible { outline: 5px solid var(--color-focus); outline-offset: 4px; }
 .option-card .emoji {
   font-size: 2.5rem;
@@ -746,3 +755,93 @@ img, canvas, svg, video { max-width: 100%; }
 
 /* ---------- Botones de género (Mi Familia) ---------- */
 .gender-btn { min-height: 60px; }
+
+/* ---------- Portada: fondo propio, cálido y sereno, distinto al resto ---------- */
+/* Varios degradados suaves superpuestos ("manchas" de color muy tenues)
+   sobre una base cálida, para transmitir tranquilidad y modernidad sin
+   caer en lo infantil. El resto de pantallas conserva el fondo general. */
+.home-screen-bg {
+  background:
+    radial-gradient(circle at 12% 12%, rgba(245, 169, 62, 0.20), transparent 42%),
+    radial-gradient(circle at 88% 18%, rgba(78, 127, 191, 0.18), transparent 46%),
+    radial-gradient(circle at 50% 105%, rgba(79, 152, 104, 0.16), transparent 55%),
+    linear-gradient(160deg, #FFFBF4 0%, #FBF3E6 45%, #F0EFF5 100%);
+}
+body.high-contrast .home-screen-bg { background: var(--color-bg); }
+
+/* Reloj de la portada: tamaño protagonista, como una app de reloj/salud. */
+#home-time { letter-spacing: -0.02em; }
+
+/* ---------- Botón "Empezar": respiración suave y continua ---------- */
+/* Llama la atención de forma natural (ligero cambio de escala y de brillo
+   de la sombra), nunca un parpadeo brusco. Respeta reduce-motion. */
+.btn-breathe { animation: btnBreathe 3.4s ease-in-out infinite; }
+@keyframes btnBreathe {
+  0%, 100% { transform: scale(1); box-shadow: var(--shadow-glow-success), var(--btn-bevel); }
+  50% { transform: scale(1.02); box-shadow: 0 14px 34px rgba(79, 152, 104, 0.42), var(--btn-bevel); }
+}
+.btn-breathe:active { animation-play-state: paused; }
+
+/* ---------- Variante compacta de tarjeta de opción ---------- */
+/* Para pantallas con mucha información junta (p.ej. foto + pregunta + 4
+   respuestas de "¿Quién es?"), donde conviene un pelín más de aire. */
+.option-card-compact {
+  min-height: 84px;
+  padding: 10px;
+}
+.option-card-compact .emoji {
+  width: 52px;
+  height: 52px;
+  font-size: 2rem;
+}
+
+/* Iconos SVG propios (tornillo, tuerca): que se vean centrados y nítidos
+   dentro de la misma "burbuja" circular que usan los emoji. */
+.tool-icon svg { display: block; }
+
+/* ---------- Arrastrar para reordenar (Administración > Editar familia) ---------- */
+.family-card { position: relative; touch-action: none; }
+.drag-handle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: var(--color-text-soft);
+  cursor: grab;
+  touch-action: none;
+  box-shadow: var(--shadow-xs);
+  z-index: 5;
+}
+.drag-handle:active { cursor: grabbing; }
+.family-card.dragging {
+  opacity: 0.9;
+  transform: scale(1.05) rotate(1deg);
+  box-shadow: var(--shadow-lift);
+  z-index: 80;
+  transition: none;
+}
+.family-card.drag-over {
+  outline: 3px dashed var(--color-primary-light);
+  outline-offset: 4px;
+}
+
+/* ---------- Salud ---------- */
+.health-value-huge { font-size: var(--font-xl); font-weight: 800; }
+.health-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--color-bg-soft);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}

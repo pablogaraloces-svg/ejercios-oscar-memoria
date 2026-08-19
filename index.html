@@ -27,20 +27,20 @@
     <div id="onboarding-root" class="col grow"></div>
   </section>
 
-  <!-- Pantalla principal (solo lo esencial para Óscar) -->
-  <section class="screen" id="screen-home">
+  <!-- Pantalla principal (solo lo esencial para Óscar) — fondo propio, distinto al resto -->
+  <section class="screen home-screen-bg" id="screen-home">
     <div class="top-bar">
       <div class="row">
         <div class="mascot bounce" id="home-mascot">🐵</div>
-        <div class="col" style="gap:4px;">
-          <h1 class="title-xl" id="home-greeting">Hola</h1>
-          <p class="text-md" id="home-date"></p>
+        <div class="col" style="gap:2px;">
+          <h1 class="title-huge" id="home-time">--:--</h1>
+          <p class="text-md" id="home-date" style="text-transform:capitalize;"></p>
         </div>
       </div>
     </div>
 
     <div class="grow col center" style="gap:28px;">
-      <button class="btn btn-huge btn-success" id="btn-start-session" style="width:100%;max-width:640px;">
+      <button class="btn btn-huge btn-success btn-breathe" id="btn-start-session" style="width:100%;max-width:420px;">
         ▶️ Empezar el ratito de hoy
       </button>
       <button class="option-card" id="btn-open-family" style="width:100%; max-width:340px;">
@@ -62,12 +62,15 @@
       <h2 class="title-lg title-admin">Administración</h2>
       <div style="width:88px;"></div>
     </div>
-    <div class="col grow center" style="gap:20px;">
+    <div class="col grow center" style="gap:18px;">
       <button class="option-card" id="btn-admin-settings" style="width:100%; max-width:420px;">
         <span class="emoji">⚙️</span><span>Ajustes</span>
       </button>
       <button class="option-card" id="btn-admin-reports" style="width:100%; max-width:420px;">
         <span class="emoji">📈</span><span>Estadísticas</span>
+      </button>
+      <button class="option-card" id="btn-admin-health" style="width:100%; max-width:420px;">
+        <span class="emoji">🩺</span><span>Salud</span>
       </button>
       <button class="option-card" id="btn-admin-family" style="width:100%; max-width:420px;">
         <span class="emoji">👨‍👩‍👧</span><span>Editar familia</span>
@@ -111,6 +114,16 @@
       <button class="btn btn-accent hidden" id="btn-add-family">➕ Añadir</button>
     </div>
     <div id="family-root" class="col grow" style="gap:16px; overflow-y:auto;"></div>
+  </section>
+
+  <!-- Salud -->
+  <section class="screen" id="screen-health">
+    <div class="top-bar">
+      <button class="btn btn-icon btn-ghost" id="btn-health-back" aria-label="Volver">←</button>
+      <h2 class="title-lg title-admin">Salud</h2>
+      <div style="width:88px;"></div>
+    </div>
+    <div id="health-root" class="col grow" style="gap:16px; overflow-y:auto;"></div>
   </section>
 
   <!-- Ajustes -->

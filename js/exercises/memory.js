@@ -22,14 +22,16 @@ function pickOne(list) {
  * Genera un ejercicio de memoria: se muestran N elementos durante 10
  * segundos exactos, luego se pregunta cuál de ellos apareció.
  * La introducción y la pregunta varían para no sonar repetitivas.
+ * Las opciones de respuesta son SIEMPRE 4 (1 correcta + 3 distractores),
+ * para que la presentación sea siempre la misma y no confunda.
  */
 export function generateMemoryExercise(level = 2) {
   const pool = Math.random() > 0.5 ? ANIMALS : OBJECTS;
   const itemsToShow = Math.min(2 + Math.floor(level / 3), 4);
   const studySeconds = 10;
+  const decoyCount = 3; // total de opciones = 1 correcta + 3 distractores = 4, siempre
 
   const shown = sample(pool, itemsToShow);
-  const decoyCount = Math.min(1 + Math.floor(level / 4), 3);
   const decoys = sample(
     pool.filter((p) => !shown.includes(p)),
     decoyCount

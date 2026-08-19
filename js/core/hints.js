@@ -7,13 +7,14 @@
  * 3er error: se mantiene/refuerza la pista visual, sin voz nueva.
  * 4º error: solución amable (voz + visual).
  */
-import { pickTryAgainSoft, fillName } from "./phrases.js";
+import { pickTryAgainSoft, applyNameBudget } from "./phrases.js";
 
 const PISTA_INTRO = "Fíjate bien, {name}. Te voy a dar una pequeña pista.";
 
 export class HintFlow {
-  constructor({ name, onSoft, onPistaVoice, onVisualHint, onReveal }) {
+  constructor({ name, nameBudget, onSoft, onPistaVoice, onVisualHint, onReveal }) {
     this.name = name;
+    this.nameBudget = nameBudget || { used: false };
     this.errorCount = 0;
     this.onSoft = onSoft;
     this.onPistaVoice = onPistaVoice;
@@ -29,10 +30,10 @@ export class HintFlow {
     this.errorCount += 1;
     switch (this.errorCount) {
       case 1:
-        this.onSoft?.(fillName(pickTryAgainSoft(), this.name));
+        this.onSoft?.(applyNameBudget(pickTryAgainSoft(), this.name, this.nameBudget));
         break;
       case 2:
-        this.onPistaVoice?.(fillName(PISTA_INTRO, this.name));
+        this.onPistaVoice?.(applyNameBudget(PISTA_INTRO, this.name, this.nameBudget));
         this.onVisualHint?.();
         break;
       case 3:

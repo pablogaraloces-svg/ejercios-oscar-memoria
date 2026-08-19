@@ -8,7 +8,8 @@ import { SessionRunner } from "./screens/session.js";
 import { renderSettings } from "./screens/settingsScreen.js";
 import { renderFamily, openAddFamilyModal, openEditFamilyModal } from "./screens/familyScreen.js";
 import { renderReports, exportReportPdf } from "./screens/reportsScreen.js";
-import { getGreeting } from "./core/phrases.js";
+import { renderHealth } from "./screens/healthScreen.js";
+import { getCurrentTimeText, getCurrentDateText } from "./core/phrases.js";
 
 const screens = {};
 document.querySelectorAll(".screen").forEach((el) => (screens[el.id] = el));
@@ -78,13 +79,19 @@ async function boot() {
 const homeMascot = new Mascot(document.getElementById("home-mascot"), null);
 const sessionMascot = new Mascot(document.getElementById("session-mascot"), document.getElementById("session-bubble"));
 
+// Portada: en vez de una frase fija, se muestra la hora y la fecha reales
+// del dispositivo, actualizadas automáticamente mientras la app está abierta.
+function updateHomeClock() {
+  const timeEl = document.getElementById("home-time");
+  const dateEl = document.getElementById("home-date");
+  if (timeEl) timeEl.textContent = getCurrentTimeText();
+  if (dateEl) dateEl.textContent = getCurrentDateText();
+}
+updateHomeClock();
+setInterval(updateHomeClock, 15000);
+
 function goHome() {
-  document.getElementById("home-greeting").textContent = getGreeting(ctx.profile.name);
-  document.getElementById("home-date").textContent = new Date().toLocaleDateString("es-ES", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+  updateHomeClock();
   homeMascot.setName(ctx.profile.name);
   showScreen("screen-home");
 }
@@ -329,6 +336,11 @@ document.getElementById("btn-admin-family").addEventListener("click", () => {
   showScreen("screen-family");
   refreshFamilyScreen();
 });
+document.getElementById("btn-admin-health").addEventListener("click", async () => {
+  showScreen("screen-health");
+  await renderHealth(document.getElementById("health-root"), ctx);
+});
+document.getElementById("btn-health-back").addEventListener("click", () => showScreen("screen-admin-menu"));
 
 /* ---------------- Salir con confirmación ---------------- */
 document.getElementById("btn-exit").addEventListener("click", () => {

@@ -10,11 +10,14 @@ import {
   drawAdherenceChart,
   getSessionHourDistribution,
   drawHourChart,
+  getDailyDurationTotals,
+  drawDurationChart,
   getMoodByDate,
   summarizeMoodByDate,
   resetStats,
 } from "../core/reports.js";
 import { canvasesToPdfBlob, shareOrDownloadPdf } from "../core/pdfExport.js";
+import { getHealthEntries, getMonthlyHealthAverages, monthLabel, formatAverage } from "../core/health.js";
 
 const MOOD_COLORS = {
   "Muy bien": "#6FBF8B",
@@ -60,6 +63,19 @@ export async function renderReports(rootEl, ctx) {
   rootEl.appendChild(chartCard);
   drawAccuracyChart(canvas, sessions);
   charts.accuracy = canvas;
+
+  // Tiempo dedicado por día (suma de todas las sesiones de ese día)
+  const durationSeries = getDailyDurationTotals(sessions);
+  const durationCard = document.createElement("div");
+  durationCard.className = "card";
+  durationCard.innerHTML = `<h3 class="title-lg">Tiempo dedicado cada día</h3><p class="text-md">Si hace varias sesiones el mismo día, se suman todas.</p>`;
+  const durationCanvas = document.createElement("canvas");
+  durationCanvas.width = 900; durationCanvas.height = 240;
+  durationCanvas.style.width = "100%"; durationCanvas.style.height = "auto";
+  durationCard.appendChild(durationCanvas);
+  rootEl.appendChild(durationCard);
+  drawDurationChart(durationCanvas, durationSeries);
+  charts.duration = durationCanvas;
 
   // Dónde falla más
   const catStats = await getCategoryStats(ctx.profile.id);
@@ -124,6 +140,34 @@ export async function renderReports(rootEl, ctx) {
   rootEl.appendChild(adherenceCard);
   drawAdherenceChart(adherenceCanvas, adherence.series);
   charts.adherence = adherenceCanvas;
+
+  // Salud: historial cronológico + promedios mensuales (oxígeno y tensión
+  // siempre por separado), reutilizando el mismo sistema de tarjetas.
+  const healthEntries = await getHealthEntries(ctx.profile.id);
+  if (healthEntries.length) {
+    const healthAverages = await getMonthlyHealthAverages(ctx.profile.id);
+    const healthCard = document.createElement("div");
+    healthCard.className = "card col";
+    healthCard.innerHTML = `<h3 class="title-lg">Salud</h3>
+      <p class="text-md">Promedio de ${monthLabel(healthAverages.month)}: oxígeno ${
+      healthAverages.avgOxygen !== null ? formatAverage(healthAverages.avgOxygen) + "%" : "—"
+    }, tensión ${formatAverage(healthAverages.avgSystolic, 0)} / ${formatAverage(healthAverages.avgDiastolic, 0)}.</p>`;
+    const healthList = document.createElement("div");
+    healthList.className = "col";
+    healthList.style.gap = "8px";
+    healthList.style.marginTop = "10px";
+    healthEntries.slice(0, 10).forEach((e) => {
+      const row = document.createElement("div");
+      row.className = "health-history-item";
+      const parts = [];
+      if (e.oxygen !== null) parts.push(`Oxígeno: ${e.oxygen}%`);
+      if (e.systolic !== null || e.diastolic !== null) parts.push(`Tensión: ${e.systolic ?? "—"} / ${e.diastolic ?? "—"}`);
+      row.innerHTML = `<span class="text-base" style="font-weight:700;">${e.date}</span><span class="text-base">${parts.join(" · ")}</span>`;
+      healthList.appendChild(row);
+    });
+    healthCard.appendChild(healthList);
+    rootEl.appendChild(healthCard);
+  }
 
   const note = document.createElement("p");
   note.className = "text-md";
