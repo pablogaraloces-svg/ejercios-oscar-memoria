@@ -251,9 +251,11 @@ export class SessionRunner {
     const anyDone = () => Object.values(doneStates).some(Boolean);
     const evaluateAdvance = () => {
       if (anyDone()) {
-        // Al terminar de marcar (o corregir), esperamos un momento breve
-        // antes de continuar, por si quiere marcar alguna cosita más.
-        this.scheduleExactAdvance(1200);
+        // Tras marcar algo, se da tiempo de sobra para leer el resto de
+        // recordatorios con calma, pensarlos y poder ir marcando varios
+        // más antes de continuar (cada toque nuevo vuelve a alargar esta
+        // espera desde cero).
+        this.scheduleExactAdvance(14000);
       } else {
         // Nada marcado todavía: no avanzar. Aun así, dejamos una red de
         // seguridad muy larga para que la pantalla nunca quede bloqueada
