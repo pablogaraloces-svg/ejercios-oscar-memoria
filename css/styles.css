@@ -852,6 +852,102 @@ body.high-contrast .home-screen-bg { background: var(--color-bg); }
 }
 .btn-follow-blink:active { animation-play-state: paused; }
 
+/* ---------- Pantalla "Estoy listo": calendario + reloj digital ---------- */
+.greeting-screen { gap: var(--space-3); width: 100%; }
+.greeting-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.greeting-calendar-card {
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-3) var(--space-2);
+  animation: fadeIn var(--dur-slow) var(--ease-gentle) 150ms both;
+}
+.greeting-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+.greeting-calendar-month {
+  font-size: var(--font-md);
+  font-weight: 800;
+  text-transform: capitalize;
+  color: var(--color-text);
+  letter-spacing: -0.005em;
+}
+/* Reloj digital, integrado en la propia cabecera del calendario en vez
+   de ser un texto suelto: cápsula con tipografía tabular (los dígitos no
+   "bailan" al cambiar) y color de acento, cálido en vez de frío. */
+.greeting-clock {
+  font-size: var(--font-lg);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-soft);
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-inset);
+}
+.greeting-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px 2px;
+  align-items: center;
+  justify-items: center;
+}
+.greeting-cal-dow {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--color-text-soft);
+  padding-bottom: 4px;
+}
+.greeting-cal-day {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  transition: transform var(--dur-fast) var(--ease-gentle);
+}
+.greeting-cal-day.is-today {
+  background: var(--gradient-primary);
+  color: white;
+  font-weight: 800;
+  box-shadow: var(--shadow-glow-primary);
+  animation: mascotCelebrate 900ms var(--ease-spring) 300ms both;
+}
+.greeting-start-btn { margin-top: var(--space-4); }
+
+/* ---------- "Antes de seguir": botón Seguir arriba a la derecha ---------- */
+.reminders-box { position: relative; }
+.reminders-heading { padding-right: 150px; } /* deja hueco para que el título nunca quede debajo del botón */
+.reminders-follow-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-height: 64px;
+  padding: 10px 22px;
+  font-size: var(--font-base);
+}
+@media (max-width: 700px), (orientation: portrait) {
+  .reminders-box { padding-top: 78px; }
+  .reminders-heading { padding-right: 0; }
+  .reminders-follow-btn { top: 0; right: 0; left: 0; margin: 0 auto; width: fit-content; }
+}
+
 /* ---------- Variante compacta de tarjeta de opción ---------- */
 /* Para pantallas con mucha información junta (p.ej. foto + pregunta + 4
    respuestas de "¿Quién es?"), donde conviene un pelín más de aire. */
@@ -1010,7 +1106,19 @@ body.high-contrast .home-screen-bg { background: var(--color-bg); }
   text-align: center;
   animation: fadeIn var(--dur-slow) var(--ease-gentle) 500ms both;
 }
+.splash-version {
+  margin-top: 4px;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--color-text-soft);
+  opacity: 0.65;
+  text-align: center;
+  animation: fadeIn var(--dur-slow) var(--ease-gentle) 650ms both;
+}
 .splash-credit.exiting {
+  animation: fadeIn 400ms var(--ease-gentle) reverse forwards;
+}
+.splash-version.exiting {
   animation: fadeIn 400ms var(--ease-gentle) reverse forwards;
 }
 

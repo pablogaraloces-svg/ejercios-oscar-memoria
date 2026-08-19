@@ -104,6 +104,38 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 9 (número de versión, calendario y ajustes de ritmo)
+
+**Número de versión visible**
+- Debajo del crédito de autoría en la pantalla de inicio aparece ahora
+  "Versión 9". Vive en un único archivo (`js/core/version.js`), sincronizado
+  con la versión de caché del Service Worker, para que siempre se sepa con
+  un vistazo qué versión hay instalada en la tablet. Se incrementará en
+  cada actualización futura.
+
+**Pantalla "Estoy listo" rediseñada**
+- Sustituida la fecha/hora sueltas (que quedaban frías) por una tarjeta de
+  calendario del mes actual, limpia y ordenada al estilo Apple: todos los
+  días del mes, con el día de hoy resaltado con un círculo de color y una
+  pequeña animación al aparecer.
+- El reloj digital ya no es un texto suelto: está integrado en la propia
+  cabecera del calendario, junto al mes, con tipografía tabular (los
+  números no "bailan" al cambiar) dentro de una cápsula de color cálido.
+- El botón "Estoy listo" ahora parpadea (mismo estilo que el resto de la
+  app) y queda colocado abajo, con espacio de sobra alrededor de todo el
+  conjunto.
+
+**"¿Cómo te encuentras de humor hoy?" más ágil**
+- Corregido: antes, tras marcar un icono, podía tardar bastante más de lo
+  esperado en avanzar (el margen de seguridad de la voz se sumaba de más).
+  Ahora son exactamente 4 segundos tras la selección, ni más ni menos.
+
+**"Antes de seguir": botón "Seguir" arriba a la derecha**
+- Reubicado desde abajo hasta la esquina superior derecha de la pantalla,
+  bien visible y sin pisar nunca el título ni la lista de recordatorios
+  (se reserva automáticamente el hueco necesario, y en vertical se coloca
+  centrado arriba en vez de a la derecha, para que siempre quede cómodo).
+
 ## 🆕 Novedades de la versión 8 (inicio, Cerebrín vivo, familia y climatología)
 
 **Pantalla de inicio: causa raíz corregida**

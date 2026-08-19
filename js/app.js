@@ -12,6 +12,7 @@ import { renderReports, exportReportPdf } from "./screens/reportsScreen.js";
 import { renderHealth } from "./screens/healthScreen.js";
 import { getCurrentTimeText, getCurrentDateText } from "./core/phrases.js";
 import { getWeather } from "./core/weather.js";
+import { APP_VERSION } from "./core/version.js";
 
 const screens = {};
 document.querySelectorAll(".screen").forEach((el) => (screens[el.id] = el));
@@ -60,6 +61,7 @@ async function boot() {
     setTimeout(() => {
       document.querySelector(".splash-mascot")?.classList.add("exiting");
       document.querySelector(".splash-credit")?.classList.add("exiting");
+      document.querySelector(".splash-version")?.classList.add("exiting");
       setTimeout(resolve, EXIT_MS);
     }, ENTRANCE_MS + PAUSE_MS);
   });
@@ -113,6 +115,9 @@ async function boot() {
 // Las instancias de mascota se crean UNA sola vez (no en cada sesión) para
 // no acumular listeners de "toque" duplicados sobre el mismo elemento.
 const homeMascot = new Mascot(document.getElementById("home-mascot"), null);
+
+const versionEl = document.getElementById("splash-version");
+if (versionEl) versionEl.textContent = `Versión ${APP_VERSION}`;
 const sessionMascot = new Mascot(document.getElementById("session-mascot"), document.getElementById("session-bubble"));
 
 // Portada: en vez de una frase fija, se muestra la hora y la fecha reales

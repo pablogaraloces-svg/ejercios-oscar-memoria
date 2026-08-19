@@ -176,18 +176,58 @@ export class SessionRunner {
     const timeText = `Ahora son las ${getCurrentTimeText()}.`;
     this._nameBudget.used = true; // el saludo ya dice el nombre una vez
     this.say(`${greetText} ${dateText} ${timeText}`);
+
     const box = document.createElement("div");
-    box.className = "col center grow";
-    box.innerHTML = `<div style="font-size:3.2rem;">👋</div>
-      <h2 class="title-xl" style="text-align:center;">${greetText}</h2>
-      <p class="text-md" style="text-align:center;">${dateText} · ${getCurrentTimeText()}</p>`;
+    box.className = "col center grow greeting-screen";
+    box.innerHTML = `
+      <div class="greeting-header">
+        <div style="font-size:2.2rem;">👋</div>
+        <h2 class="title-xl" style="text-align:center;">${greetText}</h2>
+      </div>
+      ${this.buildCalendarCardHTML()}
+    `;
+
     const btn = document.createElement("button");
-    btn.className = "btn btn-success btn-huge btn-start-bigger";
-    btn.style.marginTop = "28px";
+    btn.className = "btn btn-success btn-huge btn-start-bigger btn-follow-blink greeting-start-btn";
     btn.textContent = "Estoy listo";
     btn.onclick = () => this.next();
     box.appendChild(btn);
     this.contentEl.appendChild(box);
+  }
+
+  /** Tarjeta de calendario del mes con el reloj digital integrado en la
+   * cabecera, para la pantalla de saludo ("Estoy listo"). */
+  buildCalendarCardHTML() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const today = now.getDate();
+    const monthLabel = now.toLocaleDateString("es-ES", { month: "long" });
+    const timeText = getCurrentTimeText();
+
+    const firstDay = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const startWeekday = (firstDay.getDay() + 6) % 7; // lunes = 0
+
+    let daysHtml = "";
+    ["L", "M", "X", "J", "V", "S", "D"].forEach((d) => {
+      daysHtml += `<span class="greeting-cal-dow">${d}</span>`;
+    });
+    for (let i = 0; i < startWeekday; i++) daysHtml += `<span></span>`;
+    for (let day = 1; day <= daysInMonth; day++) {
+      const isToday = day === today;
+      daysHtml += `<span class="greeting-cal-day${isToday ? " is-today" : ""}">${day}</span>`;
+    }
+
+    return `
+      <div class="card greeting-calendar-card">
+        <div class="greeting-calendar-header">
+          <span class="greeting-calendar-month">${monthLabel} ${year}</span>
+          <span class="greeting-clock">${timeText}</span>
+        </div>
+        <div class="greeting-calendar-grid">${daysHtml}</div>
+      </div>
+    `;
   }
 
   renderWellbeing(question) {
@@ -230,7 +270,9 @@ export class SessionRunner {
         );
         this.mascot.celebrate();
         this.say(reaction);
-        this.scheduleAutoAdvance(Math.max(2200, Voice.estimateDurationMs(reaction)));
+        // 4 segundos justos tras marcar: suficiente para leer la reacción,
+        // sin alargarse de más antes de pasar a la siguiente pantalla.
+        this.scheduleExactAdvance(4000);
       };
       options.appendChild(b);
     });
@@ -240,9 +282,26 @@ export class SessionRunner {
 
   renderReminders(reminders) {
     const box = document.createElement("div");
-    box.className = "col grow";
-    box.innerHTML = `<h2 class="title-xl">Antes de seguir…</h2><p class="text-md">Marca lo que ya hayas hecho hoy.</p>`;
+    box.className = "col grow reminders-box";
+    box.innerHTML = `
+      <div class="reminders-heading">
+        <div class="col" style="gap:4px;">
+          <h2 class="title-xl">Antes de seguir…</h2>
+          <p class="text-md">Marca lo que ya hayas hecho hoy.</p>
+        </div>
+      </div>`;
     this.say("¿Has podido hacer alguna de estas cositas hoy?");
+
+    // Sin avance automático: Óscar decide cuándo continuar, con todo el
+    // tiempo que necesite para leer, pensar y marcar lo que corresponda.
+    // El botón "Seguir" (arriba a la derecha, bien visible) parpadea
+    // suavemente para que quede claro cómo avanzar cuando esté listo.
+    const followBtn = document.createElement("button");
+    followBtn.className = "btn btn-success btn-follow-blink reminders-follow-btn";
+    followBtn.textContent = "Seguir ▶️";
+    followBtn.onclick = () => this.next();
+    box.appendChild(followBtn);
+
     const list = document.createElement("div");
     list.className = "col";
     list.style.marginTop = "16px";
@@ -298,20 +357,6 @@ export class SessionRunner {
       list.appendChild(row);
     });
     box.appendChild(list);
-
-    // Sin avance automático: Óscar decide cuándo continuar, con todo el
-    // tiempo que necesite para leer, pensar y marcar lo que corresponda.
-    // El botón "Seguir" parpadea suavemente para que quede claro cómo
-    // avanzar cuando esté listo.
-    const followRow = document.createElement("div");
-    followRow.className = "row center";
-    followRow.style.marginTop = "28px";
-    const followBtn = document.createElement("button");
-    followBtn.className = "btn btn-huge btn-success btn-follow-blink";
-    followBtn.textContent = "Seguir ▶️";
-    followBtn.onclick = () => this.next();
-    followRow.appendChild(followBtn);
-    box.appendChild(followRow);
 
     this.contentEl.appendChild(box);
   }
