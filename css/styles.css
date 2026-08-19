@@ -226,13 +226,18 @@ h1, h2, h3, p { margin: 0; }
   font-size: var(--font-huge);
   font-weight: 800;
   letter-spacing: -0.02em;
-  margin: 2px 0 var(--space-3);
+  margin: -6px 0 10px;
   color: var(--color-primary-dark);
   background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 60%, var(--color-primary-light) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+/* Esta pantalla necesita todo el alto posible para ver bien a la
+   familia: se reduce el hueco de la barra superior (el título ya no vive
+   ahí, así que no necesita tanto margen) para aprovechar mejor el
+   espacio disponible, sin cortar ninguna fotografía. */
+#screen-family .top-bar { margin-bottom: 6px; }
 body.high-contrast .family-title-elegant {
   background: none;
   -webkit-text-fill-color: unset;
@@ -346,7 +351,14 @@ body.high-contrast .family-title-elegant {
 .col { display: flex; flex-direction: column; gap: var(--space-2); }
 .center { align-items: center; justify-content: center; text-align: center; }
 .spread { justify-content: space-between; }
-.grow { flex: 1; }
+/* min-height:0 es imprescindible aquí: sin él, un elemento flex con
+   flex:1 que además tenga su propio scroll interno (overflow-y:auto) no
+   se limita al espacio disponible y nunca llega a activar ese scroll
+   propio — en su lugar, empuja y corta el contenido de toda la pantalla
+   que lo contiene (es el motivo exacto por el que, p.ej., la pantalla de
+   Familia recortaba las fotos en vez de dejarlas hacer scroll con
+   normalidad). */
+.grow { flex: 1; min-height: 0; }
 .wrap { flex-wrap: wrap; }
 
 .top-bar {
@@ -990,18 +1002,26 @@ body.high-contrast .home-screen-bg { background: var(--color-bg); }
    independiente (igual que el saludo de arriba, para que ambos queden en
    el mismo eje visual), y el botón "flota" a su derecha sin desplazar
    ese centro. En vertical, el botón pasa a ir debajo, centrado también. */
+/* Calendario + botón "Estoy listo": rejilla de 3 columnas (hueco /
+   calendario / botón). Al ser las columnas de los extremos del mismo
+   tamaño ("1fr"), el calendario (columna central, "auto") queda siempre
+   centrado en el mismo eje que el saludo de arriba, y el botón vive en
+   su PROPIA columna a la derecha — nunca puede solaparse con el
+   calendario, sea cual sea el ancho real del botón. En vertical, se
+   apilan uno debajo del otro. */
 .greeting-main-row {
-  position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: center;
+  gap: var(--space-4);
   width: 100%;
 }
+.greeting-calendar-slot { grid-column: 2; }
 .greeting-start-btn-side {
-  position: absolute;
-  top: 50%;
-  right: calc(50% - 190px - var(--space-4));
-  transform: translateY(-50%);
+  grid-column: 3;
+  justify-self: start;
+  align-self: center;
+  margin-top: -22px; /* un poco más arriba, para que quede cómodo junto al calendario */
   min-height: 76px;
   padding: 14px 30px;
   font-size: var(--font-md);
@@ -1009,8 +1029,9 @@ body.high-contrast .home-screen-bg { background: var(--color-bg); }
   white-space: nowrap;
 }
 @media (max-width: 900px), (orientation: portrait) {
-  .greeting-main-row { flex-direction: column; gap: var(--space-4); }
-  .greeting-start-btn-side { position: static; transform: none; }
+  .greeting-main-row { grid-template-columns: 1fr; gap: var(--space-3); }
+  .greeting-calendar-slot { grid-column: 1; justify-self: center; }
+  .greeting-start-btn-side { grid-column: 1; justify-self: center; margin-top: 0; }
 }
 
 /* ---------- "Antes de seguir": botón Seguir arriba a la derecha ---------- */

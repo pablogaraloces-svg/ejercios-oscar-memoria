@@ -1,11 +1,15 @@
 /**
  * version.js — Número de versión de la aplicación, visible debajo del
- * crédito de autoría en la pantalla de inicio.
+ * crédito de autoría en la pantalla de inicio y en la portada.
  *
- * Se incrementa correlativamente cada vez que se publica una actualización
- * (debe mantenerse en el mismo número que CACHE_VERSION en
- * service-worker.js, para que ambos avancen siempre juntos). Así, con solo
- * mirar la pantalla de inicio, se sabe exactamente qué versión hay
- * instalada en la tablet.
+ * Esquema de numeración: los cambios pequeños/puntuales suman un decimal
+ * (11.1, 11.2, 11.3...) sobre la versión mayor actual (11), en vez de
+ * subir el número entero cada vez. Cuando se acumule una actualización
+ * grande o un rediseño importante, se pasa a la siguiente versión mayor
+ * (12.0) y se reinicia el decimal. Así hay margen para muchos cambios
+ * pequeños sin que el número crezca demasiado rápido.
+ *
+ * Debe mantenerse siempre coherente con CACHE_VERSION en
+ * service-worker.js (mismo número, para que ambos avancen juntos).
  */
-export const APP_VERSION = "11";
+export const APP_VERSION = "11.1";

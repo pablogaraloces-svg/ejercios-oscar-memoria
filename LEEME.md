@@ -104,6 +104,35 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 11.1 (correcciones puntuales)
+
+**Nuevo esquema de numeración de versiones**
+- A partir de ahora, los cambios puntuales suman un decimal (11.1, 11.2,
+  11.3...) en vez de subir el número entero cada vez. Cuando se acumule
+  una actualización grande, se pasará a la versión 12 y se reiniciará el
+  decimal. Así hay margen para muchos ajustes finos sin que el número
+  crezca demasiado rápido.
+
+**Familia: corregido el corte de fotos (causa real, no un parche)**
+- Encontrado el motivo exacto: el contenedor con scroll interno de la
+  lista de familiares no tenía `min-height: 0`, un detalle técnico de
+  Flexbox sin el cual ese tipo de contenedor no se limita a su espacio
+  disponible ni activa correctamente su propio scroll — en su lugar,
+  "empuja" y corta el contenido de toda la pantalla. Corregido de forma
+  general (beneficia también, de forma silenciosa, a otras pantallas con
+  scroll interno como Estadísticas, Ajustes o Salud).
+- Además, se ha reducido el espacio que ocupaban la barra superior y el
+  título en esta pantalla, para aprovechar mejor el alto disponible y ver
+  cómodamente a los grupos familiares.
+
+**"Estoy listo": el botón ya no se solapa con el calendario**
+- Sustituido el cálculo manual de posición (que podía fallar según el
+  ancho real del botón) por una rejilla de 3 columnas donde el calendario
+  y el botón viven en columnas completamente independientes — así es
+  geométricamente imposible que se solapen, sea cual sea su tamaño. El
+  botón queda además un poco más arriba, en el hueco entre el calendario
+  y el borde derecho de la pantalla.
+
 ## 🆕 Novedades de la versión 11 (correcciones de detalle y ajuste fino)
 
 **Familia**

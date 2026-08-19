@@ -1,8 +1,11 @@
 /**
  * service-worker.js — Cache-first para uso 100% offline.
  * Sube CACHE_VERSION cuando se publiquen cambios para forzar actualización.
+ * Debe coincidir siempre con APP_VERSION (js/core/version.js): cambios
+ * pequeños suman un decimal (v11.1, v11.2...), los grandes pasan a la
+ * siguiente versión mayor (v12).
  */
-const CACHE_VERSION = "acompanante-v11";
+const CACHE_VERSION = "acompanante-v11.1";
 const CORE_ASSETS = [
   "./",
   "./index.html",

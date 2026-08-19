@@ -210,7 +210,11 @@ export class SessionRunner {
 
     const mainRow = document.createElement("div");
     mainRow.className = "greeting-main-row";
-    mainRow.innerHTML = this.buildCalendarCardHTML();
+
+    const calSlot = document.createElement("div");
+    calSlot.className = "greeting-calendar-slot";
+    calSlot.innerHTML = this.buildCalendarCardHTML();
+    mainRow.appendChild(calSlot);
 
     const btn = document.createElement("button");
     btn.className = "btn btn-success btn-follow-blink greeting-start-btn-side";
