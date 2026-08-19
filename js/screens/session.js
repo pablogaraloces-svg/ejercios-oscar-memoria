@@ -151,17 +151,39 @@ export class SessionRunner {
     this.clearInactivityTimer();
     clearTimeout(this._advanceTimer);
     clearTimeout(this._introTimer);
+    clearTimeout(this._stepTransitionTimer);
     // Presupuesto de nombre: como máximo se dice "Óscar" una vez por
     // pantalla/ejercicio (se reinicia limpio en cada paso nuevo).
     this._nameBudget = { used: false };
     this.updateProgress();
     this.mascot.idle();
-    this.contentEl.innerHTML = "";
-    this.contentEl.classList.remove("fade-in");
-    void this.contentEl.offsetWidth;
-    this.contentEl.classList.add("fade-in");
 
-    const step = this.steps[this.stepIndex];
+    const previousStep = this.steps[this._lastRenderedIndex];
+    const currentStep = this.steps[this.stepIndex];
+    this._lastRenderedIndex = this.stepIndex;
+
+    const paintStep = () => {
+      this.contentEl.classList.remove("content-fade-out");
+      this.contentEl.innerHTML = "";
+      this.contentEl.classList.remove("fade-in");
+      void this.contentEl.offsetWidth;
+      this.contentEl.classList.add("fade-in");
+      this.dispatchStep(currentStep);
+    };
+
+    // Entre un ejercicio y el siguiente, se deja un pequeño desvanecido de
+    // salida antes de pintar el nuevo, para que el cambio no se sienta de
+    // golpe (el resto de pantallas de la sesión ya tenían una entrada
+    // suave y se mantienen igual, sin este paso extra).
+    if (previousStep?.type === "exercise" && currentStep.type === "exercise") {
+      this.contentEl.classList.add("content-fade-out");
+      this._stepTransitionTimer = setTimeout(paintStep, 200);
+    } else {
+      paintStep();
+    }
+  }
+
+  dispatchStep(step) {
     if (step.type === "greeting") this.renderGreeting();
     else if (step.type === "wellbeing") this.renderWellbeing(step.question);
     else if (step.type === "reminders") this.renderReminders(step.reminders);
@@ -184,14 +206,19 @@ export class SessionRunner {
         <div style="font-size:2.2rem;">👋</div>
         <h2 class="title-xl" style="text-align:center;">${greetText}</h2>
       </div>
-      ${this.buildCalendarCardHTML()}
     `;
 
+    const mainRow = document.createElement("div");
+    mainRow.className = "greeting-main-row";
+    mainRow.innerHTML = this.buildCalendarCardHTML();
+
     const btn = document.createElement("button");
-    btn.className = "btn btn-success btn-huge btn-start-bigger btn-follow-blink greeting-start-btn";
+    btn.className = "btn btn-success btn-follow-blink greeting-start-btn-side";
     btn.textContent = "Estoy listo";
     btn.onclick = () => this.next();
-    box.appendChild(btn);
+    mainRow.appendChild(btn);
+
+    box.appendChild(mainRow);
     this.contentEl.appendChild(box);
   }
 
@@ -573,9 +600,9 @@ export class SessionRunner {
 
   renderPhotoChoice(ex, hintFlow) {
     const photoBox = document.createElement("div");
-    photoBox.className = "col center family-photo-stage";
+    photoBox.className = "col center";
     photoBox.style.marginTop = "12px";
-    photoBox.innerHTML = `<img src="${ex.photo}" alt="Foto familiar" class="family-photo-elevated" />`;
+    photoBox.innerHTML = `<img src="${ex.photo}" alt="Foto familiar" class="family-photo-elevated" id="family-photo-img" />`;
     this.contentEl.appendChild(photoBox);
     this.renderChoice(ex, hintFlow, { compact: true });
   }
@@ -604,6 +631,12 @@ export class SessionRunner {
       this.stats.correct++;
       if (ex.category === "herramientas" && ex.__slotEl) {
         this.animatePieceIntoSlot(btn, ex.__slotEl, opt.emoji);
+      }
+      if (ex.category === "fotos") {
+        // Pequeño "latido" en la propia foto al acertar, para dar más
+        // vida al ejercicio (además del brillo verde del botón).
+        const photoImg = document.getElementById("family-photo-img");
+        photoImg?.classList.add("family-photo-heartbeat");
       }
       await reportResult(this.profile.id, ex.category, { success: true, usedHints: hintFlow.errorCount });
       burstConfetti(14);
@@ -657,37 +690,32 @@ export class SessionRunner {
   renderSpotDiff(ex, hintFlow) {
     const wrap = document.createElement("div");
     wrap.className = "col";
-    wrap.style.gap = "10px";
-    wrap.style.marginTop = "14px";
+    wrap.style.gap = "12px";
+    wrap.style.marginTop = "10px";
 
     const labels = document.createElement("div");
     labels.className = "row";
     labels.style.justifyContent = "center";
-    labels.style.gap = "40px";
+    labels.style.gap = "48px";
     labels.innerHTML = `
-      <div class="col center" style="gap:4px;">
-        <span class="pill">Imagen 1</span>
-      </div>
-      <div class="col center" style="gap:4px;">
-        <span class="pill">Imagen 2</span>
-        <span class="spot-diff-touch">TOCA AQUÍ</span>
-      </div>
+      <span class="diff-panel-title">Imagen 1</span>
+      <span class="diff-panel-title">Imagen 2</span>
     `;
     wrap.appendChild(labels);
 
     const panels = document.createElement("div");
     panels.className = "row wrap";
-    panels.style.gap = "18px";
+    panels.style.gap = "22px";
     panels.style.justifyContent = "center";
 
     const cols = Math.ceil(Math.sqrt(ex.panelA.length));
 
     function buildPanel(items, interactive) {
       const p = document.createElement("div");
-      p.className = "card";
+      p.className = "card diff-panel" + (interactive ? " diff-panel-highlight" : "");
       p.style.display = "grid";
       p.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-      p.style.gap = "8px";
+      p.style.gap = "10px";
       items.forEach((emoji) => {
         const cell = document.createElement("div");
         cell.textContent = emoji;

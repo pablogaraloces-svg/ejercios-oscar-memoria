@@ -675,12 +675,12 @@ h1, h2, h3, p { margin: 0; }
 
 /* ---------- Ejercicio: encuentra las diferencias ---------- */
 .diff-cell {
-  width: 58px;
-  height: 58px;
+  width: 80px;
+  height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
+  font-size: 2.7rem;
   border-radius: var(--radius-sm);
   background: var(--color-bg-soft);
   border: 3px solid var(--color-border);
@@ -702,6 +702,15 @@ h1, h2, h3, p { margin: 0; }
 /* Fade util */
 .fade-in { animation: fadeIn var(--dur-slow) var(--ease-gentle); }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
+
+/* Desvanecido de salida entre un ejercicio y el siguiente, para que el
+   cambio no se sienta de golpe (se combina con la entrada .fade-in que
+   pinta el nuevo contenido justo después). */
+.content-fade-out { animation: contentFadeOut 200ms var(--ease-gentle) forwards; }
+@keyframes contentFadeOut {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-6px) scale(0.99); }
+}
 
 .hidden { display: none !important; }
 
@@ -929,7 +938,26 @@ body.high-contrast .home-screen-bg { background: var(--color-bg); }
   box-shadow: var(--shadow-glow-primary);
   animation: mascotCelebrate 900ms var(--ease-spring) 300ms both;
 }
-.greeting-start-btn { margin-top: var(--space-4); }
+/* Calendario + botón "Estoy listo", en fila: el botón queda ajustado al
+   lado, más pequeño que el CTA de la portada pero con el mismo parpadeo
+   para que se identifique igual de bien. En vertical, se apilan. */
+.greeting-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  width: 100%;
+}
+.greeting-start-btn-side {
+  min-height: 76px;
+  padding: 14px 30px;
+  font-size: var(--font-md);
+  border-radius: var(--radius-lg);
+}
+@media (max-width: 700px), (orientation: portrait) {
+  .greeting-main-row { flex-direction: column; }
+}
 
 /* ---------- "Antes de seguir": botón Seguir arriba a la derecha ---------- */
 .reminders-box { position: relative; }
@@ -952,13 +980,14 @@ body.high-contrast .home-screen-bg { background: var(--color-bg); }
 /* Para pantallas con mucha información junta (p.ej. foto + pregunta + 4
    respuestas de "¿Quién es?"), donde conviene un pelín más de aire. */
 .option-card-compact {
-  min-height: 84px;
-  padding: 10px;
+  min-height: 68px;
+  padding: 8px;
+  font-size: var(--font-sm);
 }
 .option-card-compact .emoji {
-  width: 52px;
-  height: 52px;
-  font-size: 2rem;
+  width: 42px;
+  height: 42px;
+  font-size: 1.7rem;
 }
 
 /* Iconos SVG propios (tornillo, tuerca): que se vean centrados y nítidos
@@ -1028,41 +1057,46 @@ body.high-contrast .home-screen-bg { background: var(--color-bg); }
 .weather-temp { font-size: var(--font-lg); font-weight: 800; line-height: 1.1; }
 .weather-desc { font-size: var(--font-sm); color: var(--color-text-soft); }
 
-/* ---------- Ejercicio de familia: escenario con profundidad ---------- */
-/* La fotografía sigue siendo la protagonista; solo se añade un "escenario"
-   detrás (degradado sutil + sombra ambiental) para dar sensación de
-   profundidad, al estilo de interfaces modernas tipo Apple. */
-.family-photo-stage {
-  position: relative;
-  padding: 30px;
-  border-radius: 36px;
-  background: radial-gradient(circle at 50% 38%, rgba(78, 127, 191, 0.12) 0%, rgba(30, 34, 46, 0.16) 100%);
-}
+/* ---------- Ejercicio de familia ---------- */
+/* Sin fondo/escenario detrás: la fotografía se deja tal cual, solo con un
+   marco y una sombra suave propios (sin recuadro grande ni degradado). */
 .family-photo-elevated {
   width: 220px;
   height: 220px;
   object-fit: cover;
   border-radius: 28px;
   border: 4px solid var(--color-surface);
-  box-shadow:
-    0 2px 6px rgba(20, 24, 34, 0.14),
-    0 24px 48px rgba(20, 24, 34, 0.30),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.35);
-  position: relative;
-  z-index: 1;
+  box-shadow: var(--shadow-lift);
+  transform-origin: center;
+}
+/* Pequeño "latido" en la propia foto al acertar el nombre, para dar algo
+   más de vida al ejercicio (además del brillo verde del botón elegido). */
+.family-photo-heartbeat { animation: familyPhotoHeartbeat 700ms var(--ease-spring); }
+@keyframes familyPhotoHeartbeat {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.12); }
+  45% { transform: scale(1.02); }
+  65% { transform: scale(1.09); }
 }
 
-/* ---------- "Toca aquí" del ejercicio de diferencias ---------- */
-.spot-diff-touch {
+/* ---------- Ejercicio de diferencias: títulos e iluminación del recuadro ---------- */
+.diff-panel-title {
   font-weight: 800;
-  font-size: var(--font-sm);
-  color: var(--color-accent);
-  letter-spacing: 0.03em;
-  animation: spotDiffPulse 1.6s ease-in-out infinite;
+  font-size: var(--font-md);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text);
 }
-@keyframes spotDiffPulse {
-  0%, 100% { opacity: 0.75; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.08); }
+.diff-panel { position: relative; }
+/* En vez de un texto "TOCA AQUÍ", el propio recuadro que hay que tocar se
+   ilumina por los bordes de forma sutil e intermitente (encendido breve,
+   pausa, repetir), para que la vista vaya sola hacia él. */
+.diff-panel-highlight {
+  animation: diffPanelGlow 2.6s ease-in-out infinite;
+}
+@keyframes diffPanelGlow {
+  0%, 12%, 100% { box-shadow: var(--shadow-soft), var(--btn-bevel-ghost); border-color: rgba(233, 226, 212, 0.7); }
+  6% { box-shadow: 0 0 0 5px rgba(245, 169, 62, 0.4), var(--shadow-soft); border-color: var(--color-accent); }
 }
 
 /* ---------- Pantalla de inicio (splash) ---------- */

@@ -104,6 +104,45 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 10 (calendario, diferencias, familia y transiciones)
+
+**Calendario de "Estoy listo"**
+- La voz simplificada dice ahora con claridad el día de la semana, el día
+  y el mes ("Hoy es miércoles, 19 de agosto"), sin el año (que alargaba
+  la frase y restaba protagonismo al día de la semana).
+- El botón "Estoy listo" se ha movido junto al calendario (a su lado, no
+  debajo), más pequeño que el CTA de la portada pero con el mismo
+  parpadeo, sin pisar nada; en vertical se apila automáticamente.
+
+**Ejercicio de diferencias**
+- Los dos recuadros de imágenes ahora son más grandes (de 58 a 80 píxeles
+  por celda), para verse mejor.
+- Títulos más claros: "IMAGEN 1" / "IMAGEN 2" en mayúsculas.
+- Eliminado el texto "TOCA AQUÍ": ahora el propio recuadro que hay que
+  tocar se ilumina por los bordes de forma sutil e intermitente, para que
+  la vista vaya sola hacia él.
+
+**Ejercicio de familia**
+- Quitado el fondo/"escenario" gris que aparecía detrás de la foto (se
+  dejó tal cual, con su marco y sombra propios, sin recuadro extra).
+- Botones de nombres algo más pequeños.
+- Al acertar, la propia foto hace un pequeño "latido" (zoom con rebote),
+  además del brillo verde del botón elegido.
+
+**Transición entre ejercicios**
+- Añadido un desvanecido de salida sutil (200 ms) específicamente entre
+  un ejercicio y el siguiente, para que el cambio no se sienta tan de
+  golpe. El resto de pantallas de la sesión mantiene su transición
+  habitual, sin este paso extra.
+
+**Icono de la aplicación regenerado**
+- El icono (incluido el maskable, que es el que usa Android para el
+  icono real de la tablet) tenía dos fondos superpuestos y el texto
+  "CEREBRÍN" incrustado, lo que se veía desajustado. Se ha regenerado
+  desde cero usando el personaje limpio sobre el mismo degradado cálido
+  que ya se usa para la mascota en el resto de la app — así el icono de
+  la tablet es visualmente coherente con el diseño interno.
+
 ## 🆕 Novedades de la versión 9 (número de versión, calendario y ajustes de ritmo)
 
 **Número de versión visible**

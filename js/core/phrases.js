@@ -154,14 +154,13 @@ export function getCurrentDateText() {
   return now.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
 }
 
-/** Frase hablada con el día, mes y año de hoy, para que la voz lo recuerde al empezar. */
+/** Frase hablada con el día de la semana, el día y el mes de hoy. */
 export function getSpokenDate() {
   const now = new Date();
   const text = now.toLocaleDateString("es-ES", {
     weekday: "long",
     day: "numeric",
     month: "long",
-    year: "numeric",
   });
   return `Hoy es ${text}.`;
 }
