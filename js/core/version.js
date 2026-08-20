@@ -17,4 +17,4 @@
  * Debe mantenerse siempre coherente con CACHE_VERSION en
  * service-worker.js (mismo número, para que ambos avancen juntos).
  */
-export const APP_VERSION = "1.2";
+export const APP_VERSION = "1.3";

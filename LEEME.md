@@ -104,6 +104,46 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 1.3 (correcciones y medicación)
+
+**Administración**
+- Corregido el solape del texto "Mantén pulsado ⠿..." con el primer
+  botón: ahora queda pegado justo debajo del título, sin invadir nada.
+
+**Perfiles**
+- Al eliminar un perfil, la aplicación ya no salta a la pantalla
+  principal: se queda en Perfiles, mostrando el resto de fichas.
+- **Nueva sección de medicación por perfil**: Mañana / Mediodía / Noche,
+  cada una con su lista de medicamentos (nombre, cantidad —admite
+  "1/2" para media pastilla— y hora). Se guarda al instante en cuanto se
+  añade o se quita algo.
+
+**"¿Cómo te encuentras hoy?"**
+- Corregido el corte de voz: ahora la pantalla espera al menos 4
+  segundos, pero si la frase es más larga de leer, se alarga
+  automáticamente (con 1,5s de margen) para que nunca se corte a mitad.
+
+**Ejercicio de cálculo**
+- Añadida (sin tocar nada existente) una cuenta visual grande en la
+  parte inferior, tipo "4 − 2 = ?", con el interrogante parpadeando hasta
+  que Óscar acierta, momento en el que se sustituye por el resultado real
+  con una pequeña animación. Números grandes y muy legibles.
+
+**Botón de salir**
+- Nueva opción "Ir al inicio", junto a las dos que ya había ("Seguir un
+  poco más" y "Salir"), para volver a la portada sin cerrar la app.
+
+**Página principal**
+- Cerebrín aparece ahora también de fondo, muy grande pero muy sutil
+  (apenas un 7% de opacidad), fundido con el degradado, a la derecha de
+  la pantalla — un toque personal que no interfiere con la lectura de
+  los botones. Se desactiva automáticamente en modo alto contraste.
+
+**Estadísticas**
+- Nuevo resumen de medicación (mañana/mediodía/noche, con nombre,
+  cantidad y hora), con el mismo diseño limpio de tarjetas que el resto
+  de la pantalla, y también incluido en el PDF exportable.
+
 ## 🆕 Novedades de la versión 1.2 (perfiles múltiples, fechas en español, PDF ampliado)
 
 **Sistema de versiones reiniciado**

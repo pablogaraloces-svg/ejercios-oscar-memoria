@@ -303,9 +303,11 @@ export class SessionRunner {
         );
         this.mascot.celebrate();
         this.say(reaction);
-        // 4 segundos justos tras marcar: suficiente para leer la reacción,
-        // sin alargarse de más antes de pasar a la siguiente pantalla.
-        this.scheduleExactAdvance(4000);
+        // Al menos 4 segundos, pero si la frase es más larga de leer en
+        // voz alta, se alarga automáticamente (con 1,5s de margen extra)
+        // para que la voz nunca se corte a mitad antes de pasar de
+        // pantalla.
+        this.scheduleExactAdvance(Math.max(4000, Voice.estimateDurationMs(reaction) + 1500));
       };
       options.appendChild(b);
     });
@@ -462,7 +464,28 @@ export class SessionRunner {
     else if (ex.kind === "photo_choice") this.renderPhotoChoice(ex, hintFlow);
     else if (ex.kind === "spot_diff") this.renderSpotDiff(ex, hintFlow);
     else if (ex.kind === "puzzle_piece") this.renderPuzzlePiece(ex, hintFlow);
-    else this.renderChoice(ex, hintFlow);
+    else {
+      this.renderChoice(ex, hintFlow);
+      if (ex.category === "calculo") this.renderCalcVisual(ex);
+    }
+  }
+
+  /** Ejercicio de cálculo: la cuenta grande abajo, con un "?" que
+   * parpadea hasta que Óscar acierta, momento en el que se sustituye
+   * por el resultado real. Es un elemento visual A MAYORES del ejercicio
+   * (botones y voz existentes no cambian en absoluto). */
+  renderCalcVisual(ex) {
+    const box = document.createElement("div");
+    box.className = "calc-visual fade-in";
+    const opSymbol = ex.calcOp === "-" ? "−" : "+";
+    box.innerHTML = `
+      <span class="calc-visual-num">${ex.calcA}</span>
+      <span class="calc-visual-op">${opSymbol}</span>
+      <span class="calc-visual-num">${ex.calcB}</span>
+      <span class="calc-visual-eq">=</span>
+      <span class="calc-visual-result" id="calc-visual-result">?</span>
+    `;
+    this.contentEl.appendChild(box);
   }
 
   renderMemoryRecall(ex, hintFlow) {
@@ -643,6 +666,14 @@ export class SessionRunner {
         // vida al ejercicio (además del brillo verde del botón).
         const photoImg = document.getElementById("family-photo-img");
         photoImg?.classList.add("family-photo-heartbeat");
+      }
+      if (ex.category === "calculo") {
+        // Sustituye el "?" de la cuenta visual por el resultado real.
+        const resultEl = document.getElementById("calc-visual-result");
+        if (resultEl) {
+          resultEl.textContent = String(ex.calcResult);
+          resultEl.classList.add("calc-visual-result-solved");
+        }
       }
       await reportResult(this.profile.id, ex.category, { success: true, usedHints: hintFlow.errorCount });
       burstConfetti(14);

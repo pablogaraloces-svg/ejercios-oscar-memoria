@@ -119,6 +119,10 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
           <label for="pf-notes-${p.id}">Observaciones</label>
           <textarea id="pf-notes-${p.id}" placeholder="Notas para la familia o el profesional (alergias, preferencias, cualquier cosa a tener en cuenta)…">${p.notes || ""}</textarea>
         </div>
+        <div class="field">
+          <label>Medicación y horarios</label>
+          <div id="pf-medication-${p.id}"></div>
+        </div>
         <div class="row wrap" style="gap:12px; margin-top:6px;">
           <button class="btn btn-success" id="pf-save-${p.id}">Guardar cambios</button>
           ${!isActive ? `<button class="btn btn-ghost" id="pf-use-${p.id}">Usar este perfil</button>` : ""}
@@ -126,6 +130,9 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
         </div>
       `;
       panel.appendChild(inner);
+      buildMedicationSection(inner.querySelector(`#pf-medication-${p.id}`), p, () => {
+        if (isActive) ctx.onProfileUpdated?.(p);
+      });
       item.appendChild(panel);
 
       let expanded = false;
@@ -179,13 +186,13 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
             const result = await deleteProfileCascade(p.id);
             if (result.ok) {
               if (isActive) {
-                // Si se elimina el perfil activo, se pasa automáticamente
-                // al primero que quede.
+                // Si se elimina el perfil activo, se pasa al primero que
+                // quede, pero SIN salir de esta pantalla — se queda aquí,
+                // en Perfiles, en vez de ir a la portada.
                 const remaining = await getAllProfiles();
-                if (remaining[0]) ctx.onProfileSwitched?.(remaining[0]);
-              } else {
-                await refresh();
+                if (remaining[0]) await ctx.silentSwitchProfile?.(remaining[0]);
               }
+              await refresh();
             }
           };
         };
@@ -656,4 +663,88 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
 
   renderTabs();
   await renderBody();
+}
+
+const MEDICATION_GROUPS = [
+  { key: "morning", label: "🌅 Mañana" },
+  { key: "noon", label: "☀️ Mediodía" },
+  { key: "night", label: "🌙 Noche" },
+];
+
+/**
+ * Sección de medicación de un perfil: tres momentos del día (mañana,
+ * mediodía, noche), cada uno con su lista de medicamentos (nombre,
+ * cantidad —admite "1/2" para media pastilla— y hora). Se guarda al
+ * instante en cuanto se añade o se quita algo, igual que el resto de
+ * listas editables de la app (recordatorios, familia).
+ */
+function buildMedicationSection(container, profile, onChanged) {
+  if (!container) return;
+  profile.medications = profile.medications || { morning: [], noon: [], night: [] };
+  container.innerHTML = "";
+  container.className = "col medication-section";
+
+  MEDICATION_GROUPS.forEach((g) => {
+    const groupBox = document.createElement("div");
+    groupBox.className = "medication-group";
+
+    const title = document.createElement("p");
+    title.className = "medication-group-title";
+    title.textContent = g.label;
+    groupBox.appendChild(title);
+
+    const list = document.createElement("div");
+    list.className = "col";
+    list.style.gap = "6px";
+    (profile.medications[g.key] || []).forEach((med) => {
+      const row = document.createElement("div");
+      row.className = "medication-row";
+      row.innerHTML = `<span class="medication-row-text">💊 <strong>${med.name}</strong> — ${med.quantity} — ${med.time || "sin hora"}</span>`;
+      const rm = document.createElement("button");
+      rm.className = "btn btn-icon btn-ghost medication-remove-btn";
+      rm.textContent = "✕";
+      rm.setAttribute("aria-label", "Quitar medicamento");
+      rm.onclick = async () => {
+        profile.medications[g.key] = profile.medications[g.key].filter((m) => m.id !== med.id);
+        await DB.put("profile", profile);
+        buildMedicationSection(container, profile, onChanged);
+        onChanged?.();
+      };
+      row.appendChild(rm);
+      list.appendChild(row);
+    });
+    groupBox.appendChild(list);
+
+    const addRow = document.createElement("div");
+    addRow.className = "row wrap medication-add-row";
+    addRow.innerHTML = `
+      <input type="text" placeholder="Medicamento" class="medication-input-name" style="flex:2; min-width:130px;" />
+      <input type="text" placeholder="Cantidad (ej: 1 o 1/2)" class="medication-input-qty" style="flex:1; min-width:130px;" />
+      <input type="time" class="medication-input-time" style="flex:1; min-width:110px;" />
+    `;
+    const addBtn = document.createElement("button");
+    addBtn.className = "btn btn-ghost";
+    addBtn.textContent = "➕ Añadir";
+    addRow.appendChild(addBtn);
+
+    const nameInput = addRow.querySelector(".medication-input-name");
+    const qtyInput = addRow.querySelector(".medication-input-qty");
+    const timeInput = addRow.querySelector(".medication-input-time");
+    addBtn.onclick = async () => {
+      const name = nameInput.value.trim();
+      if (!name) return;
+      profile.medications[g.key] = profile.medications[g.key] || [];
+      profile.medications[g.key].push({
+        id: `med_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        name,
+        quantity: qtyInput.value.trim() || "1",
+        time: timeInput.value || "",
+      });
+      await DB.put("profile", profile);
+      buildMedicationSection(container, profile, onChanged);
+      onChanged?.();
+    };
+    groupBox.appendChild(addRow);
+    container.appendChild(groupBox);
+  });
 }

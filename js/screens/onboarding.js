@@ -199,6 +199,7 @@ export function renderOnboarding(root, onComplete) {
         height: null,
         photo: null,
         notes: "",
+        medications: { morning: [], noon: [], night: [] },
         family: [],
         enabledCategories: data.categories.length ? data.categories : [...ALL_CATEGORIES],
         createdAt: Date.now(),

@@ -270,6 +270,14 @@ function openSettingsScreen() {
       await DB.put("settings", ctx.settings);
       goHome();
     },
+    // Igual que arriba, pero SIN navegar a la portada (para cuando se
+    // elimina el perfil activo: hay que pasar a otro perfil por fuerza,
+    // pero conviene quedarse en la pantalla de Perfiles).
+    silentSwitchProfile: async (p) => {
+      ctx.profile = p;
+      ctx.settings.activeProfileId = p.id;
+      await DB.put("settings", ctx.settings);
+    },
     // Abre el modal genérico compartido (el mismo que usa Familia) con
     // el contenido que le pida quien lo llame.
     openModal: (renderFn) => {
@@ -512,6 +520,17 @@ document.getElementById("btn-exit").addEventListener("click", () => {
 });
 document.getElementById("btn-exit-cancel").addEventListener("click", () => {
   document.getElementById("exit-modal").classList.remove("active");
+});
+document.getElementById("btn-exit-home").addEventListener("click", () => {
+  document.getElementById("exit-modal").classList.remove("active");
+  // Si había una sesión de ejercicios en marcha, se corta con cuidado
+  // (para no dejar temporizadores sueltos) y se va a la portada.
+  if (sessionRunner) {
+    sessionRunner.clearInactivityTimer?.();
+    clearTimeout(sessionRunner._advanceTimer);
+    clearTimeout(sessionRunner._introTimer);
+  }
+  goHome();
 });
 document.getElementById("btn-exit-confirm").addEventListener("click", () => {
   document.getElementById("exit-modal").classList.remove("active");

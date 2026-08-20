@@ -30,6 +30,7 @@
 
   <!-- Pantalla principal (solo lo esencial para Óscar) — fondo propio, distinto al resto -->
   <section class="screen home-screen-bg" id="screen-home">
+    <img src="assets/mascot/cerebrin.png" alt="" class="home-bg-mascot" aria-hidden="true" />
     <div class="top-bar">
       <div class="row">
         <div class="mascot bounce" id="home-mascot"><img src="assets/mascot/cerebrin.png" alt="Cerebrín" class="mascot-img" /></div>
@@ -72,7 +73,7 @@
       <h2 class="title-lg title-admin">Administración</h2>
       <div style="width:88px;"></div>
     </div>
-    <p class="text-sm" style="text-align:center; color:var(--color-text-soft); margin-bottom:6px;">Mantén pulsado ⠿ para reordenar los botones a tu gusto.</p>
+    <p class="text-sm admin-reorder-hint">Mantén pulsado ⠿ para reordenar los botones a tu gusto.</p>
     <div class="col grow center" id="admin-menu-list" style="gap:18px;"></div>
   </section>
 
@@ -153,8 +154,9 @@
       <img src="assets/mascot/cerebrin.png" alt="Cerebrín" style="width:80px; height:auto; margin:0 auto;" />
       <h2 class="title-lg">¿Quieres salir por ahora?</h2>
       <p class="text-base" style="margin:16px 0 28px;">Hemos guardado todo tu progreso. Puedes volver cuando quieras, aquí te espero.</p>
-      <div class="row center" style="gap:16px;">
+      <div class="row center wrap" style="gap:16px;">
         <button class="btn btn-ghost" id="btn-exit-cancel">Seguir un poco más</button>
+        <button class="btn btn-accent" id="btn-exit-home">Ir al inicio</button>
         <button class="btn btn-warm" id="btn-exit-confirm">Salir</button>
       </div>
     </div>

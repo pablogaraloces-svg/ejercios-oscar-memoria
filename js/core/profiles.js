@@ -25,6 +25,7 @@ export async function createProfile({ name, photo = null, age = null }) {
     weight: null,
     height: null,
     notes: "",
+    medications: { morning: [], noon: [], night: [] },
     family: [],
     enabledCategories: [],
     createdAt: Date.now(),

@@ -50,6 +50,10 @@ export function generateCalculationExercise(level = 2) {
     kind: "choice",
     prompt: `¿Cuánto es ${a} ${op} ${b}?`,
     spokenPrompt: `¿Cuánto es ${a} ${OP_WORDS[op]} ${b}?`,
+    calcA: a,
+    calcOp: op,
+    calcB: b,
+    calcResult: correct,
     options,
   };
 }

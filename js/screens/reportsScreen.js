@@ -170,6 +170,46 @@ export async function renderReports(rootEl, ctx) {
     rootEl.appendChild(healthCard);
   }
 
+  // Medicación: resumen limpio por momento del día (mañana/mediodía/noche),
+  // leído directamente de la ficha del perfil — nada que calcular, solo
+  // mostrarlo de forma clara.
+  const medGroups = [
+    { key: "morning", label: "🌅 Mañana" },
+    { key: "noon", label: "☀️ Mediodía" },
+    { key: "night", label: "🌙 Noche" },
+  ];
+  const medications = ctx.profile.medications || { morning: [], noon: [], night: [] };
+  const hasAnyMedication = medGroups.some((g) => (medications[g.key] || []).length > 0);
+  if (hasAnyMedication) {
+    const medCard = document.createElement("div");
+    medCard.className = "card col";
+    medCard.innerHTML = `<h3 class="title-lg">Medicación</h3><p class="text-md">Tal y como está registrada en la ficha del perfil.</p>`;
+    const medGrid = document.createElement("div");
+    medGrid.className = "col";
+    medGrid.style.gap = "10px";
+    medGrid.style.marginTop = "10px";
+    medGroups.forEach((g) => {
+      const entries = medications[g.key] || [];
+      if (!entries.length) return;
+      const groupBox = document.createElement("div");
+      groupBox.className = "medication-group";
+      const title = document.createElement("p");
+      title.className = "medication-group-title";
+      title.textContent = g.label;
+      groupBox.appendChild(title);
+      entries.forEach((m) => {
+        const row = document.createElement("div");
+        row.className = "medication-row";
+        row.style.marginBottom = "6px";
+        row.innerHTML = `<span class="medication-row-text">💊 <strong>${m.name}</strong> — ${m.quantity}${m.time ? ` — ${m.time}` : ""}</span>`;
+        groupBox.appendChild(row);
+      });
+      medGrid.appendChild(groupBox);
+    });
+    medCard.appendChild(medGrid);
+    rootEl.appendChild(medCard);
+  }
+
   const note = document.createElement("p");
   note.className = "text-md";
   note.style.textAlign = "center";
@@ -464,6 +504,26 @@ export async function exportReportPdf(ctx) {
       if (e.oxygen !== null) parts.push(`Oxígeno: ${e.oxygen}%`);
       if (e.systolic !== null || e.diastolic !== null) parts.push(`Tensión: ${e.systolic ?? "—"} / ${e.diastolic ?? "—"}`);
       pdf.text(`${formatDateMediumEs(e.date)} — ${parts.join(" · ") || "Sin datos"}`, 20);
+    });
+  }
+
+  // Medicación (si hay alguna registrada en la ficha del perfil)
+  const medGroupsPdf = [
+    { key: "morning", label: "Mañana" },
+    { key: "noon", label: "Mediodía" },
+    { key: "night", label: "Noche" },
+  ];
+  const medicationsPdf = ctx.profile.medications || { morning: [], noon: [], night: [] };
+  if (medGroupsPdf.some((g) => (medicationsPdf[g.key] || []).length > 0)) {
+    pdf.heading("Medicación");
+    medGroupsPdf.forEach((g) => {
+      const entries = medicationsPdf[g.key] || [];
+      if (!entries.length) return;
+      pdf.text(g.label, 24);
+      entries.forEach((m) => {
+        pdf.text(`${m.name} — ${m.quantity}${m.time ? ` — ${m.time}` : ""}`, 20);
+      });
+      pdf.spacer(4);
     });
   }
 
