@@ -29,6 +29,7 @@ export const DEFAULT_SETTINGS = {
   adminPin: "1234", // PIN de administración (cambiable desde Ajustes > Contraseña admin)
   securityQuestion: "", // pregunta de recuperación si se olvida el PIN
   securityAnswer: "",
+  adminMenuOrder: ["settings", "reports", "health", "family"], // orden de los botones del panel de Administración, reordenable
 };
 
 export const DEFAULT_REMINDER_CATALOG = [

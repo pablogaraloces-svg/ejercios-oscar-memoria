@@ -21,6 +21,7 @@ import { getReminders, markReminderDoneToday, unmarkReminderDoneToday } from "..
 import { buildFamilyIdentityPhrase } from "../core/familyPhrase.js";
 import { buildSessionExercises, CATEGORY_LABELS } from "../exercises/index.js";
 import { burstConfetti, celebrateSuccess } from "../core/confetti.js";
+import { getDateKey } from "../core/dateUtils.js";
 
 const INACTIVITY_MS = 60000;
 const POSITIVE_MOODS = new Set(["Muy bien", "Bien"]);
@@ -288,8 +289,9 @@ export class SessionRunner {
         options.querySelectorAll("button").forEach((x) => (x.style.pointerEvents = "none"));
         b.classList.add("correct-flash");
         await DB.put("settings", {
-          id: `mood_${new Date().toDateString()}_${question.key}`,
-          date: new Date().toDateString(),
+          id: `mood_${this.profile.id}_${getDateKey()}_${question.key}`,
+          profileId: this.profile.id,
+          date: getDateKey(),
           key: question.key,
           value: m.label,
         });
@@ -817,7 +819,7 @@ export class SessionRunner {
     await DB.put("sessions", {
       id: uid("session"),
       profileId: this.profile.id,
-      date: new Date().toDateString(),
+      date: getDateKey(),
       timestamp: endedAt,
       hour: new Date().getHours(),
       startTime: new Date(this.startedAt).toLocaleTimeString("es-ES", timeFmt),

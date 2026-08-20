@@ -1,5 +1,6 @@
 import { DB } from "./db.js";
 import { CATEGORY_LABELS } from "../exercises/index.js";
+import { getDateKey, formatDateShortEs } from "./dateUtils.js";
 
 /**
  * reports.js — Construye datos de evolución y los dibuja en <canvas>.
@@ -29,7 +30,7 @@ export async function resetStats(profileId) {
   sessions.filter((s) => s.profileId === profileId).forEach((s) => deletions.push(DB.delete("sessions", s.id)));
   progress.filter((p) => p.profileId === profileId).forEach((p) => deletions.push(DB.delete("progress", p.id)));
   settingsEntries
-    .filter((e) => e.id?.startsWith("mood_") || e.id?.startsWith("done_"))
+    .filter((e) => (e.id?.startsWith("mood_") || e.id?.startsWith("done_")) && e.profileId === profileId)
     .forEach((e) => deletions.push(DB.delete("settings", e.id)));
 
   await Promise.all(deletions);
@@ -54,7 +55,7 @@ function computeStreak(sessions) {
   let streak = 0;
   let cursor = new Date();
   while (true) {
-    const key = cursor.toDateString();
+    const key = getDateKey(cursor);
     if (days.has(key)) {
       streak++;
       cursor.setDate(cursor.getDate() - 1);
@@ -109,7 +110,7 @@ export function drawAccuracyChart(canvas, sessions) {
     ctx.fillStyle = "#5A5A5A";
     ctx.font = "16px sans-serif";
     ctx.textAlign = "center";
-    const label = s.date.split(" ").slice(1, 3).join(" ");
+    const label = formatDateShortEs(s.date);
     ctx.fillText(label, x + barW / 2, h - padding + 22);
     ctx.fillText(`${Math.round(value * 100)}%`, x + barW / 2, y - 8);
   });
@@ -165,7 +166,7 @@ export function drawDurationChart(canvas, series) {
     ctx.fillStyle = "#5A5A5A";
     ctx.font = "14px sans-serif";
     ctx.textAlign = "center";
-    const label = d.date.split(" ").slice(1, 3).join(" ");
+    const label = formatDateShortEs(d.date);
     ctx.fillText(label, x + barW / 2, h - padding + 20);
     ctx.fillText(`${d.minutes} min`, x + barW / 2, y - 8);
   });
@@ -220,7 +221,7 @@ const MOOD_RANK = { "Muy bien": 0, "Bien": 1, "Regular": 2, "No muy bien": 3 };
 
 export async function getMoodByDate(profileId) {
   const all = await DB.getAll("settings");
-  const moods = all.filter((r) => r.id?.startsWith("mood_"));
+  const moods = all.filter((r) => r.id?.startsWith("mood_") && r.profileId === profileId);
   const byDate = {};
   moods.forEach((m) => {
     // Si hay varias respuestas el mismo día, nos quedamos con la menos positiva
@@ -310,7 +311,7 @@ export function drawCategoryErrorChart(canvas, stats) {
 /** ---------- Estados de ánimo marcados por día ---------- */
 export async function getMoodStats(profileId) {
   const all = await DB.getAll("settings");
-  const moods = all.filter((r) => r.id?.startsWith("mood_"));
+  const moods = all.filter((r) => r.id?.startsWith("mood_") && r.profileId === profileId);
   const counts = {};
   moods.forEach((m) => {
     counts[m.value] = (counts[m.value] || 0) + 1;
@@ -417,7 +418,7 @@ export function drawAdherenceChart(canvas, series) {
     ctx.fillStyle = "#5A5A5A";
     ctx.font = "14px sans-serif";
     ctx.textAlign = "center";
-    const label = s.date.split(" ").slice(1, 3).join(" ");
+    const label = formatDateShortEs(s.date);
     ctx.fillText(label, x + barW / 2, h - padding + 20);
     ctx.fillText(`${Math.round(s.rate * 100)}%`, x + barW / 2, y - 8);
   });

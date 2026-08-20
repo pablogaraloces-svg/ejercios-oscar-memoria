@@ -13,6 +13,7 @@ import { renderHealth } from "./screens/healthScreen.js";
 import { getCurrentTimeText, getCurrentDateText } from "./core/phrases.js";
 import { getWeather } from "./core/weather.js";
 import { APP_VERSION } from "./core/version.js";
+import { wireDragReorder } from "./core/dragReorder.js";
 
 const screens = {};
 document.querySelectorAll(".screen").forEach((el) => (screens[el.id] = el));
@@ -100,7 +101,10 @@ async function boot() {
       });
     };
   } else {
-    ctx.profile = profiles[0];
+    // Usa el perfil marcado como activo (settings.activeProfileId); si no
+    // hay ninguno marcado o el perfil activo ya no existe (se eliminó),
+    // se recurre al primero disponible.
+    ctx.profile = profiles.find((p) => p.id === settings.activeProfileId) || profiles[0];
     reveal = () => goHome();
   }
 
@@ -138,6 +142,10 @@ function goHome() {
   homeMascot.setName(ctx.profile.name);
   showScreen("screen-home");
   loadHomeWeather();
+  // La música de fondo es solo para el ratito de Óscar; en Administración
+  // se apaga (ver openAdminPinModal), así que al volver a casa se
+  // reanuda aquí, si está activada.
+  if (ctx.settings?.musicEnabled) Music.start(ctx.settings.musicVolume ?? 0.35, ctx.settings.musicTrack ?? 0);
 }
 
 let weatherRequestInFlight = false;
@@ -254,6 +262,23 @@ function openSettingsScreen() {
     onProfileUpdated: (p) => {
       ctx.profile = p;
     },
+    // Cambiar de perfil activo: se guarda como perfil actual de la app y
+    // se vuelve a la portada, ya con los datos de la persona elegida.
+    onProfileSwitched: async (p) => {
+      ctx.profile = p;
+      ctx.settings.activeProfileId = p.id;
+      await DB.put("settings", ctx.settings);
+      goHome();
+    },
+    // Abre el modal genérico compartido (el mismo que usa Familia) con
+    // el contenido que le pida quien lo llame.
+    openModal: (renderFn) => {
+      const modal = document.getElementById("generic-modal");
+      const box = document.getElementById("generic-modal-box");
+      const close = () => modal.classList.remove("active");
+      renderFn(box, close);
+      modal.classList.add("active");
+    },
   });
 }
 document.getElementById("btn-settings-back").addEventListener("click", () => showScreen("screen-admin-menu"));
@@ -309,7 +334,11 @@ function openAdminPinModal() {
       const expected = ctx.settings.adminPin || "1234";
       if (input.value === expected) {
         modal.classList.remove("active");
+        // La música de fondo es solo para el ratito de Óscar, no para
+        // Administración (se reanuda sola al volver a casa, en goHome()).
+        Music.stop();
         showScreen("screen-admin-menu");
+        renderAdminMenu();
       } else {
         failedAttempts++;
         input.value = "";
@@ -395,7 +424,9 @@ function openAdminPinModal() {
       ctx.settings.adminPin = val;
       await DB.put("settings", ctx.settings);
       modal.classList.remove("active");
+      Music.stop();
       showScreen("screen-admin-menu");
+      renderAdminMenu();
     };
   }
 
@@ -405,20 +436,74 @@ function openAdminPinModal() {
 document.getElementById("btn-admin").addEventListener("click", openAdminPinModal);
 document.getElementById("btn-admin-back").addEventListener("click", goHome);
 
-document.getElementById("btn-admin-settings").addEventListener("click", openSettingsScreen);
-document.getElementById("btn-admin-reports").addEventListener("click", async () => {
-  showScreen("screen-reports");
-  await renderReports(document.getElementById("reports-root"), ctx);
-});
-document.getElementById("btn-admin-family").addEventListener("click", () => {
-  familyEditable = true;
-  showScreen("screen-family");
-  refreshFamilyScreen();
-});
-document.getElementById("btn-admin-health").addEventListener("click", async () => {
-  showScreen("screen-health");
-  await renderHealth(document.getElementById("health-root"), ctx);
-});
+/* ---------------- Menú de Administración: botones reordenables ---------------- */
+const ADMIN_MENU_ITEMS = {
+  settings: { label: "Ajustes", emoji: "⚙️", action: openSettingsScreen },
+  reports: {
+    label: "Estadísticas",
+    emoji: "📈",
+    action: async () => {
+      showScreen("screen-reports");
+      await renderReports(document.getElementById("reports-root"), ctx);
+    },
+  },
+  health: {
+    label: "Salud",
+    emoji: "🩺",
+    action: async () => {
+      showScreen("screen-health");
+      await renderHealth(document.getElementById("health-root"), ctx);
+    },
+  },
+  family: {
+    label: "Editar familia",
+    emoji: "👨‍👩‍👧",
+    action: () => {
+      familyEditable = true;
+      showScreen("screen-family");
+      refreshFamilyScreen();
+    },
+  },
+};
+
+function renderAdminMenu() {
+  const list = document.getElementById("admin-menu-list");
+  list.innerHTML = "";
+  // Por si en el futuro se añade un nuevo botón al panel: si el orden
+  // guardado no lo incluye todavía, se añade al final automáticamente.
+  const knownIds = Object.keys(ADMIN_MENU_ITEMS);
+  const savedOrder = (ctx.settings.adminMenuOrder || []).filter((id) => knownIds.includes(id));
+  const order = [...savedOrder, ...knownIds.filter((id) => !savedOrder.includes(id))];
+
+  order.forEach((id, idx) => {
+    const item = ADMIN_MENU_ITEMS[id];
+    if (!item) return;
+    const card = document.createElement("button");
+    card.className = "option-card admin-menu-card";
+    card.style.width = "100%";
+    card.style.maxWidth = "420px";
+    card.innerHTML = `<span class="emoji">${item.emoji}</span><span>${item.label}</span>`;
+    card.onclick = () => item.action();
+
+    const handle = document.createElement("div");
+    handle.className = "drag-handle admin-drag-handle";
+    handle.textContent = "⠿";
+    handle.setAttribute("aria-label", "Arrastrar para reordenar");
+    handle.onclick = (e) => e.stopPropagation(); // que tocar el asa no active el botón
+    card.appendChild(handle);
+
+    wireDragReorder(handle, card, list, idx, async (fromIdx, toIdx) => {
+      const newOrder = [...order];
+      const [moved] = newOrder.splice(fromIdx, 1);
+      newOrder.splice(toIdx, 0, moved);
+      ctx.settings.adminMenuOrder = newOrder;
+      await DB.put("settings", ctx.settings);
+      renderAdminMenu();
+    });
+
+    list.appendChild(card);
+  });
+}
 document.getElementById("btn-health-back").addEventListener("click", () => showScreen("screen-admin-menu"));
 
 /* ---------------- Salir con confirmación ---------------- */

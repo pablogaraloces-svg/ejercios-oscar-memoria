@@ -195,14 +195,22 @@ export function renderOnboarding(root, onComplete) {
         id: uid("profile"),
         name: data.name || "Amigo/a",
         age: null,
+        weight: null,
+        height: null,
         photo: null,
+        notes: "",
         family: [],
         enabledCategories: data.categories.length ? data.categories : [...ALL_CATEGORIES],
         createdAt: Date.now(),
       };
       await DB.put("profile", profile);
       await seedDefaultReminders(profile.id, data.reminderKeys);
-      const settings = { ...DEFAULT_SETTINGS, textSize: data.textSize, adminPin: data.adminPin || "1234" };
+      const settings = {
+        ...DEFAULT_SETTINGS,
+        textSize: data.textSize,
+        adminPin: data.adminPin || "1234",
+        activeProfileId: profile.id,
+      };
       await DB.put("settings", settings);
       onComplete(profile, settings);
     };

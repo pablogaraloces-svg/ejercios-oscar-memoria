@@ -1,7 +1,7 @@
 {
-  "name": "Mi Acompañante Diario",
-  "short_name": "Acompañante",
-  "description": "Asistente diario de estimulación cognitiva, recordatorios y compañía.",
+  "name": "Cerebrín",
+  "short_name": "Cerebrín",
+  "description": "Cerebrín — acompañante diario de estimulación cognitiva, recordatorios y compañía.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

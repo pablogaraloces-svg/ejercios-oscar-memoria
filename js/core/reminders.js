@@ -1,5 +1,6 @@
 import { DB, uid } from "./db.js";
 import { DEFAULT_REMINDER_CATALOG } from "./state.js";
+import { getDateKey } from "./dateUtils.js";
 
 /**
  * reminders.js — Recordatorios que SOLO aparecen dentro de la sesión diaria,
@@ -47,19 +48,20 @@ export async function seedDefaultReminders(profileId, selectedKeys = []) {
 }
 
 export async function markReminderDoneToday(profileId, reminderId) {
-  const key = `done_${new Date().toDateString()}_${reminderId}`;
-  const rec = { id: key, profileId, reminderId, date: new Date().toDateString(), done: true };
+  const dateKey = getDateKey();
+  const key = `done_${dateKey}_${reminderId}`;
+  const rec = { id: key, profileId, reminderId, date: dateKey, done: true };
   await DB.put("settings", rec);
 }
 
 export async function isReminderDoneToday(profileId, reminderId) {
-  const key = `done_${new Date().toDateString()}_${reminderId}`;
+  const key = `done_${getDateKey()}_${reminderId}`;
   const rec = await DB.get("settings", key);
   return !!rec?.done;
 }
 
 /** Permite corregir una marcación: si Óscar se equivoca, puede desmarcarla. */
 export async function unmarkReminderDoneToday(profileId, reminderId) {
-  const key = `done_${new Date().toDateString()}_${reminderId}`;
+  const key = `done_${getDateKey()}_${reminderId}`;
   await DB.delete("settings", key);
 }

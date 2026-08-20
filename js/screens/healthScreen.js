@@ -1,4 +1,5 @@
 import { addHealthEntry, getHealthEntries, monthLabel } from "../core/health.js";
+import { formatDateMediumEs } from "../core/dateUtils.js";
 
 /**
  * healthScreen.js — Apartado de seguimiento de salud, pensado para que un
@@ -117,7 +118,7 @@ export async function renderHealth(rootEl, ctx) {
         parts.push(`Tensión: ${e.systolic ?? "—"} / ${e.diastolic ?? "—"}`);
       }
       row.innerHTML = `
-        <span class="text-base" style="font-weight:700;">${e.date}, ${e.time}</span>
+        <span class="text-base" style="font-weight:700;">${formatDateMediumEs(e.date)}, ${e.time}</span>
         <span class="text-base">${parts.join(" · ") || "Sin datos"}</span>
       `;
       listBox.appendChild(row);

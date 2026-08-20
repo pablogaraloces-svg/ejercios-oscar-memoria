@@ -104,6 +104,79 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 1.2 (perfiles múltiples, fechas en español, PDF ampliado)
+
+**Sistema de versiones reiniciado**
+- A partir de esta actualización, la app se considera "ya funcional de
+  verdad" y el contador vuelve a empezar en 1.1 (esta ronda de cambios ya
+  es la 1.2). Se mantiene el esquema de decimales por cambio pequeño.
+
+**Fechas en español (fallo real corregido de raíz)**
+- Nueva utilidad compartida (`js/core/dateUtils.js`) que separa la clave
+  interna de guardado (estable, sin idioma) del texto que se muestra
+  (siempre en español). Corregidas las 10 apariciones del problema en
+  Salud, Estadísticas, recordatorios y ánimo diario. De paso, se corrigió
+  un fallo latente: antes las fechas no ordenaban cronológicamente de
+  verdad (solo alfabéticamente por el nombre del día en inglés).
+
+**PDF de Estadísticas ampliado**
+- Antes faltaban datos reales al exportar (la gráfica de tiempo dedicado
+  por día, el calendario de ánimo completo, y toda la sección de Salud no
+  se incluían). Ahora se exporta todo, con un diseño limpio por bloques
+  que crea páginas nuevas automáticamente según haga falta. Preparado
+  para ampliarse fácilmente: cada vez que se añada una estadística nueva
+  a la pantalla, basta con añadir una línea al PDF para que se incluya
+  también ahí.
+
+**Sin música en Administración**
+- La música de fondo (pensada solo para el ratito de Óscar) se apaga en
+  cuanto se entra en Administración con el PIN, y se reanuda sola al
+  volver a la pantalla principal.
+
+**Botones de Administración reordenables**
+- Igual que las fotos de familia: mantén pulsado ⠿ para colocar Ajustes,
+  Estadísticas, Salud y Editar familia en el orden que prefieras. El
+  orden se guarda y se respeta la próxima vez.
+
+**Portada más limpia**
+- Eliminado el mensaje "Estoy aquí para acompañarte, sin prisa 💛".
+
+**Icono más profesional**
+- El icono maskable (el que usa Android para el icono real de la tablet)
+  ya no tiene el degradado de fondo que se veía unos segundos al abrir la
+  app: ahora es blanco liso, sin tocar el diseño de Cerebrín.
+
+**Nombre de la app corregido**
+- Donde antes aparecía "Acompañante" (la etiqueta del icono en la
+  pantalla de inicio de Android, y el título de la pestaña del
+  navegador), ahora aparece "Cerebrín" en todos los sitios.
+
+**Perfiles múltiples (la novedad más grande)**
+- La pestaña "Perfil" de Ajustes pasa a llamarse "Perfiles" y permite
+  tener a varias personas usando la misma aplicación, cada una con sus
+  propias estadísticas, familia, recordatorios y salud completamente
+  separados entre sí.
+- Cada perfil tiene su propia ficha: foto (igual que las fotos de
+  familia), edad, peso, altura y un campo de **Observaciones** libre.
+- Al tocar la foto y el nombre de una persona se abre un desplegable con
+  un pequeño efecto de "crecer con rebote" al abrir (estilo Apple), donde
+  se puede editar la ficha, cambiar a ese perfil ("Usar este perfil") o
+  eliminarlo (nunca se puede eliminar el último que quede).
+- Se pueden añadir perfiles nuevos desde ahí mismo.
+- Al cambiar de perfil, toda la aplicación (ejercicios, familia,
+  recordatorios, salud, estadísticas) pasa a mostrar automáticamente los
+  datos de la persona elegida — no hace falta ningún cambio adicional en
+  el resto de la app, porque todo ya se guardaba internamente separado
+  por persona.
+- **Dos fallos reales de fondo, corregidos de paso**: el registro diario
+  de ánimo no llevaba ninguna marca de a qué perfil pertenecía (con dos
+  personas el mismo día, una sobrescribía el ánimo de la otra), y
+  "resetear estadísticas" borraba el ánimo y los recordatorios de
+  **todos** los perfiles en vez de solo el activo. Ambos corregidos.
+- Al eliminar un perfil se borran también, en cascada, todos sus datos
+  asociados (sesiones, recordatorios, progreso, salud) — nunca queda
+  información huérfana guardada sin dueño.
+
 ## 🆕 Novedades de la versión 11.1 (correcciones puntuales)
 
 **Nuevo esquema de numeración de versiones**

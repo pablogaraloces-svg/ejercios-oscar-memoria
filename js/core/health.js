@@ -1,4 +1,5 @@
 import { DB, uid } from "./db.js";
+import { getDateKey } from "./dateUtils.js";
 
 /**
  * health.js — Registro histórico de salud (oxígeno en sangre y tensión
@@ -12,7 +13,7 @@ export async function addHealthEntry(profileId, { oxygen, systolic, diastolic })
   const entry = {
     id: uid("health"),
     profileId,
-    date: now.toDateString(),
+    date: getDateKey(now),
     time: now.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
     timestamp: now.getTime(),
     oxygen: oxygen === "" || oxygen === null ? null : Number(oxygen),

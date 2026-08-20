@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<title>Mi Acompañante Diario</title>
-<meta name="description" content="Asistente diario de estimulación cognitiva, recordatorios y compañía." />
+<title>Cerebrín</title>
+<meta name="description" content="Cerebrín — acompañante diario de estimulación cognitiva, recordatorios y compañía." />
 <meta name="theme-color" content="#5E81AC" />
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" href="assets/icons/icon-192.png" />
@@ -56,7 +56,6 @@
         <span>Mi familia</span>
       </button>
     </div>
-    <p class="text-md" style="text-align:center;">Estoy aquí para acompañarte, sin prisa. 💛</p>
     <div class="home-credit-block">
       <p class="home-credit">© Diseñado y programado por Pablo Garaloces 2026</p>
       <p class="home-version" id="home-version"></p>
@@ -73,20 +72,8 @@
       <h2 class="title-lg title-admin">Administración</h2>
       <div style="width:88px;"></div>
     </div>
-    <div class="col grow center" style="gap:18px;">
-      <button class="option-card" id="btn-admin-settings" style="width:100%; max-width:420px;">
-        <span class="emoji">⚙️</span><span>Ajustes</span>
-      </button>
-      <button class="option-card" id="btn-admin-reports" style="width:100%; max-width:420px;">
-        <span class="emoji">📈</span><span>Estadísticas</span>
-      </button>
-      <button class="option-card" id="btn-admin-health" style="width:100%; max-width:420px;">
-        <span class="emoji">🩺</span><span>Salud</span>
-      </button>
-      <button class="option-card" id="btn-admin-family" style="width:100%; max-width:420px;">
-        <span class="emoji">👨‍👩‍👧</span><span>Editar familia</span>
-      </button>
-    </div>
+    <p class="text-sm" style="text-align:center; color:var(--color-text-soft); margin-bottom:6px;">Mantén pulsado ⠿ para reordenar los botones a tu gusto.</p>
+    <div class="col grow center" id="admin-menu-list" style="gap:18px;"></div>
   </section>
 
   <!-- Sesión diaria (flujo dinámico) -->

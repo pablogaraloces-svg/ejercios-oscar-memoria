@@ -18,6 +18,7 @@ import {
 } from "../core/reports.js";
 import { canvasesToPdfBlob, shareOrDownloadPdf } from "../core/pdfExport.js";
 import { getHealthEntries, getMonthlyHealthAverages, monthLabel, formatAverage } from "../core/health.js";
+import { getDateKey, formatDateMediumEs } from "../core/dateUtils.js";
 
 const MOOD_COLORS = {
   "Muy bien": "#6FBF8B",
@@ -162,7 +163,7 @@ export async function renderReports(rootEl, ctx) {
       const parts = [];
       if (e.oxygen !== null) parts.push(`Oxígeno: ${e.oxygen}%`);
       if (e.systolic !== null || e.diastolic !== null) parts.push(`Tensión: ${e.systolic ?? "—"} / ${e.diastolic ?? "—"}`);
-      row.innerHTML = `<span class="text-base" style="font-weight:700;">${e.date}</span><span class="text-base">${parts.join(" · ")}</span>`;
+      row.innerHTML = `<span class="text-base" style="font-weight:700;">${formatDateMediumEs(e.date)}</span><span class="text-base">${parts.join(" · ")}</span>`;
       healthList.appendChild(row);
     });
     healthCard.appendChild(healthList);
@@ -262,7 +263,7 @@ function renderMoodCalendar(container, moodByDate) {
 
   for (let day = 1; day <= daysInMonth; day++) {
     const dateObj = new Date(year, month, day);
-    const key = dateObj.toDateString();
+    const key = getDateKey(dateObj);
     const mood = moodByDate[key];
     const cell = document.createElement("div");
     cell.style.aspectRatio = "1";
@@ -302,52 +303,171 @@ function renderMoodCalendar(container, moodByDate) {
  * Genera el PDF con el resumen actual (debe llamarse después de renderReports)
  * y lo comparte o descarga.
  */
+/**
+ * Constructor de páginas de PDF sencillo y extensible: se van añadiendo
+ * bloques (título, texto, gráfica...) uno detrás de otro, y él solo crea
+ * una página nueva cuando no cabe más en la actual. Así, si en el futuro
+ * se añade una nueva estadística a la pantalla, basta con añadir aquí una
+ * línea más — nunca hay que recalcular posiciones a mano.
+ */
+function createPdfPageBuilder() {
+  const PAGE_W = 1240;
+  const PAGE_H = 1754;
+  const MARGIN = 60;
+  const pages = [];
+  let ctx = null;
+  let cursorY = 0;
+
+  function newPage() {
+    const canvas = document.createElement("canvas");
+    canvas.width = PAGE_W;
+    canvas.height = PAGE_H;
+    ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#FBF9F5";
+    ctx.fillRect(0, 0, PAGE_W, PAGE_H);
+    pages.push(canvas);
+    cursorY = MARGIN;
+  }
+  newPage();
+
+  const api = {
+    ensureSpace(h) {
+      if (cursorY + h > PAGE_H - MARGIN) newPage();
+    },
+    title(text) {
+      api.ensureSpace(70);
+      ctx.fillStyle = "#2E2E2E";
+      ctx.font = "bold 44px sans-serif";
+      ctx.fillText(text, MARGIN, cursorY + 34);
+      cursorY += 66;
+    },
+    heading(text) {
+      api.ensureSpace(50);
+      ctx.fillStyle = "#2E2E2E";
+      ctx.font = "bold 30px sans-serif";
+      ctx.fillText(text, MARGIN, cursorY + 26);
+      cursorY += 48;
+    },
+    text(text, size = 23) {
+      api.ensureSpace(size + 14);
+      ctx.fillStyle = "#4A4A4A";
+      ctx.font = `${size}px sans-serif`;
+      ctx.fillText(text, MARGIN, cursorY + size * 0.8);
+      cursorY += size + 14;
+    },
+    image(sourceCanvas) {
+      const targetWidth = PAGE_W - MARGIN * 2;
+      const scale = targetWidth / sourceCanvas.width;
+      const h = sourceCanvas.height * scale;
+      api.ensureSpace(h + 26);
+      ctx.drawImage(sourceCanvas, MARGIN, cursorY, targetWidth, h);
+      cursorY += h + 26;
+    },
+    /** Calendario de ánimo del mes, dibujado directamente en la página. */
+    moodCalendar(moodByDate) {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const startWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
+      const cell = 46;
+      const gap = 8;
+      const rows = Math.ceil((daysInMonth + startWeekday) / 7);
+      api.ensureSpace(30 + rows * (cell + gap) + 10);
+
+      ["L", "M", "X", "J", "V", "S", "D"].forEach((d, i) => {
+        ctx.fillStyle = "#5A5A5A";
+        ctx.font = "bold 16px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(d, MARGIN + i * (cell + gap) + cell / 2, cursorY + 14);
+      });
+      const gridTop = cursorY + 34;
+      let col = startWeekday;
+      let row = 0;
+      for (let day = 1; day <= daysInMonth; day++) {
+        const key = getDateKey(new Date(year, month, day));
+        const mood = moodByDate[key];
+        const cx = MARGIN + col * (cell + gap) + cell / 2;
+        const cy = gridTop + row * (cell + gap) + cell / 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, cell / 2 - 2, 0, Math.PI * 2);
+        ctx.fillStyle = mood ? MOOD_COLORS[mood] : "#EFEAE0";
+        ctx.fill();
+        ctx.fillStyle = mood ? "#FFFFFF" : "#8A8A8A";
+        ctx.font = "bold 17px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(day), cx, cy);
+        col++;
+        if (col >= 7) { col = 0; row++; }
+      }
+      ctx.textBaseline = "alphabetic";
+      cursorY = gridTop + rows * (cell + gap) + 10;
+    },
+    spacer(h = 14) {
+      cursorY += h;
+    },
+    getPages() {
+      return pages;
+    },
+  };
+  return api;
+}
+
 export async function exportReportPdf(ctx) {
   if (!lastCharts) return { status: "sin-datos" };
   const { charts, stats, moodByDate, profileName } = lastCharts;
 
-  const page1 = document.createElement("canvas");
-  page1.width = 1240;
-  page1.height = 1754;
-  const p1 = page1.getContext("2d");
-  p1.fillStyle = "#FBF9F5";
-  p1.fillRect(0, 0, page1.width, page1.height);
-  p1.fillStyle = "#2E2E2E";
-  p1.font = "bold 44px sans-serif";
-  p1.fillText(`Resumen de estadísticas`, 60, 90);
-  p1.font = "28px sans-serif";
-  p1.fillText(`${profileName} — ${new Date().toLocaleDateString("es-ES")}`, 60, 140);
+  const pdf = createPdfPageBuilder();
 
-  p1.font = "24px sans-serif";
-  p1.fillText(`Días seguidos: ${stats.streak}`, 60, 200);
-  p1.fillText(`Sesiones totales: ${stats.totalSessions}`, 60, 236);
-  p1.fillText(`Precisión media: ${stats.avgAccuracy}%`, 60, 272);
-  p1.fillText(`Ejercicios completados: ${stats.totalExercises}`, 60, 308);
+  pdf.title("Resumen de estadísticas");
+  pdf.text(`${profileName} — ${new Date().toLocaleDateString("es-ES")}`, 26);
+  pdf.spacer(10);
 
-  drawScaled(p1, charts.accuracy, 60, 340, 1120);
-  drawScaled(p1, charts.category, 60, 340 + 320, 1120);
-  drawScaled(p1, charts.hour, 60, 340 + 320 * 2, 1120);
+  // Resumen general (siempre el primer bloque: si se añade una nueva
+  // estadística "de un vistazo" en el futuro, añadir aquí una línea más).
+  pdf.heading("Resumen general");
+  pdf.text(`Días seguidos: ${stats.streak}`);
+  pdf.text(`Sesiones totales: ${stats.totalSessions}`);
+  pdf.text(`Ejercicios completados: ${stats.totalExercises}`);
+  pdf.text(`Precisión media: ${stats.avgAccuracy}%`);
+  pdf.spacer(10);
 
-  const page2 = document.createElement("canvas");
-  page2.width = 1240;
-  page2.height = 1754;
-  const p2 = page2.getContext("2d");
-  p2.fillStyle = "#FBF9F5";
-  p2.fillRect(0, 0, page2.width, page2.height);
-  p2.fillStyle = "#2E2E2E";
-  p2.font = "bold 36px sans-serif";
-  p2.fillText("Ánimo y cumplimiento de recordatorios", 60, 80);
+  // Gráficas (si se añade una gráfica nueva a la pantalla de
+  // Estadísticas, basta con guardarla en `charts.xxx` en renderReports()
+  // y añadir aquí una línea `pdf.image(charts.xxx)` más).
+  if (charts.accuracy) { pdf.heading("Últimas sesiones"); pdf.image(charts.accuracy); }
+  if (charts.duration) { pdf.heading("Tiempo dedicado cada día"); pdf.image(charts.duration); }
+  if (charts.category) { pdf.heading("Dónde tiene más dificultad"); pdf.image(charts.category); }
+  if (charts.hour) { pdf.heading("A qué horas hace las sesiones"); pdf.image(charts.hour); }
+  if (charts.mood) { pdf.heading("Cómo dice sentirse"); pdf.image(charts.mood); }
+  if (charts.adherence) { pdf.heading("Cumplimiento de recordatorios"); pdf.image(charts.adherence); }
 
-  drawScaled(p2, charts.mood, 60, 120, 1120);
-  drawScaled(p2, charts.adherence, 60, 120 + 320, 1120);
+  // Calendario de ánimo del mes
+  pdf.heading("Calendario de ánimo");
+  pdf.moodCalendar(moodByDate);
+  pdf.spacer(10);
 
-  const blob = canvasesToPdfBlob([page1, page2]);
+  // Salud (si hay datos registrados)
+  const healthEntries = await getHealthEntries(ctx.profile.id);
+  if (healthEntries.length) {
+    const avg = await getMonthlyHealthAverages(ctx.profile.id);
+    pdf.heading("Salud");
+    pdf.text(
+      `Promedio de ${monthLabel(avg.month)}: oxígeno ${
+        avg.avgOxygen !== null ? formatAverage(avg.avgOxygen) + "%" : "—"
+      }, tensión ${formatAverage(avg.avgSystolic, 0)} / ${formatAverage(avg.avgDiastolic, 0)}.`
+    );
+    pdf.spacer(6);
+    healthEntries.slice(0, 20).forEach((e) => {
+      const parts = [];
+      if (e.oxygen !== null) parts.push(`Oxígeno: ${e.oxygen}%`);
+      if (e.systolic !== null || e.diastolic !== null) parts.push(`Tensión: ${e.systolic ?? "—"} / ${e.diastolic ?? "—"}`);
+      pdf.text(`${formatDateMediumEs(e.date)} — ${parts.join(" · ") || "Sin datos"}`, 20);
+    });
+  }
+
+  const blob = canvasesToPdfBlob(pdf.getPages());
   const filename = `estadisticas_${profileName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
   return { status: await shareOrDownloadPdf(blob, filename) };
-}
-
-function drawScaled(ctx, sourceCanvas, x, y, targetWidth) {
-  const scale = targetWidth / sourceCanvas.width;
-  const targetHeight = sourceCanvas.height * scale;
-  ctx.drawImage(sourceCanvas, x, y, targetWidth, targetHeight);
 }

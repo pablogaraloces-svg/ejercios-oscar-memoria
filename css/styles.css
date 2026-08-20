@@ -1109,6 +1109,22 @@ body.high-contrast .home-screen-bg { background: var(--color-bg); }
   outline-offset: 4px;
 }
 
+/* Botones del menú de Administración, reordenables igual que las fotos
+   de familia (mismo asa ⠿, mismo comportamiento de arrastre). */
+.admin-menu-card { position: relative; touch-action: pan-y; }
+.admin-drag-handle { top: 50%; transform: translateY(-50%); right: 14px; }
+.admin-menu-card.dragging {
+  opacity: 0.9;
+  transform: scale(1.03) rotate(0.5deg);
+  box-shadow: var(--shadow-lift);
+  z-index: 80;
+  transition: none;
+}
+.admin-menu-card.drag-over {
+  outline: 3px dashed var(--color-primary-light);
+  outline-offset: 4px;
+}
+
 /* ---------- Salud ---------- */
 .health-value-huge { font-size: var(--font-xl); font-weight: 800; }
 .health-history-item {
@@ -1285,4 +1301,69 @@ body.high-contrast .home-screen-bg { background: var(--color-bg); }
 }
 @media (orientation: portrait) {
   .session-mascot-col { width: 100%; max-width: 420px; }
+}
+
+/* ---------- Perfiles (Ajustes > Perfiles): ficha desplegable tipo Apple ---------- */
+.profile-card-item { padding: 0; overflow: hidden; }
+.profile-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: var(--space-3);
+  cursor: pointer;
+  user-select: none;
+}
+.profile-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.9rem;
+  background: var(--color-bg-soft);
+  border: 2px solid var(--color-border);
+  flex-shrink: 0;
+}
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-name { font-size: var(--font-md); font-weight: 800; }
+.profile-expand-arrow {
+  font-size: 1.3rem;
+  color: var(--color-text-soft);
+  transition: transform 380ms var(--ease-spring);
+  flex-shrink: 0;
+}
+.profile-card-header.is-expanded .profile-expand-arrow { transform: rotate(180deg); }
+
+/* El desplegable "crece" con un pequeño rebote al abrir (estilo Apple) y
+   se recoge de nuevo con la misma curva; solo max-height y opacity, así
+   que es ligero para la tablet. */
+.profile-detail-panel {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 420ms var(--ease-spring), opacity 280ms ease;
+}
+.profile-detail-panel.is-expanded {
+  max-height: 900px;
+  opacity: 1;
+}
+.profile-detail-inner {
+  padding: 14px var(--space-3) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-top: 1px solid var(--color-border);
+}
+.profile-detail-inner textarea {
+  min-height: 90px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-border);
+  padding: var(--space-2);
+  font-size: var(--font-base);
+  font-family: inherit;
+  background: var(--color-bg-soft);
+  color: var(--color-text);
+  resize: vertical;
 }

@@ -3,9 +3,10 @@ import { DEFAULT_REMINDER_CATALOG } from "../core/state.js";
 import { getReminders, addReminder, removeReminder, setReminderEnabled } from "../core/reminders.js";
 import { Voice } from "../core/voice.js";
 import { Music, TRACKS } from "../core/music.js";
+import { getAllProfiles, createProfile, deleteProfileCascade } from "../core/profiles.js";
 
 const TABS = [
-  { key: "perfil", label: "👤 Perfil" },
+  { key: "perfiles", label: "👤 Perfiles" },
   { key: "recordatorios", label: "✅ Recordatorios" },
   { key: "voz", label: "🔊 Voz y música" },
   { key: "accesibilidad", label: "🔎 Accesibilidad" },
@@ -13,7 +14,7 @@ const TABS = [
 ];
 
 export async function renderSettings(tabsEl, rootEl, ctx) {
-  let activeTab = "perfil";
+  let activeTab = "perfiles";
 
   function renderTabs() {
     tabsEl.innerHTML = "";
@@ -32,58 +33,216 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
 
   async function renderBody() {
     rootEl.innerHTML = "";
-    if (activeTab === "perfil") await renderProfileTab();
+    if (activeTab === "perfiles") await renderProfilesTab();
     else if (activeTab === "recordatorios") await renderRemindersTab();
     else if (activeTab === "voz") await renderVoiceTab();
     else if (activeTab === "password") await renderPasswordTab();
     else await renderAccessibilityTab();
   }
 
-  async function renderProfileTab() {
-    const p = ctx.profile;
-    const card = document.createElement("div");
-    card.className = "card col";
-    card.style.maxWidth = "640px";
-    card.innerHTML = `
-      <div class="field">
-        <label for="set-name">Nombre del paciente</label>
-        <input type="text" id="set-name" value="${p.name || ""}" />
-      </div>
-      <div class="field">
-        <label for="set-age">Edad (opcional)</label>
-        <input type="number" id="set-age" value="${p.age ?? ""}" />
-      </div>
-      <div class="row wrap" style="gap:16px;">
-        <div class="field" style="flex:1; min-width:180px;">
-          <label for="set-weight">Peso (kg, opcional)</label>
-          <input type="number" id="set-weight" value="${p.weight ?? ""}" />
-        </div>
-        <div class="field" style="flex:1; min-width:180px;">
-          <label for="set-height">Altura (cm, opcional)</label>
-          <input type="number" id="set-height" value="${p.height ?? ""}" />
-        </div>
-      </div>
-    `;
-    const saveBtn = document.createElement("button");
-    saveBtn.className = "btn btn-success btn-huge";
-    saveBtn.style.marginTop = "16px";
-    saveBtn.textContent = "Guardar cambios";
-    saveBtn.onclick = async () => {
-      p.name = card.querySelector("#set-name").value.trim() || p.name;
-      const ageVal = card.querySelector("#set-age").value;
-      p.age = ageVal ? Number(ageVal) : null;
-      const weightVal = card.querySelector("#set-weight").value;
-      p.weight = weightVal ? Number(weightVal) : null;
-      const heightVal = card.querySelector("#set-height").value;
-      p.height = heightVal ? Number(heightVal) : null;
-      await DB.put("profile", p);
+  async function renderProfilesTab() {
+    const wrap = document.createElement("div");
+    wrap.className = "col";
+    wrap.style.gap = "16px";
+    wrap.style.maxWidth = "640px";
 
-      ctx.onProfileUpdated?.(p);
-      saveBtn.textContent = "¡Guardado! ✔️";
-      setTimeout(() => (saveBtn.textContent = "Guardar cambios"), 1600);
-    };
-    card.appendChild(saveBtn);
-    rootEl.appendChild(card);
+    const intro = document.createElement("p");
+    intro.className = "text-md";
+    intro.textContent = "Toca la foto y el nombre de una persona para ver o editar su ficha. Puedes tener varios perfiles en la misma aplicación y cambiar entre ellos cuando quieras.";
+    wrap.appendChild(intro);
+
+    const list = document.createElement("div");
+    list.className = "col";
+    list.style.gap = "12px";
+    wrap.appendChild(list);
+
+    const addBtn = document.createElement("button");
+    addBtn.className = "btn btn-accent";
+    addBtn.style.marginTop = "4px";
+    addBtn.textContent = "➕ Añadir perfil";
+    addBtn.onclick = () => openAddProfileModal();
+    wrap.appendChild(addBtn);
+
+    rootEl.appendChild(wrap);
+
+    async function refresh() {
+      const profiles = await getAllProfiles();
+      list.innerHTML = "";
+      profiles.forEach((p) => renderProfileCard(p, profiles.length));
+    }
+
+    function renderProfileCard(p, totalProfiles) {
+      const isActive = p.id === ctx.profile.id;
+      const item = document.createElement("div");
+      item.className = "card profile-card-item";
+
+      const header = document.createElement("div");
+      header.className = "profile-card-header";
+      header.innerHTML = `
+        <span class="profile-avatar">${p.photo ? `<img src="${p.photo}" alt="${p.name}" />` : "👤"}</span>
+        <span class="col" style="gap:2px; flex:1; text-align:left;">
+          <span class="profile-name">${p.name}</span>
+          ${isActive ? '<span class="pill">Perfil activo ahora</span>' : '<span class="text-sm" style="color:var(--color-text-soft);">Toca para ver la ficha</span>'}
+        </span>
+        <span class="profile-expand-arrow">▾</span>
+      `;
+      item.appendChild(header);
+
+      const panel = document.createElement("div");
+      panel.className = "profile-detail-panel";
+      const inner = document.createElement("div");
+      inner.className = "profile-detail-inner";
+      inner.innerHTML = `
+        <div class="field">
+          <label for="pf-name-${p.id}">Nombre</label>
+          <input type="text" id="pf-name-${p.id}" value="${p.name || ""}" />
+        </div>
+        <div class="field">
+          <label for="pf-photo-${p.id}">Foto</label>
+          <input type="file" id="pf-photo-${p.id}" accept="image/*" style="min-height:auto; border:none; padding:8px 0;" />
+        </div>
+        <div class="row wrap" style="gap:16px;">
+          <div class="field" style="flex:1; min-width:140px;">
+            <label for="pf-age-${p.id}">Edad</label>
+            <input type="number" id="pf-age-${p.id}" value="${p.age ?? ""}" />
+          </div>
+          <div class="field" style="flex:1; min-width:140px;">
+            <label for="pf-weight-${p.id}">Peso (kg)</label>
+            <input type="number" id="pf-weight-${p.id}" value="${p.weight ?? ""}" />
+          </div>
+          <div class="field" style="flex:1; min-width:140px;">
+            <label for="pf-height-${p.id}">Altura (cm)</label>
+            <input type="number" id="pf-height-${p.id}" value="${p.height ?? ""}" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="pf-notes-${p.id}">Observaciones</label>
+          <textarea id="pf-notes-${p.id}" placeholder="Notas para la familia o el profesional (alergias, preferencias, cualquier cosa a tener en cuenta)…">${p.notes || ""}</textarea>
+        </div>
+        <div class="row wrap" style="gap:12px; margin-top:6px;">
+          <button class="btn btn-success" id="pf-save-${p.id}">Guardar cambios</button>
+          ${!isActive ? `<button class="btn btn-ghost" id="pf-use-${p.id}">Usar este perfil</button>` : ""}
+          ${totalProfiles > 1 ? `<button class="btn btn-warm" id="pf-delete-${p.id}">🗑️ Eliminar perfil</button>` : ""}
+        </div>
+      `;
+      panel.appendChild(inner);
+      item.appendChild(panel);
+
+      let expanded = false;
+      header.onclick = () => {
+        expanded = !expanded;
+        header.classList.toggle("is-expanded", expanded);
+        panel.classList.toggle("is-expanded", expanded);
+      };
+
+      let photoData = null;
+      inner.querySelector(`#pf-photo-${p.id}`).addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => (photoData = reader.result);
+        reader.readAsDataURL(file);
+      });
+
+      inner.querySelector(`#pf-save-${p.id}`).onclick = async () => {
+        const nameVal = inner.querySelector(`#pf-name-${p.id}`).value.trim();
+        p.name = nameVal || p.name;
+        const ageVal = inner.querySelector(`#pf-age-${p.id}`).value;
+        p.age = ageVal ? Number(ageVal) : null;
+        const weightVal = inner.querySelector(`#pf-weight-${p.id}`).value;
+        p.weight = weightVal ? Number(weightVal) : null;
+        const heightVal = inner.querySelector(`#pf-height-${p.id}`).value;
+        p.height = heightVal ? Number(heightVal) : null;
+        p.notes = inner.querySelector(`#pf-notes-${p.id}`).value;
+        if (photoData) p.photo = photoData;
+        await DB.put("profile", p);
+        if (isActive) {
+          ctx.profile = p;
+          ctx.onProfileUpdated?.(p);
+        }
+        const saveBtn = inner.querySelector(`#pf-save-${p.id}`);
+        saveBtn.textContent = "¡Guardado! ✔️";
+        setTimeout(() => (saveBtn.textContent = "Guardar cambios"), 1600);
+        await refresh();
+      };
+
+      const useBtn = inner.querySelector(`#pf-use-${p.id}`);
+      if (useBtn) {
+        useBtn.onclick = () => ctx.onProfileSwitched?.(p);
+      }
+
+      const deleteBtn = inner.querySelector(`#pf-delete-${p.id}`);
+      if (deleteBtn) {
+        deleteBtn.onclick = async () => {
+          deleteBtn.textContent = "Toca de nuevo para confirmar";
+          deleteBtn.onclick = async () => {
+            const result = await deleteProfileCascade(p.id);
+            if (result.ok) {
+              if (isActive) {
+                // Si se elimina el perfil activo, se pasa automáticamente
+                // al primero que quede.
+                const remaining = await getAllProfiles();
+                if (remaining[0]) ctx.onProfileSwitched?.(remaining[0]);
+              } else {
+                await refresh();
+              }
+            }
+          };
+        };
+      }
+
+      list.appendChild(item);
+    }
+
+    function openAddProfileModal() {
+      ctx.openModal?.((box, close) => {
+        box.innerHTML = `
+          <h2 class="title-lg">Añadir perfil</h2>
+          <div class="col" style="gap:16px; margin-top:20px; text-align:left;">
+            <div class="field">
+              <label for="new-pf-name">Nombre</label>
+              <input type="text" id="new-pf-name" placeholder="Ej: Óscar, María…" />
+            </div>
+            <div class="field">
+              <label for="new-pf-age">Edad (opcional)</label>
+              <input type="number" id="new-pf-age" />
+            </div>
+            <div class="field">
+              <label for="new-pf-photo">Foto (opcional, se puede añadir luego)</label>
+              <input type="file" id="new-pf-photo" accept="image/*" style="min-height:auto; border:none; padding:8px 0;" />
+            </div>
+          </div>
+          <div class="row center" style="gap:16px; margin-top:28px;">
+            <button class="btn btn-ghost" id="new-pf-cancel">Cancelar</button>
+            <button class="btn btn-success" id="new-pf-save" disabled>Añadir</button>
+          </div>
+        `;
+        let photoData = null;
+        const nameInput = box.querySelector("#new-pf-name");
+        const saveBtn = box.querySelector("#new-pf-save");
+        nameInput.addEventListener("input", () => {
+          saveBtn.disabled = !nameInput.value.trim();
+        });
+        box.querySelector("#new-pf-photo").addEventListener("change", (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => (photoData = reader.result);
+          reader.readAsDataURL(file);
+        });
+        box.querySelector("#new-pf-cancel").onclick = close;
+        saveBtn.onclick = async () => {
+          const name = nameInput.value.trim();
+          if (!name) return;
+          const ageVal = box.querySelector("#new-pf-age").value;
+          await createProfile({ name, photo: photoData, age: ageVal ? Number(ageVal) : null });
+          close();
+          await refresh();
+        };
+      });
+    }
+
+    await refresh();
   }
 
   async function renderPasswordTab() {
