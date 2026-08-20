@@ -24,6 +24,21 @@ export async function addHealthEntry(profileId, { oxygen, systolic, diastolic })
   return entry;
 }
 
+/**
+ * Modifica una medición ya guardada (fecha y hora originales se
+ * conservan tal cual, solo se corrigen los valores). Se usa desde el
+ * Historial cuando hay que corregir un dato concreto de un día.
+ */
+export async function updateHealthEntry(entryId, { oxygen, systolic, diastolic }) {
+  const entry = await DB.get("health", entryId);
+  if (!entry) return null;
+  entry.oxygen = oxygen === "" || oxygen === null || oxygen === undefined ? null : Number(oxygen);
+  entry.systolic = systolic === "" || systolic === null || systolic === undefined ? null : Number(systolic);
+  entry.diastolic = diastolic === "" || diastolic === null || diastolic === undefined ? null : Number(diastolic);
+  await DB.put("health", entry);
+  return entry;
+}
+
 export async function getHealthEntries(profileId) {
   const all = await DB.getAll("health");
   return all

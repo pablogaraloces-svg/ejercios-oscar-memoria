@@ -104,6 +104,36 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 1.4 (correcciones y diseño del ejercicio de diferencias)
+
+**Medicación y horarios**
+- Corregido: el botón "Guardar cambios" quedaba oculto por un límite de
+  altura del desplegable, insuficiente desde que se añadió la sección de
+  medicación. Ya es visible siempre, sin importar cuántos medicamentos
+  tenga cada momento del día.
+
+**Salud → Historial**
+- Ahora se puede tocar cualquier registro del historial para corregir
+  sus datos (oxígeno, tensión alta y baja) de ese día concreto. Al
+  guardar (o cancelar), se vuelve automáticamente a la vista de
+  historial.
+
+**Ejercicio de diferencias — rediseñado**
+- El parpadeo del recuadro que hay que tocar ya no es un encendido/apagado
+  brusco: ahora es una retroiluminación suave y continua, que sube y baja
+  de intensidad como una respiración, sin apagarse nunca del todo.
+- "Imagen 1" e "Imagen 2" han dejado de ser un texto suelto: ahora son
+  cápsulas elegantes con relieve propio (recuerdan a un botón, sin
+  serlo — no responden al tacto). La cápsula de "Imagen 2" parpadea
+  exactamente al mismo ritmo que el recuadro, para que la vista asocie
+  ambas señales.
+
+**Botón de salir**
+- Corregido el solape con los nombres del ejercicio de reconocimiento
+  familiar: el botón se encoge discretamente solo durante ese ejercicio y
+  recupera su tamaño normal en el siguiente paso (o en cuanto se vuelve a
+  la portada, por cualquier camino).
+
 ## 🆕 Novedades de la versión 1.3 (correcciones y medicación)
 
 **Administración**

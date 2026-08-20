@@ -1,4 +1,4 @@
-import { addHealthEntry, getHealthEntries, monthLabel } from "../core/health.js";
+import { addHealthEntry, getHealthEntries, updateHealthEntry, monthLabel } from "../core/health.js";
 import { formatDateMediumEs } from "../core/dateUtils.js";
 
 /**
@@ -111,7 +111,9 @@ export async function renderHealth(rootEl, ctx) {
     }
     entries.forEach((e) => {
       const row = document.createElement("div");
-      row.className = "health-history-item";
+      row.className = "health-history-item health-history-item-editable";
+      row.setAttribute("role", "button");
+      row.setAttribute("tabindex", "0");
       const parts = [];
       if (e.oxygen !== null) parts.push(`Oxígeno: ${e.oxygen}%`);
       if (e.systolic !== null || e.diastolic !== null) {
@@ -120,9 +122,51 @@ export async function renderHealth(rootEl, ctx) {
       row.innerHTML = `
         <span class="text-base" style="font-weight:700;">${formatDateMediumEs(e.date)}, ${e.time}</span>
         <span class="text-base">${parts.join(" · ") || "Sin datos"}</span>
+        <span class="health-edit-icon" aria-hidden="true">✏️</span>
       `;
+      row.onclick = () => renderEditEntry(e);
       listBox.appendChild(row);
     });
+  }
+
+  /** Sustituye el historial por un formulario para corregir esa medición
+   * concreta; al guardar (o cancelar) se vuelve a mostrar el historial. */
+  function renderEditEntry(entry) {
+    listBox.innerHTML = "";
+    const editBox = document.createElement("div");
+    editBox.className = "col";
+    editBox.style.gap = "14px";
+    editBox.innerHTML = `
+      <p class="text-md" style="font-weight:700;">Corrigiendo la medición del ${formatDateMediumEs(entry.date)}, ${entry.time}</p>
+      <div class="field">
+        <label for="health-edit-oxygen">Oxígeno en sangre (%)</label>
+        <input type="number" id="health-edit-oxygen" inputmode="numeric" min="0" max="100" value="${entry.oxygen ?? ""}" />
+      </div>
+      <div class="row wrap" style="gap:16px;">
+        <div class="field" style="flex:1; min-width:180px;">
+          <label for="health-edit-systolic">Tensión alta</label>
+          <input type="number" id="health-edit-systolic" inputmode="numeric" value="${entry.systolic ?? ""}" />
+        </div>
+        <div class="field" style="flex:1; min-width:180px;">
+          <label for="health-edit-diastolic">Tensión baja</label>
+          <input type="number" id="health-edit-diastolic" inputmode="numeric" value="${entry.diastolic ?? ""}" />
+        </div>
+      </div>
+      <div class="row wrap" style="gap:12px;">
+        <button class="btn btn-success" id="health-edit-save">Guardar cambios</button>
+        <button class="btn btn-ghost" id="health-edit-cancel">Cancelar</button>
+      </div>
+    `;
+    listBox.appendChild(editBox);
+
+    editBox.querySelector("#health-edit-cancel").onclick = () => renderHistory();
+    editBox.querySelector("#health-edit-save").onclick = async () => {
+      const oxygen = editBox.querySelector("#health-edit-oxygen").value;
+      const systolic = editBox.querySelector("#health-edit-systolic").value;
+      const diastolic = editBox.querySelector("#health-edit-diastolic").value;
+      await updateHealthEntry(entry.id, { oxygen, systolic, diastolic });
+      await renderHistory();
+    };
   }
 
   await renderHistory();

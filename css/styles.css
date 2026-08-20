@@ -627,9 +627,19 @@ body.high-contrast .family-title-elegant {
   display: flex; align-items: center; justify-content: center;
   font-size: 1.6rem;
   cursor: pointer;
-  transition: transform var(--dur-fast) var(--ease-gentle), box-shadow var(--dur-fast) var(--ease-gentle);
+  transition: transform var(--dur-fast) var(--ease-gentle), box-shadow var(--dur-fast) var(--ease-gentle), width 320ms var(--ease-spring), height 320ms var(--ease-spring), font-size 320ms var(--ease-spring), opacity 320ms var(--ease-gentle);
 }
 .exit-fab:hover { transform: translateY(-2px); }
+/* Versión encogida: para los ejercicios donde el botón fijo pueda quedar
+   demasiado cerca de una respuesta (p.ej. los nombres del reconocimiento
+   familiar). Vuelve a su tamaño normal solo en el paso siguiente. */
+.exit-fab.exit-fab-compact {
+  width: 40px;
+  height: 40px;
+  font-size: 1.05rem;
+  opacity: 0.55;
+}
+.exit-fab.exit-fab-compact:hover { opacity: 0.9; }
 .exit-fab:active { transform: scale(0.94); }
 
 /* Botón discreto de administración: pequeño, poco visible, no distrae a Óscar */
@@ -1169,6 +1179,17 @@ body.high-contrast .home-bg-mascot { display: none; }
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
 }
+.health-history-item-editable {
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-gentle), box-shadow var(--dur-fast) var(--ease-gentle), border-color var(--dur-fast) var(--ease-gentle);
+}
+.health-history-item-editable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+  border-color: var(--color-primary-light);
+}
+.health-history-item-editable:active { transform: scale(0.98); }
+.health-edit-icon { font-size: 1.1rem; opacity: 0.55; flex-shrink: 0; }
 
 /* ---------- Meteorología (portada) ---------- */
 .weather-widget {
@@ -1209,23 +1230,46 @@ body.high-contrast .home-bg-mascot { display: none; }
 }
 
 /* ---------- Ejercicio de diferencias: títulos e iluminación del recuadro ---------- */
-.diff-panel-title {
+/* "Imagen 1" / "Imagen 2" ahora son cápsulas elegantes con relieve
+   propio (recuerdan a un botón, sin serlo — no tienen cursor de
+   puntero ni responden al tacto, son solo una etiqueta con más
+   personalidad que un simple texto). */
+.diff-panel-title-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 28px;
+  border-radius: var(--radius-full);
+  background: var(--gradient-surface);
+  border: 2px solid var(--color-border);
+  box-shadow: var(--shadow-xs), var(--btn-bevel-ghost);
   font-weight: 800;
   font-size: var(--font-md);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.01em;
   color: var(--color-text);
+  cursor: default;
+  user-select: none;
 }
 .diff-panel { position: relative; }
-/* En vez de un texto "TOCA AQUÍ", el propio recuadro que hay que tocar se
-   ilumina por los bordes de forma sutil e intermitente (encendido breve,
-   pausa, repetir), para que la vista vaya sola hacia él. */
-.diff-panel-highlight {
-  animation: diffPanelGlow 2.6s ease-in-out infinite;
+
+/* Retroiluminación suave y continua (nunca se apaga del todo, solo sube
+   y baja de intensidad como una respiración) en vez del parpadeo neto de
+   antes — tanto en el recuadro interactivo como en su etiqueta "Imagen
+   2", exactamente al mismo ritmo, para que la vista los asocie como una
+   misma señal. */
+.diff-panel-highlight,
+.diff-panel-title-target {
+  animation: diffBacklight 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
-@keyframes diffPanelGlow {
-  0%, 12%, 100% { box-shadow: var(--shadow-soft), var(--btn-bevel-ghost); border-color: rgba(233, 226, 212, 0.7); }
-  6% { box-shadow: 0 0 0 5px rgba(245, 169, 62, 0.4), var(--shadow-soft); border-color: var(--color-accent); }
+@keyframes diffBacklight {
+  0%, 100% {
+    box-shadow: 0 0 0 2px rgba(245, 169, 62, 0.10), var(--shadow-soft);
+    border-color: rgba(245, 169, 62, 0.30);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(245, 169, 62, 0.34), var(--shadow-soft);
+    border-color: var(--color-accent);
+  }
 }
 
 /* ---------- Pantalla de inicio (splash) ---------- */
@@ -1378,7 +1422,7 @@ body.high-contrast .home-bg-mascot { display: none; }
   transition: max-height 420ms var(--ease-spring), opacity 280ms ease;
 }
 .profile-detail-panel.is-expanded {
-  max-height: 900px;
+  max-height: 2600px;
   opacity: 1;
 }
 .profile-detail-inner {

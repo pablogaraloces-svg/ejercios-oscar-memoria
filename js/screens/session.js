@@ -158,6 +158,10 @@ export class SessionRunner {
     this._nameBudget = { used: false };
     this.updateProgress();
     this.mascot.idle();
+    // Por defecto el botón de salir tiene su tamaño normal; solo se
+    // encoge en los ejercicios concretos donde pueda molestar (ver
+    // renderExercise → COMPACT_EXIT_KINDS).
+    this.setExitFabCompact(false);
 
     const previousStep = this.steps[this._lastRenderedIndex];
     const currentStep = this.steps[this.stepIndex];
@@ -423,11 +427,23 @@ export class SessionRunner {
     }, delay);
   }
 
+  /** Encoge (o devuelve a su tamaño normal) el botón de salir, para los
+   * ejercicios concretos donde su posición fija pueda molestar con algún
+   * botón de respuesta (p.ej. los nombres del reconocimiento familiar). */
+  setExitFabCompact(compact) {
+    document.getElementById("btn-exit")?.classList.toggle("exit-fab-compact", compact);
+  }
+
   renderExercise(ex) {
     this.stats.total++;
     this._exerciseCount = (this._exerciseCount || 0) + 1;
     const catLabel = CATEGORY_LABELS[ex.category] || "";
     this.mascot.thinking();
+    // Ejercicios donde el botón de salir (fijo, abajo a la derecha) puede
+    // quedar demasiado cerca de un botón de respuesta: se encoge mientras
+    // dure ese ejercicio y vuelve a su tamaño normal en el siguiente paso.
+    const COMPACT_EXIT_KINDS = new Set(["photo_choice"]);
+    this.setExitFabCompact(COMPACT_EXIT_KINDS.has(ex.kind));
 
     // A partir del segundo ejercicio, la voz guía la transición (ya no hay
     // botón "Siguiente"), con una frase distinta cada vez.
@@ -735,8 +751,8 @@ export class SessionRunner {
     labels.style.justifyContent = "center";
     labels.style.gap = "48px";
     labels.innerHTML = `
-      <span class="diff-panel-title">Imagen 1</span>
-      <span class="diff-panel-title">Imagen 2</span>
+      <span class="diff-panel-title-wrap">Imagen 1</span>
+      <span class="diff-panel-title-wrap diff-panel-title-target">Imagen 2</span>
     `;
     wrap.appendChild(labels);
 

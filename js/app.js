@@ -146,6 +146,10 @@ function goHome() {
   // se apaga (ver openAdminPinModal), así que al volver a casa se
   // reanuda aquí, si está activada.
   if (ctx.settings?.musicEnabled) Music.start(ctx.settings.musicVolume ?? 0.35, ctx.settings.musicTrack ?? 0);
+  // Por si se salió de la sesión en mitad de un ejercicio que encogía el
+  // botón de salir (p.ej. el de fotos familiares): siempre vuelve a su
+  // tamaño normal en la portada, sin esperar a la siguiente sesión.
+  document.getElementById("btn-exit")?.classList.remove("exit-fab-compact");
 }
 
 let weatherRequestInFlight = false;
