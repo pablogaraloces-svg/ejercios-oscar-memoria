@@ -5,7 +5,7 @@
  * pequeños suman un decimal (v11.1, v11.2...), los grandes pasan a la
  * siguiente versión mayor (v12).
  */
-const CACHE_VERSION = "acompanante-v2.1";
+const CACHE_VERSION = "acompanante-v2.2";
 const CORE_ASSETS = [
   "./",
   "./index.html",

@@ -104,6 +104,43 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 2.2 (corregido el problema real de actualización de la app)
+
+**Por qué no se actualizaba**
+- Revisé todo el Service Worker línea por línea y comprobé, uno por uno,
+  los 63 archivos que necesita para instalarse (si uno solo hubiera
+  fallado, toda la actualización se habría cancelado en silencio para
+  siempre) — todos respondían correctamente, así que el problema no
+  estaba ahí.
+- **La causa real estaba en cómo se registraba el Service Worker desde
+  la aplicación**: no se le pedía nunca de forma activa que comprobara
+  si había una versión nueva publicada. Por defecto, el navegador solo
+  revisa esto de vez en cuando por su cuenta (puede tardar bastante en
+  darse cuenta solo), así que la app se podía quedar "congelada" en una
+  versión antigua indefinidamente, aunque el código nuevo ya estuviera
+  lista para descargarse.
+
+**Qué se ha corregido**
+- Ahora, al abrir la app, se le pide explícitamente al navegador que
+  compruebe si hay una versión nueva — y se vuelve a comprobar cada vez
+  que se regresa a la app tras un rato en segundo plano.
+- Se ha añadido también un ajuste específico (`updateViaCache: "none"`)
+  para que el propio archivo del Service Worker nunca se sirva desde una
+  copia antigua guardada por el navegador.
+- En cuanto una versión nueva termina de instalarse, la app se recarga
+  ella sola para empezar a usarla — pero **nunca a mitad de una sesión
+  de ejercicios** (para no interrumpir a Óscar de golpe): si la
+  actualización llega mientras está en mitad del ratito de hoy, espera
+  a que vuelva a la portada para aplicarse, sin cortar nada.
+
+**Para la próxima vez que instales una actualización en la tablet**
+- Con este cambio, no debería volver a hacer falta ningún paso manual:
+  bastará con tener la tablet con conexión a internet un momento y
+  volver a abrir (o volver) a la aplicación.
+- Si alguna vez quieres forzar una actualización inmediata sin esperar,
+  puedes cerrar la app del todo (no solo minimizarla) y volver a
+  abrirla.
+
 ## 🆕 Novedades de la versión 2.1 (nuevo juego: "Sopa de letras")
 
 **Nuevo juego en la Sala de Juegos**

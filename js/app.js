@@ -43,6 +43,11 @@ function applySettings(settings) {
 // El audio en el navegador requiere un primer gesto del usuario:
 // arrancamos la música de fondo en cuanto toque la pantalla por primera vez.
 let musicPrimed = false;
+// Si el Service Worker se actualiza mientras Óscar está en mitad de una
+// sesión de ejercicios, no tiene sentido recargar la página de golpe (lo
+// sacaría bruscamente de lo que está haciendo). Se marca aquí y se
+// aplica en el siguiente goHome(), cuando es seguro hacerlo.
+let pendingUpdateReload = false;
 function primeMusicOnFirstTouch() {
   if (musicPrimed) return;
   musicPrimed = true;
@@ -78,7 +83,46 @@ async function boot() {
   }
 
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+    navigator.serviceWorker
+      // "updateViaCache: none" evita que el propio archivo
+      // service-worker.js (y lo que importe) se sirva desde la caché
+      // HTTP normal del navegador — sin esto, el navegador podría seguir
+      // usando una copia antigua del propio Service Worker durante horas
+      // antes de darse cuenta de que hay una versión nueva.
+      .register("./service-worker.js", { updateViaCache: "none" })
+      .then((reg) => {
+        // Fuerza una comprobación inmediata de si hay una versión nueva
+        // publicada, sin esperar al ciclo de revisión por defecto del
+        // navegador (que puede tardar bastante en comprobarlo por su
+        // cuenta) — es la causa más habitual de que una PWA se quede
+        // "atascada" mostrando una versión antigua.
+        reg.update().catch(() => {});
+        // Si se vuelve a la app tras un rato en segundo plano, se
+        // vuelve a comprobar por si hay una versión nueva esperando.
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") reg.update().catch(() => {});
+        });
+      })
+      .catch(() => {});
+
+    // En cuanto el Service Worker nuevo toma el control de verdad (justo
+    // después de activarse), se recarga la página una sola vez para que
+    // se use ya el código nuevo — si no, la pestaña que ya estaba abierta
+    // seguiría funcionando con el código antiguo hasta cerrarla y
+    // volverla a abrir manualmente. Pero nunca a mitad de una sesión de
+    // ejercicios: en ese caso se espera a la próxima vez que se vuelva a
+    // la portada (ver goHome()), para no interrumpir a Óscar de golpe.
+    let reloadedForUpdate = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (reloadedForUpdate) return;
+      const sessionActive = document.getElementById("screen-session")?.classList.contains("active");
+      if (sessionActive) {
+        pendingUpdateReload = true;
+        return;
+      }
+      reloadedForUpdate = true;
+      window.location.reload();
+    });
   }
 
   const profiles = await DB.getAll("profile");
@@ -139,6 +183,14 @@ updateHomeClock();
 setInterval(updateHomeClock, 15000);
 
 function goHome() {
+  // Si había una actualización de la app esperando (detectada mientras
+  // Óscar estaba en mitad de una sesión), este es el momento seguro para
+  // aplicarla: se recarga aquí, ya de vuelta en la portada, en vez de
+  // interrumpirlo a mitad de un ejercicio.
+  if (pendingUpdateReload) {
+    window.location.reload();
+    return;
+  }
   updateHomeClock();
   homeMascot.setName(ctx.profile.name);
   showScreen("screen-home");
