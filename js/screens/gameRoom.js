@@ -1,4 +1,5 @@
 import { renderCerebrinSaltarin } from "./gamePlayer.js";
+import { renderSimonGame } from "./simonGame.js";
 import { getGameStats } from "../core/gameStats.js";
 
 /**
@@ -19,6 +20,14 @@ const GAMES = [
     description: "Ayuda a Cerebrín a saltar los obstáculos y conseguir premios.",
     enabled: true,
     render: renderCerebrinSaltarin,
+  },
+  {
+    id: "simon_colores",
+    name: "El juego de los colores",
+    emoji: "🎨",
+    description: "Memoriza y repite la secuencia de colores y sonidos, cada vez más larga.",
+    enabled: true,
+    render: renderSimonGame,
   },
   // Futuros juegos: añadir aquí una entrada más, con su propio "render".
 ];

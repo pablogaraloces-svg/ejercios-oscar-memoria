@@ -209,4 +209,43 @@ export const GameSounds = {
     // Acorde final, sostenido, a modo de campanillas de victoria.
     [1046.5, 1318.5, 1568.0].forEach((f) => playChiptuneNote(f, t + run.length * 0.09, 0.7, sfxGain, "triangle", 0.14));
   },
+
+  /** Reproduce una nota concreta (juego "Simón"): clara, cálida, con un
+   * cuerpo agradable (dos ondas superpuestas, como un pequeño "campanilleo"). */
+  playNote(freq, duration = 0.45) {
+    const ctx = ensureContext();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    playChiptuneNote(freq, t, duration, sfxGain, "triangle", 0.28);
+    playChiptuneNote(freq * 2, t, duration * 0.6, sfxGain, "sine", 0.08);
+  },
+
+  /** Fallo suave en el juego "Simón": claro, pero nunca agresivo ni
+   * desalentador — solo indica "casi, prueba otra vez". */
+  playSimonWrong() {
+    const ctx = ensureContext();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(196, t);
+    osc.frequency.exponentialRampToValueAtTime(130.81, t + 0.3);
+    gain.gain.setValueAtTime(0.001, t);
+    gain.gain.exponentialRampToValueAtTime(0.2, t + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+    osc.connect(gain);
+    gain.connect(sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.4);
+  },
+
+  /** Pequeño chispazo de éxito al completar una ronda entera de la
+   * secuencia — distinto del sonido de cada nota individual. */
+  playSimonRoundComplete() {
+    const ctx = ensureContext();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    [523.25, 659.25, 783.99].forEach((f, i) => playChiptuneNote(f, t + i * 0.08, 0.16, sfxGain, "triangle", 0.22));
+  },
 };

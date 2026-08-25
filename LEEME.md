@@ -104,6 +104,34 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 1.9 (nuevo juego: "El juego de los colores")
+
+**Nuevo juego en la Sala de Juegos, inspirado en Simón**
+- Tablero circular con 5 colores (azul, verde, rojo, amarillo, negro),
+  cada uno con su propia nota musical (escala pentatónica: Do-Mi-Sol-La-
+  Do agudo, para que cualquier secuencia aleatoria suene siempre
+  agradable, sin notas disonantes).
+- Cerebrín muestra una secuencia cada vez más larga (empezando por una
+  sola casilla); Óscar debe repetirla tocando los colores en el mismo
+  orden. Cada color se ilumina tanto cuando lo muestra Cerebrín como
+  cuando lo toca Óscar, y suena su nota correspondiente en ambos casos.
+- Aspecto de volumen 3D, con el mismo lenguaje visual que el botón
+  SALTAR del otro juego: degradados, brillo y sombra en cada gajo del
+  tablero, con un resplandor propio al iluminarse.
+- **Diseño accesible a propósito**: un fallo nunca termina la partida de
+  golpe — se repite la misma secuencia con ánimo hablado, sin perder lo
+  ya conseguido. Solo se cierra al pulsar "Salir", o al llegar a una
+  secuencia ya muy larga (celebración de "te lo sabes todo").
+- Se añade a la arquitectura extensible de la Sala de Juegos ya
+  preparada para esto exactamente: una entrada más en la lista de
+  juegos, sin tocar nada de la pantalla en sí ni del primer juego.
+- Estadísticas propias e independientes (ronda máxima alcanzada, tiempo
+  jugado), guardadas por separado — nunca se mezclan con las
+  estadísticas cognitivas ni con las de Cerebrín Saltarín.
+- Verificado con una simulación exacta que la zona del tablero que se
+  dibuja para cada color coincide siempre con la zona que detecta el
+  toque, para los 5 colores.
+
 ## 🆕 Novedades de la versión 1.8 (pista de diferencias, proporciones y Cerebrín Saltarín a fondo)
 
 **Ejercicio de "Las Diferencias" — pista corregida de raíz**

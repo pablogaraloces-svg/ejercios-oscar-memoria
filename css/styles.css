@@ -1713,3 +1713,18 @@ body.high-contrast .home-bg-mascot { display: none; }
 }
 .game-card-name { font-weight: 800; font-size: var(--font-lg); }
 .game-card-stats { color: var(--color-text-soft); }
+
+/* ---------- Juego "El juego de los colores" (estilo Simón) ---------- */
+.simon-game-wrap { gap: 12px; width: 100%; max-width: 620px; margin: 0 auto; }
+.simon-hud { display: flex; justify-content: center; margin-top: 4px; }
+.simon-board-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 10px;
+}
+.simon-board-canvas {
+  cursor: pointer;
+  touch-action: manipulation;
+  filter: drop-shadow(0 10px 20px rgba(46, 54, 74, 0.18));
+}
