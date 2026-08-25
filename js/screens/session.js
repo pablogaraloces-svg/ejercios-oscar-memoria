@@ -524,16 +524,16 @@ export class SessionRunner {
 
     const studyBox = document.createElement("div");
     studyBox.className = "row wrap center fade-in";
-    studyBox.style.gap = "28px";
+    studyBox.style.gap = "22px";
     studyBox.style.marginTop = "20px";
     ex.studyItems.forEach((item, i) => {
       const card = document.createElement("div");
       card.className = "card col center";
-      card.style.minWidth = "168px";
-      card.style.minHeight = "168px";
+      card.style.minWidth = "128px";
+      card.style.minHeight = "128px";
       // Animación suave e individual (tipo "genie"): cada dibujo respira a
       // su propio ritmo, para invitar a mirarlos con calma sin marear.
-      card.innerHTML = `<span class="study-item-breathe" style="font-size:5.2rem; animation-delay:${(i * 0.35).toFixed(2)}s;">${item.emoji}</span>`;
+      card.innerHTML = `<span class="study-item-breathe" style="font-size:5rem; animation-delay:${(i * 0.35).toFixed(2)}s;">${item.emoji}</span>`;
       studyBox.appendChild(card);
     });
     this.contentEl.appendChild(studyBox);
@@ -574,15 +574,15 @@ export class SessionRunner {
           : `<span class="emoji tool-icon">${opt.svgIcon}</span><span>${opt.label}</span>`;
       } else if (opt.color) {
         const isWhite = opt.color.toUpperCase() === "#FFFFFF";
-        const swatchBorder = isWhite ? "3px solid #9A9A9A" : "3px solid rgba(0,0,0,0.12)";
-        const swatchShadow = isWhite ? "box-shadow:inset 0 0 0 2px #E4E4E4;" : "";
-        btn.innerHTML = `<span style="width:52px;height:52px;border-radius:14px;background:${opt.color};border:${swatchBorder};${swatchShadow}display:block;"></span>`;
+        const swatchBorder = isWhite ? "4px solid #9A9A9A" : "4px solid rgba(0,0,0,0.12)";
+        const swatchShadow = isWhite ? "box-shadow:inset 0 0 0 3px #E4E4E4;" : "";
+        btn.innerHTML = `<span style="width:96px;height:96px;border-radius:22px;background:${opt.color};border:${swatchBorder};${swatchShadow}display:block;"></span>`;
       } else if (opt.emoji) {
         btn.innerHTML = opt.hideLabel
           ? `<span class="emoji">${opt.emoji}</span>`
           : `<span class="emoji">${opt.emoji}</span><span>${opt.label}</span>`;
       } else {
-        btn.innerHTML = `<span style="font-size:2.2rem;">${opt.label}</span>`;
+        btn.innerHTML = `<span class="option-card-number">${opt.label}</span>`;
       }
       btn.dataset.correct = opt.correct ? "1" : "0";
       btn.onclick = () => this.handleAnswer(ex, btn, opt, hintFlow);

@@ -312,7 +312,7 @@ body.high-contrast .family-title-elegant {
   background: var(--gradient-surface);
   border-radius: var(--radius-md);
   border: 3px solid var(--color-border);
-  min-height: 250px;
+  min-height: 185px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -338,6 +338,14 @@ body.high-contrast .family-title-elegant {
   border-radius: var(--radius-full);
   background: var(--color-bg-soft);
   box-shadow: var(--shadow-inset);
+}
+/* Números del ejercicio de cálculo: mismo peso visual que un emoji
+   grande (antes se quedaban pequeños dentro de una tarjeta grande). */
+.option-card-number {
+  font-size: 4.2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
 }
 .family-photo { width: 110px; height: 110px; object-fit: cover; border-radius: var(--radius-md); box-shadow: var(--shadow-soft); border: 3px solid var(--color-surface); }
 .family-card { transition: transform var(--dur-fast) var(--ease-gentle), box-shadow var(--dur-fast) var(--ease-gentle); }
@@ -380,7 +388,7 @@ body.high-contrast .family-title-elegant {
 .grid-options.cols-3 { grid-template-columns: repeat(3, 1fr); }
 /* Con 3 columnas cada celda es más estrecha; se ajusta la proporción y
    el icono para que sigan viéndose grandes y cómodos, sin desbordar. */
-.grid-options.cols-3 .option-card { min-height: 200px; }
+.grid-options.cols-3 .option-card { min-height: 150px; }
 .grid-options.cols-3 .option-card .emoji { width: 92px; height: 92px; font-size: 3.6rem; }
 
 .progress-track {
@@ -1090,6 +1098,13 @@ body.high-contrast .home-bg-mascot { display: none; }
 /* ---------- Variante compacta de tarjeta de opción ---------- */
 /* Para pantallas con mucha información junta (p.ej. foto + pregunta + 4
    respuestas de "¿Quién es?"), donde conviene un pelín más de aire. */
+/* Botones de navegación de la portada (Mi familia, Sala de juegos): no
+   necesitan el mismo tamaño que las tarjetas de respuesta de un
+   ejercicio, ya que su icono es solo decorativo, no el centro de una
+   pregunta. */
+.home-nav-card { min-height: 130px; }
+.home-nav-card .emoji { width: 64px; height: 64px; font-size: 2.4rem; }
+
 .option-card-compact {
   min-height: 68px;
   padding: 8px;
@@ -1551,11 +1566,36 @@ body.high-contrast .home-bg-mascot { display: none; }
    protagonistas de la app (p.ej. "Empezar el ratito de hoy"), para que
    quede clara la llamada a la atención sin resultar exagerada. */
 .rest-game-jump-btn {
-  min-width: 280px;
+  min-width: 260px;
   font-size: var(--font-lg);
   letter-spacing: 0.02em;
-  margin-top: 16px;
   animation: btnBreathe 2.6s ease-in-out infinite;
+}
+/* Reiniciar/Salir a la izquierda, a la misma altura que SALTAR (no
+   debajo), para ocupar menos alto de pantalla en total. */
+.rest-game-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  width: 100%;
+  margin-top: 18px;
+}
+.rest-game-side-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rest-game-icon-btn {
+  min-width: 60px;
+  min-height: 60px;
+  padding: 0;
+  font-size: 1.4rem;
+  border-radius: 50%;
+}
+@media (max-width: 700px), (orientation: portrait) {
+  .rest-game-controls { flex-direction: column-reverse; gap: 14px; }
+  .rest-game-side-btns { flex-direction: row; }
 }
 
 /* ---------- Lista de categorías con Restablecer individual ---------- */

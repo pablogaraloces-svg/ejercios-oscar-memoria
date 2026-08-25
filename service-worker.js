@@ -5,7 +5,7 @@
  * pequeños suman un decimal (v11.1, v11.2...), los grandes pasan a la
  * siguiente versión mayor (v12).
  */
-const CACHE_VERSION = "acompanante-v1.6";
+const CACHE_VERSION = "acompanante-v1.7";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -68,6 +68,7 @@ const CORE_ASSETS = [
   "./assets/icons/icon-maskable-192.png",
   "./assets/icons/icon-maskable-512.png",
   "./assets/mascot/cerebrin.png",
+  "./assets/mascot/cerebrin-game.png",
 ];
 
 self.addEventListener("install", (event) => {

@@ -27,7 +27,17 @@ export class RestGame {
     this.ctx = canvas.getContext("2d");
     this.callbacks = callbacks;
     this.mascotImg = new Image();
-    this.mascotImg.src = "assets/mascot/cerebrin.png";
+    // Versión recortada a medida (sin ningún margen transparente
+    // alrededor): imprescindible para que el cálculo de apoyo sobre el
+    // suelo sea exacto. La imagen general del resto de la app conserva
+    // su margen (para la insignia circular), así que aquí se usa una
+    // específica para el juego.
+    this.mascotImg.src = "assets/mascot/cerebrin-game.png";
+    // La imagen carga de forma asíncrona: en cuanto esté lista, se
+    // recalcula la proporción real (antes se calculaba solo una vez, al
+    // construir el juego, cuando la imagen normalmente aún no había
+    // cargado — y se quedaba con un valor aproximado para siempre).
+    this.mascotImg.onload = () => this._resize();
     this.running = false;
     this.rafId = null;
     this._resize();
@@ -53,7 +63,7 @@ export class RestGame {
     // asumía un dibujo cuadrado, y quedaba flotando unos px por encima).
     const ratio = this.mascotImg.naturalHeight && this.mascotImg.naturalWidth
       ? this.mascotImg.naturalHeight / this.mascotImg.naturalWidth
-      : 0.88;
+      : 0.905;
     this.cerebrinDrawH = CEREBRIN_SIZE * ratio;
   }
 
@@ -158,8 +168,9 @@ export class RestGame {
     // El efecto de chafado se recupera suavemente hacia 1 (tamaño normal).
     this.squash += (1 - this.squash) * Math.min(1, dt * 10);
 
-    // Puntos por el mero hecho de avanzar (goteo suave y constante).
-    this.points += dt * 6;
+    // Los puntos solo suben por buenos saltos (superar un obstáculo) o
+    // por conseguir estrellas/pájaros — nunca por el mero hecho de
+    // avanzar por el recorrido.
 
     this._updateObstacles(dt, progress);
     this._updatePrizes(dt, progress);
@@ -173,12 +184,16 @@ export class RestGame {
       const minGap = 2700 - progress * 900;
       const maxGap = 3700 - progress * 900;
       this.nextObstacleAt = minGap + Math.random() * (maxGap - minGap);
+      // Más pequeños en general; de vez en cuando alguno más largo
+      // (nunca más alto) para dar algo de variedad sin complicar el salto.
+      const isLong = Math.random() < 0.25;
       this.obstacles.push({
         x: this.w + 40,
-        width: 38 + Math.random() * 14,
-        height: 36 + Math.random() * 18,
+        width: isLong ? 66 + Math.random() * 20 : 28 + Math.random() * 10,
+        height: 26 + Math.random() * 12,
         cleared: false,
         hit: false,
+        hitAt: 0,
         wobble: Math.random() * Math.PI * 2,
       });
     }
@@ -200,6 +215,7 @@ export class RestGame {
 
       if (overlapX && overlapY && !ob.hit && !ob.cleared) {
         ob.hit = true; // un pequeño "tropiezo" sin consecuencias graves: no hay vidas ni fin de partida
+        ob.hitAt = this.elapsed;
         this.callbacks.onObstacleHit?.();
       }
       if (!ob.cleared && !ob.hit && obRight < cerebrinLeft) {
@@ -219,7 +235,12 @@ export class RestGame {
       // falta reaccionar a dos cosas a la vez.
       const tooClose = this.obstacles.some((ob) => ob.x > this.w - 60 && ob.x < this.w + 220);
       if (!tooClose) {
+        // Se alternan estrellas y pájaros, cada uno con su propia
+        // puntuación, para dar algo de variedad visual.
+        this._nextPrizeIsBird = !this._nextPrizeIsBird;
+        const type = this._nextPrizeIsBird ? "bird" : "star";
         this.prizes.push({
+          type,
           x: this.w + 60,
           // Altura calculada para que SIEMPRE haga falta saltar (por
           // encima de la cabeza de Cerebrín de pie, ~85px) y SIEMPRE sea
@@ -227,7 +248,8 @@ export class RestGame {
           // margen de sobra en ambos extremos para que no haga falta un
           // salto perfectamente cronometrado.
           y: 115 + Math.random() * 30,
-          size: 30,
+          size: type === "star" ? 40 : 36,
+          points: type === "star" ? 20 : 30,
           collected: false,
           spin: 0,
         });
@@ -253,7 +275,7 @@ export class RestGame {
       const overlapY = cerebrinTop < prBottom && this.groundY + this.cerebrinY > prTop;
       if (overlapX && overlapY) {
         pr.collected = true;
-        this.points += 20;
+        this.points += pr.points;
         this.callbacks.onPrizeCollected?.();
       }
     });
@@ -309,26 +331,41 @@ export class RestGame {
       ctx.fill();
     }
 
-    // Obstáculos: bloques redondeados y amistosos, con un ligero balanceo.
+    // Obstáculos: bloques redondeados y amistosos, con un ligero
+    // balanceo. Al chocar, se ponen en rojo claro y hacen una pequeña
+    // sacudida a modo de "señal de error", breve y nada agresiva.
     this.obstacles.forEach((ob) => {
       const bob = Math.sin(ob.wobble) * 2;
+      const sinceHit = ob.hit ? this.elapsed - ob.hitAt : Infinity;
+      const shake = sinceHit < 260 ? Math.sin(sinceHit * 0.14) * (1 - sinceHit / 260) * 6 : 0;
       ctx.save();
-      ctx.translate(ob.x + ob.width / 2, groundY - ob.height / 2 + bob);
-      ctx.fillStyle = ob.hit ? "#E8A2AC" : "#7FA8DE";
+      ctx.translate(ob.x + ob.width / 2 + shake, groundY - ob.height / 2 + bob);
+      ctx.fillStyle = ob.hit ? "#E63946" : "#7FA8DE";
       this._roundedRectPath(ctx, -ob.width / 2, -ob.height / 2, ob.width, ob.height, 10);
       ctx.fill();
+      if (ob.hit && sinceHit < 260) {
+        ctx.strokeStyle = "rgba(230, 57, 70, 0.55)";
+        ctx.lineWidth = 3;
+        this._roundedRectPath(ctx, -ob.width / 2 - 4, -ob.height / 2 - 4, ob.width + 8, ob.height + 8, 12);
+        ctx.stroke();
+      }
       ctx.restore();
     });
 
-    // Premios: estrellas que giran suavemente en el aire.
+    // Premios: estrellas y pajaritos que se mecen suavemente en el aire.
     this.prizes.forEach((pr) => {
       if (pr.collected) return;
       ctx.save();
       ctx.translate(pr.x, groundY - pr.y);
-      ctx.rotate(Math.sin(pr.spin) * 0.35);
-      ctx.fillStyle = "#F5A93E";
-      this._starPath(ctx, 0, 0, pr.size / 2, pr.size / 4.4, 5);
-      ctx.fill();
+      if (pr.type === "bird") {
+        ctx.rotate(Math.sin(pr.spin) * 0.12);
+        this._birdPath(ctx, pr.size);
+      } else {
+        ctx.rotate(Math.sin(pr.spin) * 0.35);
+        ctx.fillStyle = "#F5A93E";
+        this._starPath(ctx, 0, 0, pr.size / 2, pr.size / 4.4, 5);
+        ctx.fill();
+      }
       ctx.restore();
     });
 
@@ -381,5 +418,34 @@ export class RestGame {
       ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
     }
     ctx.closePath();
+  }
+
+  /** Pajarito sencillo y original (cuerpo redondeado, ala y pico),
+   * dibujado a mano — sin copiar ningún personaje existente. */
+  _birdPath(ctx, size) {
+    const r = size / 2;
+    // Cuerpo
+    ctx.fillStyle = "#4E7FBF";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r, r * 0.78, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Ala
+    ctx.fillStyle = "#395E91";
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.15, r * 0.05, r * 0.55, r * 0.34, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+    // Pico
+    ctx.fillStyle = "#F5A93E";
+    ctx.beginPath();
+    ctx.moveTo(r * 0.85, -r * 0.08);
+    ctx.lineTo(r * 1.25, 0);
+    ctx.lineTo(r * 0.85, r * 0.18);
+    ctx.closePath();
+    ctx.fill();
+    // Ojo
+    ctx.fillStyle = "#2B2B2E";
+    ctx.beginPath();
+    ctx.arc(r * 0.42, -r * 0.22, r * 0.1, 0, Math.PI * 2);
+    ctx.fill();
   }
 }

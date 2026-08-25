@@ -34,10 +34,12 @@ export function renderCerebrinSaltarin(container, { mode, profile, onExit }) {
     <div class="rest-game-canvas-wrap">
       <canvas class="rest-game-canvas" id="rg-canvas"></canvas>
     </div>
-    <button class="btn btn-huge btn-success rest-game-jump-btn" id="rg-jump-btn">SALTAR</button>
-    <div class="row center" style="gap:16px; margin-top:14px;">
-      <button class="btn btn-ghost" id="rg-restart-btn">🔄 Reiniciar</button>
-      <button class="btn btn-ghost" id="rg-finish-btn">Salir</button>
+    <div class="rest-game-controls">
+      <div class="rest-game-side-btns">
+        <button class="btn btn-ghost rest-game-icon-btn" id="rg-restart-btn" aria-label="Reiniciar" title="Reiniciar">🔄</button>
+        <button class="btn btn-ghost rest-game-icon-btn" id="rg-finish-btn" aria-label="Salir" title="Salir">🚪</button>
+      </div>
+      <button class="btn btn-huge btn-success rest-game-jump-btn" id="rg-jump-btn">SALTAR</button>
     </div>
   `;
   container.appendChild(box);

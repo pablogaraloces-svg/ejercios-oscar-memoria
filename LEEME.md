@@ -104,6 +104,56 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 1.7 (proporciones de ejercicios y ajustes finos de Cerebrín Saltarín)
+
+**Página principal**
+- "Mi familia" y "Sala de juegos" en fila horizontal, con recuadros más
+  compactos (no necesitan el mismo tamaño que las tarjetas de un
+  ejercicio, ya que su icono es solo decorativo).
+
+**Ejercicios — proporción corregida en toda la app**
+- El marco blanco de las tarjetas de respuesta se ha reducido de forma
+  general (de 250px a 185px de alto, y de 200px a 150px en las rejillas
+  de 3 columnas), manteniendo exactamente el mismo tamaño de dibujo que
+  ya gustaba — así el dibujo ocupa mucha más proporción de la tarjeta,
+  en vez de verse pequeño dentro de un recuadro grande y vacío. Afecta
+  por igual a memoria, atención, colores, herramientas, animales,
+  diferencias, intruso y compra — mismo criterio en todos.
+- **Corregidos dos fallos reales** que se habían quedado sin ajustar en
+  la ronda anterior (cuando se aumentó el tamaño de los dibujos, estos
+  dos casos concretos se quedaron con su tamaño antiguo, muy pequeño
+  dentro de la tarjeta ya agrandada): el color en el ejercicio de
+  Colores (de 52px a 96px) y los números en el ejercicio de Cálculo (de
+  un tamaño de letra pequeño a uno grande y en negrita, a la altura
+  visual del resto de dibujos).
+- Tarjetas de estudio del ejercicio de memoria, también reducidas de
+  marco (manteniendo el tamaño del dibujo).
+- Con estos cambios, la altura total de una rejilla de 4 respuestas baja
+  unos 130px — cabe cómodamente en pantalla sin necesidad de scroll.
+
+**Cerebrín Saltarín — ajustes finos**
+- **Encontrada una segunda causa real de la flotación**: la propia
+  imagen tenía un margen transparente de hasta 47px por los lados
+  (residuo de un procesado anterior), además del problema de proporción
+  ya corregido antes. Generada una versión recortada a medida,
+  específica para el juego, sin tocar la imagen que usa el resto de la
+  app. De paso, corregido un fallo de sincronización: el cálculo de la
+  proporción se hacía antes de que la imagen terminara de cargar, y
+  nunca llegaba a usar el valor real.
+- Obstáculos más pequeños en general, con un 25% de probabilidad de
+  salir más alargados (nunca más altos).
+- Al chocar contra un obstáculo, se pone en rojo claro con un pequeño
+  efecto de sacudida a modo de señal de error, breve y sin resultar
+  agresivo.
+- Estrellas más grandes, alternadas con pajaritos (dibujo propio), cada
+  uno con su propia puntuación.
+- Los puntos ya solo suben al superar bien un obstáculo o al conseguir
+  una estrella/pájaro — eliminado el goteo de puntos por el mero hecho
+  de avanzar por el recorrido.
+- Reiniciar y Salir reubicados a la izquierda de la pantalla, a la
+  misma altura que SALTAR, en vez de debajo (menos alto de pantalla
+  ocupado).
+
 ## 🆕 Novedades de la versión 1.6 ("Cerebrín Saltarín" + Sala de Juegos)
 
 **Cerebrín ya no flota — bug real encontrado y corregido**
