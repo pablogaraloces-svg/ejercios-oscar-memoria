@@ -17,7 +17,12 @@ let scheduleTimer = null;
 let nextStepTime = 0;
 let stepIndex = 0;
 let baseMusicVolume = 0.16;
-const BASE_SFX_LEVEL = 0.6;
+// Subido para que, con el regulador de volumen al máximo, el juego suene
+// a un nivel comparable al de la voz (que siempre habla a volumen
+// máximo por defecto) — antes se quedaba muy por debajo, incluso con el
+// regulador a tope. El propio regulador de cada juego sigue siendo
+// quien decide el nivel final que se quiere escuchar.
+const BASE_SFX_LEVEL = 1.3;
 let masterVolume = 1; // control de volumen general del juego (0-1), ajustable desde el propio juego
 
 function ensureContext() {
@@ -135,7 +140,7 @@ function duckMusic() {
 }
 
 export const GameSounds = {
-  startMusic(volume = 0.2) {
+  startMusic(volume = 0.4) {
     const ctx = ensureContext();
     if (!ctx) return;
     baseMusicVolume = volume;

@@ -155,8 +155,23 @@ export function renderWordSearchGame(container, { profile, onExit }) {
     li.className = "wordsearch-list-item";
     li.id = `ws-word-${i}`;
     li.textContent = entry.word;
+    li.setAttribute("role", "button");
+    li.setAttribute("tabindex", "0");
+    li.title = "Toca para una pequeña pista";
+    li.onclick = () => showWordHint(entry);
     listEl.appendChild(li);
   });
+
+  /** Pista sutil: solo un breve resplandor en la primera letra de la
+   * palabra (no se enseña la palabra entera), para orientar la vista
+   * sin resolver el ejercicio por Óscar. */
+  function showWordHint(entry) {
+    if (entry.found) return;
+    const [r, c] = entry.cells[0];
+    const cellBtn = cellAt(r, c);
+    cellBtn.classList.add("wordsearch-cell-hint");
+    setTimeout(() => cellBtn.classList.remove("wordsearch-cell-hint"), 1400);
+  }
 
   function cellAt(r, c) {
     return cellButtons[r * GRID_SIZE + c];

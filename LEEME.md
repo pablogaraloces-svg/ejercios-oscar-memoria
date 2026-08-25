@@ -104,6 +104,33 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 2.3 (volumen, sopa de letras y Simón ajustados)
+
+**Volumen de los juegos, al nivel de la voz**
+- La voz habla siempre al volumen máximo por defecto; los juegos, en
+  cambio, sonaban muy por debajo incluso con el regulador al tope.
+  Subido el nivel base de efectos y música de ambos juegos para que,
+  con el regulador a tope, suenen a un nivel comparable a la voz —
+  comprobado con una simulación numérica que, incluso en el peor caso
+  (varios instrumentos sonando a la vez), no llega a saturarse. El
+  regulador de cada juego sigue decidiendo el nivel final.
+
+**Sopa de letras**
+- Rejilla más pequeña, limitada tanto por el ancho como por el alto
+  disponible (no solo por el ancho como antes), para que quepa entera
+  sin necesidad de scroll en el formato horizontal de la tablet.
+- Nueva pista sutil: tocar una palabra de la lista todavía no encontrada
+  ilumina brevemente su primera letra en la rejilla (sin desvelar la
+  palabra entera), para orientar la vista sin resolver el ejercicio.
+
+**El juego de los colores (Simón)**
+- Secuencia más lenta y notas más largas (tanto el sonido como la
+  iluminación del color), pensado para que a una persona mayor le dé
+  tiempo de sobra a seguir la secuencia con calma.
+- Título subido, más cerca de la parte superior de la pantalla.
+- Tablero circular más grande, limitado también por el alto disponible
+  para no salirse nunca del formato horizontal de la tablet.
+
 ## 🆕 Novedades de la versión 2.2 (corregido el problema real de actualización de la app)
 
 **Por qué no se actualizaba**

@@ -1715,8 +1715,9 @@ body.high-contrast .home-bg-mascot { display: none; }
 .game-card-stats { color: var(--color-text-soft); }
 
 /* ---------- Juego "El juego de los colores" (estilo Simón) ---------- */
-.simon-game-wrap { gap: 12px; width: 100%; max-width: 780px; margin: 0 auto; }
-.simon-hud { display: flex; align-items: center; justify-content: center; gap: 20px; margin-top: 4px; }
+.simon-game-wrap { gap: 10px; width: 100%; max-width: 900px; margin: 0 auto; }
+.simon-title { margin-top: -6px; margin-bottom: 2px; }
+.simon-hud { display: flex; align-items: center; justify-content: center; gap: 20px; margin-top: 2px; }
 .simon-board-canvas {
   cursor: pointer;
   touch-action: manipulation;
@@ -1775,8 +1776,11 @@ body.high-contrast .home-bg-mascot { display: none; }
 }
 .wordsearch-grid {
   display: grid;
-  gap: 4px;
-  width: min(600px, 60vw);
+  gap: 3px;
+  /* Se limita tanto por ancho como por alto disponible (vh), para que
+     quepa entera sin necesidad de scroll en una tablet en horizontal,
+     donde el alto disponible suele ser el que más limita. */
+  width: min(440px, 54vh, 46vw);
   aspect-ratio: 1;
   flex-shrink: 0;
 }
@@ -1804,6 +1808,15 @@ body.high-contrast .home-bg-mascot { display: none; }
   background: var(--color-success-soft);
   border-color: var(--color-success);
   color: var(--color-success);
+}
+/* Pista sutil (al tocar una palabra de la lista): un resplandor breve en
+   su primera letra, sin llegar a mostrar la palabra entera. */
+.wordsearch-cell-hint {
+  animation: wordsearchHintPulse 1.4s ease-in-out;
+}
+@keyframes wordsearchHintPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 169, 62, 0); background: var(--color-surface); }
+  20%, 60% { box-shadow: 0 0 0 8px rgba(245, 169, 62, 0.35); background: var(--color-accent-soft); border-color: var(--color-accent); }
 }
 .wordsearch-side {
   width: 220px;
@@ -1833,8 +1846,10 @@ body.high-contrast .home-bg-mascot { display: none; }
   font-size: var(--font-base);
   text-align: center;
   letter-spacing: 0.02em;
-  transition: opacity var(--dur-med) ease, background var(--dur-med) ease;
+  cursor: pointer;
+  transition: opacity var(--dur-med) ease, background var(--dur-med) ease, transform 90ms ease;
 }
+.wordsearch-list-item:active { transform: scale(0.97); }
 .wordsearch-list-item-found {
   text-decoration: line-through;
   text-decoration-thickness: 3px;
@@ -1847,7 +1862,7 @@ body.high-contrast .home-bg-mascot { display: none; }
 @media (max-width: 900px), (orientation: portrait) {
   .wordsearch-main-row { flex-direction: column; align-items: center; }
   .rest-game-side-btns { flex-direction: row; order: 3; }
-  .wordsearch-grid { order: 1; width: min(500px, 90vw); }
+  .wordsearch-grid { order: 1; width: min(400px, 85vw); }
   .wordsearch-side { order: 2; width: 100%; max-width: 500px; }
   .wordsearch-list { flex-direction: row; flex-wrap: wrap; justify-content: center; }
 }

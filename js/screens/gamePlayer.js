@@ -60,7 +60,7 @@ export function renderCerebrinSaltarin(container, { mode, profile, onExit }) {
   volumeSlider.value = String(GameSounds.getVolume());
   volumeSlider.addEventListener("input", (e) => GameSounds.setVolume(Number(e.target.value)));
 
-  GameSounds.startMusic(0.2);
+  GameSounds.startMusic(0.4);
   const startedAt = Date.now();
   let summaryShown = false;
 

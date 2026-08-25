@@ -57,7 +57,11 @@ class SimonGame {
   _resize() {
     const dpr = window.devicePixelRatio || 1;
     const rect = this.canvas.parentElement.getBoundingClientRect();
-    const size = Math.max(260, Math.min(rect.width, 420));
+    // Se agranda respecto a antes, pero sigue limitado tanto por el
+    // ancho disponible como por un tope de alto (60% del alto de la
+    // pantalla), para no salirse nunca del formato horizontal de la
+    // tablet aunque el tablero sea más grande.
+    const size = Math.max(260, Math.min(rect.width, 520, window.innerHeight * 0.6));
     this.canvas.style.width = size + "px";
     this.canvas.style.height = size + "px";
     this.canvas.width = Math.round(size * dpr);
@@ -104,10 +108,13 @@ class SimonGame {
     for (let i = 0; i < this.sequence.length; i++) {
       if (this.stopped) return;
       const idx = this.sequence[i];
-      this.lightUp(idx, 620);
-      GameSounds.playNote(COLORS[idx].note);
+      // Iluminación y nota más largas, con más pausa entre una y otra:
+      // pensado para que a una persona mayor le dé tiempo de sobra a
+      // seguir la secuencia con calma, sin sensación de prisa.
+      this.lightUp(idx, 900);
+      GameSounds.playNote(COLORS[idx].note, 0.75);
       this.callbacks.onProgress?.();
-      await this._sleep(700);
+      await this._sleep(1050);
     }
     if (this.stopped) return;
     this.state = "listening";
@@ -277,7 +284,7 @@ export function renderSimonGame(container, { profile, onExit }) {
   const box = document.createElement("div");
   box.className = "col center simon-game-wrap";
   box.innerHTML = `
-    <h2 class="title-xl" style="text-align:center;">🎨 El juego de los colores</h2>
+    <h2 class="title-xl simon-title" style="text-align:center;">🎨 El juego de los colores</h2>
     <p class="text-md" id="simon-instructions" style="text-align:center;">Mira bien los colores que se iluminan, y luego tócalos en el mismo orden.</p>
     <div class="simon-hud">
       <span class="rest-game-points" id="simon-round">Ronda: 0</span>
