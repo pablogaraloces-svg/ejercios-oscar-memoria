@@ -104,6 +104,34 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 2.1 (nuevo juego: "Sopa de letras")
+
+**Nuevo juego en la Sala de Juegos**
+- Rejilla de 10×10 letras con 8 palabras escondidas (vocabulario sencillo
+  y cotidiano: animales, objetos de casa, comida), en horizontal,
+  vertical y diagonal hacia abajo — nunca al revés ni hacia arriba, para
+  que sea fácil de seguir con la vista (nivel fácil tirando a medio).
+- Verificado con 500 generaciones distintas del puzle que las 8 palabras
+  siempre caben en la rejilla.
+- **Selección con dos toques** (primera letra, última letra) en vez de
+  arrastrar el dedo por la pantalla — mucho más cómodo y fiable en una
+  tablet que un gesto de arrastre continuo. Verificado matemáticamente
+  que el camino reconstruido coincide exactamente con la palabra
+  colocada, se toque en el orden que se toque.
+- Lista de palabras en un lateral: al encontrar una, se tacha con una
+  línea clara y pasa a un tono apagado, para ver de un vistazo cuáles
+  quedan.
+- Cerebrín acompaña la partida, con celebración cada vez que se
+  encuentra una palabra.
+- **Corregido durante la propia construcción**: cuando dos palabras
+  comparten una misma letra en la rejilla, tocar esa celda para terminar
+  de encontrar la segunda palabra podía quedar bloqueado por error (al
+  estar ya marcada como "encontrada" de la primera). Detectado y
+  corregido antes de darlo por terminado.
+- Mismo lenguaje visual que los otros dos juegos: control de volumen,
+  Reiniciar/Salir a un lateral, estadísticas propias e independientes de
+  las cognitivas.
+
 ## 🆕 Novedades de la versión 2.0 (ajustes en "El juego de los colores" + volumen en ambos juegos)
 
 **Esperar a que termine la voz antes de empezar**

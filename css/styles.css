@@ -1762,3 +1762,92 @@ body.high-contrast .home-bg-mascot { display: none; }
   accent-color: var(--color-accent);
   cursor: pointer;
 }
+
+/* ---------- Juego "Sopa de letras" ---------- */
+.wordsearch-wrap { gap: 12px; width: 100%; max-width: 1080px; margin: 0 auto; }
+.wordsearch-main-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 22px;
+  width: 100%;
+  margin-top: 8px;
+}
+.wordsearch-grid {
+  display: grid;
+  gap: 4px;
+  width: min(600px, 60vw);
+  aspect-ratio: 1;
+  flex-shrink: 0;
+}
+.wordsearch-cell {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+  font-weight: 800;
+  font-size: clamp(0.85rem, 2.3vw, 1.3rem);
+  color: var(--color-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: transform 90ms ease, background 90ms ease, border-color 90ms ease;
+}
+.wordsearch-cell:active { transform: scale(0.9); }
+.wordsearch-cell-selected {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+}
+.wordsearch-cell-found {
+  background: var(--color-success-soft);
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+.wordsearch-side {
+  width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+/* Lista lateral de palabras: al encontrarse, se tachan con una línea
+   clara y pasan a un tono apagado, para que se note de un vistazo
+   cuáles quedan aún por encontrar. */
+.wordsearch-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.wordsearch-list-item {
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 9px 14px;
+  font-weight: 700;
+  font-size: var(--font-base);
+  text-align: center;
+  letter-spacing: 0.02em;
+  transition: opacity var(--dur-med) ease, background var(--dur-med) ease;
+}
+.wordsearch-list-item-found {
+  text-decoration: line-through;
+  text-decoration-thickness: 3px;
+  text-decoration-color: var(--color-success);
+  color: var(--color-text-soft);
+  background: var(--color-success-soft);
+  border-color: var(--color-success);
+  opacity: 0.7;
+}
+@media (max-width: 900px), (orientation: portrait) {
+  .wordsearch-main-row { flex-direction: column; align-items: center; }
+  .rest-game-side-btns { flex-direction: row; order: 3; }
+  .wordsearch-grid { order: 1; width: min(500px, 90vw); }
+  .wordsearch-side { order: 2; width: 100%; max-width: 500px; }
+  .wordsearch-list { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+}

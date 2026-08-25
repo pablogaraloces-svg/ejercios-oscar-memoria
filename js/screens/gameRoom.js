@@ -1,5 +1,6 @@
 import { renderCerebrinSaltarin } from "./gamePlayer.js";
 import { renderSimonGame } from "./simonGame.js";
+import { renderWordSearchGame } from "./wordSearchGame.js";
 import { getGameStats } from "../core/gameStats.js";
 
 /**
@@ -28,6 +29,14 @@ const GAMES = [
     description: "Memoriza y repite la secuencia de colores y sonidos, cada vez más larga.",
     enabled: true,
     render: renderSimonGame,
+  },
+  {
+    id: "sopa_de_letras",
+    name: "Sopa de letras",
+    emoji: "🔎",
+    description: "Encuentra las palabras escondidas en la rejilla de letras.",
+    enabled: true,
+    render: renderWordSearchGame,
   },
   // Futuros juegos: añadir aquí una entrada más, con su propio "render".
 ];
