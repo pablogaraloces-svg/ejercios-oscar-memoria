@@ -52,10 +52,16 @@
       <button class="btn btn-huge btn-success btn-breathe" id="btn-start-session" style="width:100%;max-width:420px;">
         ▶️ Empezar el ratito de hoy
       </button>
-      <button class="option-card btn-breathe-subtle" id="btn-open-family" style="width:100%; max-width:340px;">
-        <span class="emoji">👨‍👩‍👧</span>
-        <span>Mi familia</span>
-      </button>
+      <div class="row wrap center" style="gap:18px;">
+        <button class="option-card btn-breathe-subtle" id="btn-open-family" style="width:100%; max-width:280px;">
+          <span class="emoji">👨‍👩‍👧</span>
+          <span>Mi familia</span>
+        </button>
+        <button class="option-card btn-breathe-subtle" id="btn-open-gameroom" style="width:100%; max-width:280px;">
+          <span class="emoji">🕹️</span>
+          <span>Sala de juegos</span>
+        </button>
+      </div>
     </div>
     <div class="home-credit-block">
       <p class="home-credit">© Diseñado y programado por Pablo Garaloces 2026</p>
@@ -122,6 +128,16 @@
     </div>
     <h2 class="family-title-elegant" id="family-title">Mi familia</h2>
     <div id="family-root" class="col grow" style="gap:16px; overflow-y:auto;"></div>
+  </section>
+
+  <!-- Sala de juegos -->
+  <section class="screen" id="screen-game-room">
+    <div class="top-bar">
+      <button class="btn btn-icon btn-ghost" id="btn-gameroom-back" aria-label="Volver">←</button>
+      <div style="width:88px;"></div>
+      <div style="width:88px;"></div>
+    </div>
+    <div id="game-room-root" class="col grow" style="gap:16px; overflow-y:auto;"></div>
   </section>
 
   <!-- Salud -->

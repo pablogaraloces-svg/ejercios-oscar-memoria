@@ -5,7 +5,7 @@
  * pequeños suman un decimal (v11.1, v11.2...), los grandes pasan a la
  * siguiente versión mayor (v12).
  */
-const CACHE_VERSION = "acompanante-v1.5";
+const CACHE_VERSION = "acompanante-v1.6";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -22,6 +22,8 @@ const CORE_ASSETS = [
   "./js/core/health.js",
   "./js/core/weather.js",
   "./js/core/version.js",
+  "./js/core/gameSounds.js",
+  "./js/core/gameStats.js",
   "./js/core/dateUtils.js",
   "./js/core/profiles.js",
   "./js/core/dragReorder.js",
@@ -52,6 +54,8 @@ const CORE_ASSETS = [
   "./js/screens/reportsScreen.js",
   "./js/screens/healthScreen.js",
   "./js/screens/restGame.js",
+  "./js/screens/gamePlayer.js",
+  "./js/screens/gameRoom.js",
   "./assets/icons/icon-72.png",
   "./assets/icons/icon-96.png",
   "./assets/icons/icon-128.png",

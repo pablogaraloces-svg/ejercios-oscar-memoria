@@ -104,6 +104,61 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 1.6 ("Cerebrín Saltarín" + Sala de Juegos)
+
+**Cerebrín ya no flota — bug real encontrado y corregido**
+- Calculé matemáticamente el motivo exacto: el dibujo de Cerebrín no es
+  cuadrado (relación 0,88), pero el código asumía que sí lo era al
+  posicionarlo, dejando un hueco de ~11px entre sus pies y el suelo.
+  Corregido para que se apoye exactamente sobre la línea del suelo,
+  usando el alto real del dibujo respetando su proporción original.
+- Salto pulido con un pequeño efecto de "chafado" (más estirado al
+  despegar, más achatado al aterrizar) para reforzar visualmente el
+  impulso y el aterrizaje.
+
+**Música arcade y efectos de sonido**
+- Nueva música de fondo propia, alegre y con aire retro, en bucle
+  fluido (sin cortes), a volumen moderado para no tapar la voz.
+- 5 efectos de sonido distintos: saltar, superar un obstáculo, chocar
+  (suave, sin sensación de penalización grave), conseguir un premio, y
+  una fanfarria especial al llegar a la meta.
+- La música se "agacha" un instante cada vez que suena un efecto, para
+  que se oiga con claridad — la voz y los efectos tienen prioridad.
+- **Corregido un conflicto real de audio**: la música relajante normal
+  de la app no se paraba en ningún momento durante la sesión de
+  ejercicios, así que se habría solapado con la música arcade tanto en
+  el juego de descanso como en la Sala de Juegos. Ahora se detiene
+  explícitamente en ambos puntos de entrada.
+
+**Voz ocasional durante el juego**
+- "¡Ya falta poquito!" y "¡Lo estás haciendo muy bien!", cada una una
+  sola vez por partida, cerca del final del recorrido — nunca de forma
+  continua.
+
+**Premios en la parte superior**
+- Estrellas ⭐ que dan +20 puntos, con una altura calculada
+  matemáticamente para que SIEMPRE haga falta saltar (por encima de la
+  cabeza de Cerebrín de pie) y SIEMPRE sean alcanzables (por debajo del
+  punto más alto real del salto, verificado con una simulación física
+  frame a frame, no solo con la fórmula teórica). Nunca aparecen a la
+  vez que un obstáculo cercano.
+
+**Sala de Juegos — nueva sección**
+- Nuevo botón en la portada, junto a "Mi familia", con el mismo
+  lenguaje visual (relieve, sombra, respiración sutil).
+- Pantalla propia con tarjetas grandes por juego (icono, nombre,
+  descripción, mejor puntuación, botón JUGAR) — arquitectura pensada
+  para añadir más juegos en el futuro sin tocar esta pantalla.
+- Primer juego disponible: Cerebrín Saltarín.
+- Diferenciación real entre "juego libre" (desde la Sala de Juegos, sin
+  hacer antes los ejercicios) y "juego de descanso" (al terminar una
+  sesión cognitiva) — cada uno con su propio destino al pulsar "Salir".
+
+**Estadísticas del juego, completamente independientes**
+- Nuevo almacén propio en la base de datos: partidas jugadas, mejor
+  puntuación, última puntuación y tiempo jugado — nunca se mezcla con
+  memoria, atención, cálculo ni con la dificultad cognitiva.
+
 ## 🆕 Novedades de la versión 1.5 (dibujos más grandes, juego de descanso y estadísticas revisadas a fondo)
 
 **Ejercicios — dibujos más grandes y botones más cuadrados**

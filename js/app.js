@@ -14,6 +14,7 @@ import { getCurrentTimeText, getCurrentDateText } from "./core/phrases.js";
 import { getWeather } from "./core/weather.js";
 import { APP_VERSION } from "./core/version.js";
 import { wireDragReorder } from "./core/dragReorder.js";
+import { renderGameRoom, stopActiveGame } from "./screens/gameRoom.js";
 
 const screens = {};
 document.querySelectorAll(".screen").forEach((el) => (screens[el.id] = el));
@@ -242,6 +243,22 @@ document.getElementById("btn-open-family").addEventListener("click", () => {
 document.getElementById("btn-family-back").addEventListener("click", () => {
   if (familyEditable) showScreen("screen-admin-menu");
   else goHome();
+});
+
+/* ---------------- Sala de juegos: acceso directo, "juego libre" ---------------- */
+document.getElementById("btn-open-gameroom").addEventListener("click", async () => {
+  // La música de fondo normal (relajante) se apaga aquí: el juego tiene
+  // su propia música arcade, y no deben sonar las dos a la vez.
+  Music.stop();
+  showScreen("screen-game-room");
+  await renderGameRoom(document.getElementById("game-room-root"), ctx);
+});
+document.getElementById("btn-gameroom-back").addEventListener("click", () => {
+  // Si había una partida en marcha (no se salió por el propio botón
+  // "Salir" del juego), se detiene aquí su música/animación antes de
+  // volver a la portada.
+  stopActiveGame();
+  goHome();
 });
 document.getElementById("btn-add-family").addEventListener("click", () => {
   if (!familyEditable) return;

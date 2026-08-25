@@ -6,8 +6,8 @@
  */
 
 const DB_NAME = "acompanante-db";
-const DB_VERSION = 2; // v2: añade el almacén "health" (Administración > Salud). No borra nada existente.
-const STORES = ["profile", "reminders", "progress", "sessions", "settings", "health"];
+const DB_VERSION = 3; // v3: añade el almacén "gameStats" (estadísticas de los juegos, independientes de las cognitivas). No borra nada existente.
+const STORES = ["profile", "reminders", "progress", "sessions", "settings", "health", "gameStats"];
 
 let dbPromise = null;
 

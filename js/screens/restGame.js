@@ -1,24 +1,31 @@
 /**
- * restGame.js — "Juego de descanso": una pequeña experiencia de reflejos
- * y diversión al terminar los ejercicios cognitivos, protagonizada por
- * Cerebrín. Mecánica mínima a propósito (un único botón, SALTAR) para que
- * sea accesible y relajante, no un reto.
+ * restGame.js — Motor de "Cerebrín Saltarín". Mecánica mínima a
+ * propósito (un único botón, SALTAR) para que sea accesible y
+ * relajante, pensado específicamente para una persona mayor: sin vidas,
+ * sin penalizaciones duras, velocidad moderada, obstáculos grandes y
+ * bien separados.
  *
- * Totalmente independiente del sistema de ejercicios/estadísticas: no
- * llama a reportResult() ni a adaptiveDifficulty — la puntuación de este
- * juego vive solo aquí, nunca se mezcla con las estadísticas cognitivas.
+ * Totalmente independiente del sistema de ejercicios/estadísticas
+ * cognitivas: esta clase no llama a reportResult() ni a
+ * adaptiveDifficulty en ningún momento. Sus propias estadísticas (si se
+ * quieren guardar) viven aparte, en core/gameStats.js.
+ *
+ * Se comunica con el exterior únicamente mediante callbacks (onJump,
+ * onObstacleCleared, onObstacleHit, onPrizeCollected, onGoalReached,
+ * onProgress), para que el sonido, la música y la voz puedan
+ * engancharse sin que este archivo necesite saber nada de audio.
  */
 
 const GAME_DURATION_MS = 5 * 60 * 1000; // ~5 minutos, ajustable aquí
 const GROUND_RATIO = 0.78; // el suelo vive al 78% de la altura del lienzo
 const CEREBRIN_X_RATIO = 0.22; // Cerebrín se queda fijo a la izquierda; el mundo se mueve hacia él
+const CEREBRIN_SIZE = 96; // ancho de referencia del dibujo, en px
 
 export class RestGame {
-  constructor(canvas, { onProgress, onObstacleCleared } = {}) {
+  constructor(canvas, callbacks = {}) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
-    this.onProgress = onProgress;
-    this.onObstacleCleared = onObstacleCleared;
+    this.callbacks = callbacks;
     this.mascotImg = new Image();
     this.mascotImg.src = "assets/mascot/cerebrin.png";
     this.running = false;
@@ -31,7 +38,7 @@ export class RestGame {
     const dpr = window.devicePixelRatio || 1;
     const rect = this.canvas.parentElement.getBoundingClientRect();
     const cssW = Math.max(320, rect.width);
-    const cssH = 300;
+    const cssH = 320;
     this.canvas.style.width = cssW + "px";
     this.canvas.style.height = cssH + "px";
     this.canvas.width = Math.round(cssW * dpr);
@@ -41,6 +48,13 @@ export class RestGame {
     this.h = cssH;
     this.groundY = this.h * GROUND_RATIO;
     this.cerebrinX = this.w * CEREBRIN_X_RATIO;
+    // Alto real del dibujo respetando su proporción original, para que
+    // los pies queden EXACTAMENTE apoyados en el suelo (antes se
+    // asumía un dibujo cuadrado, y quedaba flotando unos px por encima).
+    const ratio = this.mascotImg.naturalHeight && this.mascotImg.naturalWidth
+      ? this.mascotImg.naturalHeight / this.mascotImg.naturalWidth
+      : 0.88;
+    this.cerebrinDrawH = CEREBRIN_SIZE * ratio;
   }
 
   reset() {
@@ -48,12 +62,17 @@ export class RestGame {
     this.elapsed = 0;
     this.points = 0;
     this.obstacles = [];
-    this.nextSpawnAt = 900;
+    this.prizes = [];
+    this.nextObstacleAt = 1400;
+    this.nextPrizeAt = 5200;
     this.cerebrinY = 0; // desplazamiento respecto al suelo (0 = en el suelo, negativo = en el aire)
     this.velocityY = 0;
     this.jumping = false;
+    this.squash = 1; // efecto visual de "chafado" al despegar/aterrizar
     this.finished = false;
-    this.scrollSpeed = 210; // px/s, sube ligeramente con el progreso
+    this.scrollSpeed = 200; // px/s, sube ligeramente con el progreso
+    this._announcedNearGoal = false;
+    this._announcedAlmostThere = false;
   }
 
   start() {
@@ -70,7 +89,11 @@ export class RestGame {
   jump() {
     if (this.jumping || this.finished) return;
     this.jumping = true;
-    this.velocityY = -560; // impulso hacia arriba (px/s)
+    // Impulso pensado para que se anticipe con facilidad: ni demasiado
+    // alto ni demasiado rápido (aprox. 0,7s de vuelo completo).
+    this.velocityY = -520;
+    this.squash = 1.18; // pequeño "estirón" al despegar
+    this.callbacks.onJump?.();
   }
 
   _progress() {
@@ -87,58 +110,81 @@ export class RestGame {
     this._draw();
 
     const progress = this._progress();
-    this.onProgress?.({ points: this.points, progress });
+    this.onProgressTick(progress);
 
     if (progress >= 1 && !this.finished) {
       this.finished = true;
-      this.onProgress?.({ points: this.points, progress: 1, done: true });
+      this.callbacks.onGoalReached?.();
+      this.callbacks.onProgress?.({ points: Math.floor(this.points), progress: 1, done: true });
     }
 
     this.rafId = requestAnimationFrame((t) => this._loop(t));
   }
 
+  /** Avisos hablados puntuales cerca de la meta — nunca de forma
+   * continua, solo una vez cada uno. */
+  onProgressTick(progress) {
+    this.callbacks.onProgress?.({ points: Math.floor(this.points), progress });
+    if (progress >= 0.7 && !this._announcedNearGoal) {
+      this._announcedNearGoal = true;
+      this.callbacks.onNearGoal?.();
+    }
+    if (progress >= 0.9 && !this._announcedAlmostThere) {
+      this._announcedAlmostThere = true;
+      this.callbacks.onAlmostThere?.();
+    }
+  }
+
   _update(dt) {
     const progress = this._progress();
-    // Progresión suave: al principio despacio y con obstáculos muy
-    // separados; hacia la mitad/final, algo más de ritmo — siempre
-    // dentro de un rango tranquilo, nunca frenético.
-    this.scrollSpeed = 200 + progress * 90;
+    // Progresión suave y siempre accesible: al principio despacio y con
+    // obstáculos muy separados; hacia el final, un poco más de ritmo,
+    // pero nunca exigente.
+    this.scrollSpeed = 195 + progress * 75;
 
-    // Física simple del salto (parábola: sube, gravedad la frena, baja).
+    // Física del salto (parábola: impulso, subida, aire, bajada,
+    // aterrizaje), con un pequeño efecto de "chafado" al tocar el suelo
+    // para reforzar visualmente el aterrizaje.
     if (this.jumping) {
-      this.velocityY += 1500 * dt; // gravedad
+      this.velocityY += 1350 * dt; // gravedad
       this.cerebrinY += this.velocityY * dt;
       if (this.cerebrinY >= 0) {
         this.cerebrinY = 0;
         this.velocityY = 0;
         this.jumping = false;
+        this.squash = 0.86; // se "achata" un instante al aterrizar
       }
     }
+    // El efecto de chafado se recupera suavemente hacia 1 (tamaño normal).
+    this.squash += (1 - this.squash) * Math.min(1, dt * 10);
 
     // Puntos por el mero hecho de avanzar (goteo suave y constante).
     this.points += dt * 6;
 
-    // Generar obstáculos: intervalo que se acorta poco a poco según el
-    // progreso (inicio fácil y espaciado → final con algo más de ritmo).
-    this.nextSpawnAt -= dt * 1000;
-    if (this.nextSpawnAt <= 0) {
-      const minGap = 2600 - progress * 1100;
-      const maxGap = 3600 - progress * 1200;
-      this.nextSpawnAt = minGap + Math.random() * (maxGap - minGap);
+    this._updateObstacles(dt, progress);
+    this._updatePrizes(dt, progress);
+  }
+
+  _updateObstacles(dt, progress) {
+    this.nextObstacleAt -= dt * 1000;
+    if (this.nextObstacleAt <= 0) {
+      // Espaciado siempre generoso (persona mayor: tiempo de sobra para
+      // reaccionar), con una variedad muy ligera según el progreso.
+      const minGap = 2700 - progress * 900;
+      const maxGap = 3700 - progress * 900;
+      this.nextObstacleAt = minGap + Math.random() * (maxGap - minGap);
       this.obstacles.push({
         x: this.w + 40,
-        width: 34 + Math.random() * 14,
-        height: 34 + Math.random() * 22,
+        width: 38 + Math.random() * 14,
+        height: 36 + Math.random() * 18,
         cleared: false,
         hit: false,
         wobble: Math.random() * Math.PI * 2,
       });
     }
 
-    // Mover obstáculos y comprobar colisión/superación.
-    const cerebrinW = 64;
-    const cerebrinLeft = this.cerebrinX - cerebrinW / 2 + 10;
-    const cerebrinRight = this.cerebrinX + cerebrinW / 2 - 10;
+    const cerebrinLeft = this.cerebrinX - CEREBRIN_SIZE / 2 + 14;
+    const cerebrinRight = this.cerebrinX + CEREBRIN_SIZE / 2 - 14;
     const cerebrinBottom = this.groundY + this.cerebrinY;
 
     this.obstacles.forEach((ob) => {
@@ -154,26 +200,89 @@ export class RestGame {
 
       if (overlapX && overlapY && !ob.hit && !ob.cleared) {
         ob.hit = true; // un pequeño "tropiezo" sin consecuencias graves: no hay vidas ni fin de partida
+        this.callbacks.onObstacleHit?.();
       }
       if (!ob.cleared && !ob.hit && obRight < cerebrinLeft) {
         ob.cleared = true;
         this.points += 10;
-        this.onObstacleCleared?.();
+        this.callbacks.onObstacleCleared?.();
       }
     });
     this.obstacles = this.obstacles.filter((ob) => ob.x + ob.width > -20);
+  }
+
+  _updatePrizes(dt, progress) {
+    this.nextPrizeAt -= dt * 1000;
+    if (this.nextPrizeAt <= 0) {
+      // Con bastante menos frecuencia que los obstáculos, y solo si no
+      // hay ningún obstáculo cerca de esa misma zona — así nunca hace
+      // falta reaccionar a dos cosas a la vez.
+      const tooClose = this.obstacles.some((ob) => ob.x > this.w - 60 && ob.x < this.w + 220);
+      if (!tooClose) {
+        this.prizes.push({
+          x: this.w + 60,
+          // Altura calculada para que SIEMPRE haga falta saltar (por
+          // encima de la cabeza de Cerebrín de pie, ~85px) y SIEMPRE sea
+          // alcanzable en el punto más alto del salto (~185px), con
+          // margen de sobra en ambos extremos para que no haga falta un
+          // salto perfectamente cronometrado.
+          y: 115 + Math.random() * 30,
+          size: 30,
+          collected: false,
+          spin: 0,
+        });
+        this.nextPrizeAt = 5200 + Math.random() * 2600;
+      } else {
+        this.nextPrizeAt = 500; // se reintenta enseguida en cuanto haya hueco
+      }
+    }
+
+    const cerebrinLeft = this.cerebrinX - CEREBRIN_SIZE / 2 + 10;
+    const cerebrinRight = this.cerebrinX + CEREBRIN_SIZE / 2 - 10;
+    const cerebrinTop = this.groundY + this.cerebrinY - this.cerebrinDrawH;
+
+    this.prizes.forEach((pr) => {
+      pr.x -= this.scrollSpeed * dt;
+      pr.spin += dt * 2.4;
+      if (pr.collected) return;
+      const prLeft = pr.x - pr.size / 2;
+      const prRight = pr.x + pr.size / 2;
+      const prTop = this.groundY - pr.y - pr.size / 2;
+      const prBottom = this.groundY - pr.y + pr.size / 2;
+      const overlapX = cerebrinRight > prLeft && cerebrinLeft < prRight;
+      const overlapY = cerebrinTop < prBottom && this.groundY + this.cerebrinY > prTop;
+      if (overlapX && overlapY) {
+        pr.collected = true;
+        this.points += 20;
+        this.callbacks.onPrizeCollected?.();
+      }
+    });
+    this.prizes = this.prizes.filter((pr) => pr.x > -40);
   }
 
   _draw() {
     const { ctx, w, h, groundY } = this;
     ctx.clearRect(0, 0, w, h);
 
-    // Cielo cálido, coherente con la identidad visual de la app.
+    // Cielo cálido con estética arcade sencilla (franjas muy sutiles),
+    // coherente con la identidad visual de la app.
     const sky = ctx.createLinearGradient(0, 0, 0, h);
-    sky.addColorStop(0, "#FFF6E5");
+    sky.addColorStop(0, "#FFEFCB");
     sky.addColorStop(1, "#F3EFE4");
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, w, h);
+
+    // Nubes decorativas muy discretas
+    const t = this.elapsed / 1000;
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    [0.15, 0.5, 0.82].forEach((frac, i) => {
+      const cx = ((w * frac - t * 12 * (i + 1)) % (w + 120) + (w + 120)) % (w + 120) - 60;
+      const cy = 40 + i * 22;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 34, 14, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx + 22, cy + 4, 22, 11, 0, 0, Math.PI * 2);
+      ctx.fill();
+    });
 
     // Suelo
     ctx.fillStyle = "#E7E0CF";
@@ -190,12 +299,12 @@ export class RestGame {
     if (progress > 0.85) {
       const goalX = w - (1 - (progress - 0.85) / 0.15) * 40 - 30;
       ctx.fillStyle = "#4F9868";
-      ctx.fillRect(goalX, groundY - 90, 6, 90);
+      ctx.fillRect(goalX, groundY - 96, 6, 96);
       ctx.fillStyle = "#F5A93E";
       ctx.beginPath();
-      ctx.moveTo(goalX + 6, groundY - 90);
-      ctx.lineTo(goalX + 34, groundY - 78);
-      ctx.lineTo(goalX + 6, groundY - 66);
+      ctx.moveTo(goalX + 6, groundY - 96);
+      ctx.lineTo(goalX + 36, groundY - 84);
+      ctx.lineTo(goalX + 6, groundY - 72);
       ctx.closePath();
       ctx.fill();
     }
@@ -211,18 +320,32 @@ export class RestGame {
       ctx.restore();
     });
 
-    // Cerebrín
-    const cy = groundY + this.cerebrinY;
+    // Premios: estrellas que giran suavemente en el aire.
+    this.prizes.forEach((pr) => {
+      if (pr.collected) return;
+      ctx.save();
+      ctx.translate(pr.x, groundY - pr.y);
+      ctx.rotate(Math.sin(pr.spin) * 0.35);
+      ctx.fillStyle = "#F5A93E";
+      this._starPath(ctx, 0, 0, pr.size / 2, pr.size / 4.4, 5);
+      ctx.fill();
+      ctx.restore();
+    });
+
+    // Cerebrín: apoyado exactamente sobre la línea del suelo (el alto
+    // real del dibujo respeta su proporción original), con un pequeño
+    // efecto de "chafado" al despegar/aterrizar para reforzar el salto.
+    const groundContactY = groundY + this.cerebrinY;
     ctx.save();
-    ctx.translate(this.cerebrinX, cy);
+    ctx.translate(this.cerebrinX, groundContactY);
+    ctx.scale(1 / this.squash, this.squash);
     if (this.mascotImg.complete && this.mascotImg.naturalWidth) {
-      const size = 92;
-      const ratio = this.mascotImg.naturalHeight / this.mascotImg.naturalWidth;
-      ctx.drawImage(this.mascotImg, -size / 2, -size, size, size * ratio);
+      const dh = this.cerebrinDrawH;
+      ctx.drawImage(this.mascotImg, -CEREBRIN_SIZE / 2, -dh, CEREBRIN_SIZE, dh);
     } else {
       ctx.fillStyle = "#F5A93E";
       ctx.beginPath();
-      ctx.arc(0, -40, 34, 0, Math.PI * 2);
+      ctx.arc(0, -34, 34, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
@@ -242,6 +365,21 @@ export class RestGame {
     ctx.arcTo(x, y + h, x, y + h - r, r);
     ctx.lineTo(x, y + r);
     ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath();
+  }
+
+  /** Estrella de 5 puntas, dibujada a mano (sin dependencias). */
+  _starPath(ctx, cx, cy, outerR, innerR, spikes) {
+    ctx.beginPath();
+    const step = Math.PI / spikes;
+    let rot = -Math.PI / 2;
+    ctx.moveTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+    for (let i = 0; i < spikes; i++) {
+      rot += step;
+      ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+      rot += step;
+      ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+    }
     ctx.closePath();
   }
 }

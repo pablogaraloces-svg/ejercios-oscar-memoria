@@ -14,6 +14,7 @@ import {
   applyNameBudget,
 } from "../core/phrases.js";
 import { Voice } from "../core/voice.js";
+import { Music } from "../core/music.js";
 import { Sounds } from "../core/sounds.js";
 import { HintFlow } from "../core/hints.js";
 import { reportResult } from "../core/adaptiveDifficulty.js";
@@ -22,7 +23,7 @@ import { buildFamilyIdentityPhrase } from "../core/familyPhrase.js";
 import { buildSessionExercises, CATEGORY_LABELS } from "../exercises/index.js";
 import { burstConfetti, celebrateSuccess } from "../core/confetti.js";
 import { getDateKey } from "../core/dateUtils.js";
-import { RestGame } from "./restGame.js";
+import { renderCerebrinSaltarin } from "./gamePlayer.js";
 
 const INACTIVITY_MS = 60000;
 const POSITIVE_MOODS = new Set(["Muy bien", "Bien"]);
@@ -164,10 +165,10 @@ export class SessionRunner {
     // encoge en los ejercicios concretos donde pueda molestar (ver
     // renderExercise → COMPACT_EXIT_KINDS).
     this.setExitFabCompact(false);
-    // Si veníamos del juego de descanso (o lo abandonamos por "atrás"),
-    // se detiene siempre su bucle de animación para no dejarlo corriendo
-    // de fondo sin necesidad.
-    this._restGame?.stop();
+    // Si veníamos del juego (o lo abandonamos por "atrás"), se detiene
+    // siempre su música/bucle de animación, para no dejarlo corriendo de
+    // fondo sin necesidad.
+    this._gamePlayer?.destroy();
 
     const previousStep = this.steps[this._lastRenderedIndex];
     const currentStep = this.steps[this.stepIndex];
@@ -857,122 +858,31 @@ export class SessionRunner {
   /* ---------------- Cierre ---------------- */
 
   /**
-   * "Juego de descanso" — Cerebrín corre y salta obstáculos. Un único
-   * botón (SALTAR), sin vidas ni penalizaciones duras: es un premio
-   * relajante después de los ejercicios, no un reto. Totalmente
-   * independiente del sistema de estadísticas cognitivas (no llama a
-   * reportResult ni a adaptiveDifficulty en ningún momento).
+   * "Cerebrín Saltarín" como "juego de descanso": al terminar los
+   * ejercicios cognitivos, se ofrece como premio relajante. Delega toda
+   * la lógica del juego (motor, sonido, música, voz) en el componente
+   * compartido gamePlayer.js — el mismo que usa la Sala de Juegos para
+   * el juego libre — para no duplicar código entre ambos sitios.
+   * Totalmente independiente del sistema de estadísticas cognitivas.
    */
   renderRestGame() {
     // Se limpia siempre el contenido explícitamente: este método también
-    // se llama directamente desde "Repetir" (no solo desde renderStep()),
+    // se llama directamente al "Repetir" (no solo desde renderStep()),
     // así que no puede depender de que ya venga vacío.
     this.contentEl.innerHTML = "";
-    const box = document.createElement("div");
-    box.className = "col center rest-game-wrap";
-    box.innerHTML = `
-      <h2 class="title-xl" style="text-align:center;">🎮 Un ratito de diversión</h2>
-      <p class="text-md" style="text-align:center;">Toca SALTAR para ayudar a Cerebrín a esquivar los obstáculos.</p>
-      <div class="rest-game-hud">
-        <span class="rest-game-points" id="rest-game-points">Puntos: 0</span>
-        <div class="row" style="flex:1; align-items:center; gap:10px;">
-          <div class="progress-track"><div class="progress-fill" id="rest-game-progress-fill" style="width:0%;"></div></div>
-          <span class="pill">META</span>
-        </div>
-      </div>
-      <div class="rest-game-canvas-wrap">
-        <canvas class="rest-game-canvas" id="rest-game-canvas"></canvas>
-      </div>
-      <button class="btn btn-huge btn-success rest-game-jump-btn" id="rest-game-jump-btn">SALTAR</button>
-      <div class="row center" style="gap:16px; margin-top:14px;">
-        <button class="btn btn-ghost" id="rest-game-restart-btn">🔄 Reiniciar</button>
-        <button class="btn btn-ghost" id="rest-game-finish-btn">Finalizar</button>
-      </div>
-    `;
-    this.contentEl.appendChild(box);
-    this.say("Ahora un ratito de diversión: toca saltar para ayudar a Cerebrín.");
-
-    const canvas = box.querySelector("#rest-game-canvas");
-    const pointsLabel = box.querySelector("#rest-game-points");
-    const progressFill = box.querySelector("#rest-game-progress-fill");
-    const jumpBtn = box.querySelector("#rest-game-jump-btn");
-
-    const game = new RestGame(canvas, {
-      onProgress: ({ points, progress, done }) => {
-        pointsLabel.textContent = `Puntos: ${Math.floor(points)}`;
-        progressFill.style.width = `${Math.round(progress * 100)}%`;
-        if (done) this.showRestGameSummary(box, game);
-      },
+    this.say("Ahora un ratito de diversión: Cerebrín Saltarín.");
+    // La música relajante de fondo (si estaba sonando durante los
+    // ejercicios) se apaga aquí: el juego tiene su propia música arcade,
+    // y no deben sonar las dos a la vez. Se reanuda sola al terminar la
+    // sesión (goHome() ya se encarga de eso).
+    Music.stop();
+    this._gamePlayer = renderCerebrinSaltarin(this.contentEl, {
+      mode: "rest",
+      profile: this.profile,
+      // "Salir" desde el juego de descanso continúa exactamente el
+      // cierre normal de la sesión — no se toca ese sistema.
+      onExit: () => this.next(),
     });
-    this._restGame = game;
-    game.start();
-
-    const doJump = () => game.jump();
-    jumpBtn.addEventListener("click", doJump);
-    // También se puede saltar tocando el propio lienzo, para que resulte
-    // aún más natural e inmediato.
-    canvas.addEventListener("click", doJump);
-
-    box.querySelector("#rest-game-restart-btn").onclick = () => {
-      game.stop();
-      game.reset();
-      game.start();
-      pointsLabel.textContent = "Puntos: 0";
-      progressFill.style.width = "0%";
-    };
-
-    box.querySelector("#rest-game-finish-btn").onclick = () => {
-      this.confirmRestGameExit(() => this.showRestGameSummary(box, game));
-    };
-  }
-
-  /** "¿Quieres finalizar el juego?" — confirmación antes de cortar la
-   * partida a medias (reutiliza el modal genérico ya existente). */
-  confirmRestGameExit(onConfirm) {
-    const modal = document.getElementById("generic-modal");
-    const modalBox = document.getElementById("generic-modal-box");
-    if (!modal || !modalBox) {
-      onConfirm();
-      return;
-    }
-    modalBox.innerHTML = `
-      <h2 class="title-lg">¿Quieres finalizar el juego?</h2>
-      <p class="text-base" style="margin:16px 0 28px;">Puedes seguir jugando un poco más, o pasar ya a terminar el ratito de hoy.</p>
-      <div class="row center wrap" style="gap:16px;">
-        <button class="btn btn-ghost" id="rest-game-continue-btn">Continuar</button>
-        <button class="btn btn-warm" id="rest-game-confirm-finish-btn">Finalizar</button>
-      </div>
-    `;
-    modal.classList.add("active");
-    modalBox.querySelector("#rest-game-continue-btn").onclick = () => modal.classList.remove("active");
-    modalBox.querySelector("#rest-game-confirm-finish-btn").onclick = () => {
-      modal.classList.remove("active");
-      this._restGame?.stop();
-      onConfirm();
-    };
-  }
-
-  /** Pantalla de cierre del propio juego: "¡Muy bien!" + puntos +
-   * REPETIR / FINALIZAR (FINALIZAR continúa el cierre normal de la
-   * sesión, sin tocarlo). */
-  showRestGameSummary(box, game) {
-    game.stop();
-    const finalPoints = Math.floor(game.points);
-    box.innerHTML = `
-      <img src="assets/mascot/cerebrin.png" alt="Cerebrín" class="closing-mascot" style="width:min(30vw,180px);" />
-      <h2 class="title-xl" style="text-align:center;">¡Muy bien!</h2>
-      <p class="text-lg" style="text-align:center; font-weight:800; color:var(--color-success);">Puntos conseguidos: ${finalPoints}</p>
-      <p class="text-md" style="text-align:center;">¿Quieres volver a jugar?</p>
-      <div class="row center wrap" style="gap:16px; margin-top:10px;">
-        <button class="btn btn-accent" id="rest-game-repeat-btn">🔄 Repetir</button>
-        <button class="btn btn-success btn-huge" id="rest-game-done-btn">Finalizar</button>
-      </div>
-    `;
-    burstConfetti(24);
-    this.say(`Muy bien. Has conseguido ${finalPoints} puntos.`);
-
-    box.querySelector("#rest-game-repeat-btn").onclick = () => this.renderRestGame();
-    box.querySelector("#rest-game-done-btn").onclick = () => this.next();
   }
 
   async renderClosing() {
