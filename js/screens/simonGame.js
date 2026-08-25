@@ -2,6 +2,7 @@ import { GameSounds } from "../core/gameSounds.js";
 import { Voice } from "../core/voice.js";
 import { recordGameSession } from "../core/gameStats.js";
 import { burstConfetti } from "../core/confetti.js";
+import { Mascot } from "../core/mascot.js";
 
 /**
  * simonGame.js — Juego de memoria inspirado en "Simón": un tablero
@@ -75,7 +76,7 @@ class SimonGame {
     this.addRandomStep();
     this.callbacks.onRoundChange?.(this.round);
     this._draw();
-    setTimeout(() => this.playSequence(true), 700);
+    this.playSequence(true);
   }
 
   addRandomStep() {
@@ -89,9 +90,17 @@ class SimonGame {
     this.playerIndex = 0;
     this.callbacks.onStateChange?.("showing");
     if (isFirst) {
-      this.callbacks.onInstruction?.();
+      // Espera a que Cerebrín termine de hablar del todo antes de
+      // empezar a mostrar la secuencia — antes se esperaba un tiempo
+      // fijo (demasiado corto) y el juego arrancaba mientras la voz
+      // seguía sonando.
+      await this.callbacks.onInstruction?.();
+      if (this.stopped) return;
+      await this._sleep(350); // pequeña pausa natural tras la voz, antes de empezar
+    } else {
+      await this._sleep(500);
     }
-    await this._sleep(500);
+    if (this.stopped) return;
     for (let i = 0; i < this.sequence.length; i++) {
       if (this.stopped) return;
       const idx = this.sequence[i];
@@ -272,17 +281,26 @@ export function renderSimonGame(container, { profile, onExit }) {
     <p class="text-md" id="simon-instructions" style="text-align:center;">Mira bien los colores que se iluminan, y luego tócalos en el mismo orden.</p>
     <div class="simon-hud">
       <span class="rest-game-points" id="simon-round">Ronda: 0</span>
+      <div class="game-volume-control">
+        <span aria-hidden="true">🔊</span>
+        <input type="range" min="0" max="1" step="0.1" value="1" class="game-volume-slider" id="simon-volume" aria-label="Volumen del juego" />
+      </div>
     </div>
-    <div class="simon-board-wrap">
-      <canvas class="simon-board-canvas" id="simon-canvas"></canvas>
-    </div>
-    <div class="row center" style="gap:16px; margin-top:16px;">
-      <button class="rest-game-side-btn" id="simon-restart-btn" aria-label="Reiniciar">
-        <span class="rest-game-side-btn-icon">🔄</span><span>Reiniciar</span>
-      </button>
-      <button class="rest-game-side-btn" id="simon-finish-btn" aria-label="Salir">
-        <span class="rest-game-side-btn-icon">🚪</span><span>Salir</span>
-      </button>
+    <div class="simon-main-row">
+      <div class="rest-game-side-btns">
+        <button class="rest-game-side-btn" id="simon-restart-btn" aria-label="Reiniciar">
+          <span class="rest-game-side-btn-icon">🔄</span><span>Reiniciar</span>
+        </button>
+        <button class="rest-game-side-btn" id="simon-finish-btn" aria-label="Salir">
+          <span class="rest-game-side-btn-icon">🚪</span><span>Salir</span>
+        </button>
+      </div>
+      <div class="simon-board-wrap">
+        <canvas class="simon-board-canvas" id="simon-canvas"></canvas>
+      </div>
+      <div class="simon-mascot-col">
+        <div class="mascot bounce" id="simon-mascot"><img src="assets/mascot/cerebrin.png" alt="Cerebrín" class="mascot-img" /></div>
+      </div>
     </div>
   `;
   container.appendChild(box);
@@ -290,16 +308,41 @@ export function renderSimonGame(container, { profile, onExit }) {
   const canvas = box.querySelector("#simon-canvas");
   const roundLabel = box.querySelector("#simon-round");
   const instructions = box.querySelector("#simon-instructions");
+  const volumeSlider = box.querySelector("#simon-volume");
+  const mascot = new Mascot(box.querySelector("#simon-mascot"), null);
+  mascot.idle();
+  volumeSlider.value = String(GameSounds.getVolume());
+  volumeSlider.addEventListener("input", (e) => GameSounds.setVolume(Number(e.target.value)));
+
   const startedAt = Date.now();
   let bestRound = 0;
 
   const game = new SimonGame(canvas, {
-    onInstruction: () => Voice.say("Mira bien los colores, y después repite tú la secuencia igual."),
+    // Devuelve una promesa que se resuelve cuando Cerebrín termina de
+    // hablar del todo (con una red de seguridad por si el evento de voz
+    // no llegara a disparase nunca), para que el juego espere de verdad
+    // a que termine la instrucción antes de empezar.
+    onInstruction: () =>
+      new Promise((resolve) => {
+        const text = "Mira bien los colores, y después repite tú la secuencia igual.";
+        let done = false;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          mascot.stopTalking();
+          resolve();
+        };
+        mascot.startTalking();
+        Voice.say(text, { onEnd: finish });
+        setTimeout(finish, Voice.estimateDurationMs(text) + 800);
+      }),
     onStateChange: (state) => {
       instructions.textContent =
         state === "showing"
           ? "Mira bien los colores…"
           : "¡Ahora te toca a ti! Toca los colores en el mismo orden.";
+      if (state === "showing") mascot.thinking();
+      else mascot.idle();
     },
     onRoundChange: (round) => {
       roundLabel.textContent = `Ronda: ${round}`;
@@ -307,8 +350,10 @@ export function renderSimonGame(container, { profile, onExit }) {
     },
     onRoundComplete: () => {
       burstConfetti(10);
+      mascot.celebrate();
     },
     onWrong: (manyRetries) => {
+      mascot.encourage();
       Voice.say(manyRetries ? "No pasa nada, sigamos intentándolo con calma." : "Casi, vamos a intentarlo otra vez.");
     },
     onMastery: () => {

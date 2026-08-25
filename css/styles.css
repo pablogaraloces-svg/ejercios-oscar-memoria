@@ -1715,16 +1715,50 @@ body.high-contrast .home-bg-mascot { display: none; }
 .game-card-stats { color: var(--color-text-soft); }
 
 /* ---------- Juego "El juego de los colores" (estilo Simón) ---------- */
-.simon-game-wrap { gap: 12px; width: 100%; max-width: 620px; margin: 0 auto; }
-.simon-hud { display: flex; justify-content: center; margin-top: 4px; }
-.simon-board-wrap {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  margin-top: 10px;
-}
+.simon-game-wrap { gap: 12px; width: 100%; max-width: 780px; margin: 0 auto; }
+.simon-hud { display: flex; align-items: center; justify-content: center; gap: 20px; margin-top: 4px; }
 .simon-board-canvas {
   cursor: pointer;
   touch-action: manipulation;
   filter: drop-shadow(0 10px 20px rgba(46, 54, 74, 0.18));
+}
+/* Fila principal: Reiniciar/Salir a un lateral (izquierda), el tablero
+   en el centro, y Cerebrín presente al otro lado — igual que la
+   distribución de Cerebrín Saltarín, para que sea coherente entre
+   ambos juegos. */
+.simon-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+  margin-top: 6px;
+}
+.simon-board-wrap { display: flex; justify-content: center; flex-shrink: 0; }
+.simon-mascot-col {
+  width: 110px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+}
+.simon-mascot-col .mascot { width: 100px; height: 100px; }
+@media (max-width: 900px), (orientation: portrait) {
+  .simon-main-row { flex-direction: column; }
+  .rest-game-side-btns { flex-direction: row; order: 2; }
+  .simon-board-wrap { order: 1; }
+  .simon-mascot-col { order: 0; width: auto; }
+}
+
+/* ---------- Control de volumen del juego (Cerebrín Saltarín y Simón) ---------- */
+.game-volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.game-volume-slider {
+  width: 90px;
+  accent-color: var(--color-accent);
+  cursor: pointer;
 }

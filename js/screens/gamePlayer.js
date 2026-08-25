@@ -30,6 +30,10 @@ export function renderCerebrinSaltarin(container, { mode, profile, onExit }) {
         <div class="progress-track"><div class="progress-fill" id="rg-progress-fill" style="width:0%;"></div></div>
         <span class="pill">META</span>
       </div>
+      <div class="game-volume-control">
+        <span aria-hidden="true">🔊</span>
+        <input type="range" min="0" max="1" step="0.1" value="1" class="game-volume-slider" id="rg-volume" aria-label="Volumen del juego" />
+      </div>
     </div>
     <div class="rest-game-arcade-row">
       <div class="rest-game-side-btns">
@@ -52,6 +56,9 @@ export function renderCerebrinSaltarin(container, { mode, profile, onExit }) {
   const pointsLabel = box.querySelector("#rg-points");
   const progressFill = box.querySelector("#rg-progress-fill");
   const jumpBtn = box.querySelector("#rg-jump-btn");
+  const volumeSlider = box.querySelector("#rg-volume");
+  volumeSlider.value = String(GameSounds.getVolume());
+  volumeSlider.addEventListener("input", (e) => GameSounds.setVolume(Number(e.target.value)));
 
   GameSounds.startMusic(0.2);
   const startedAt = Date.now();

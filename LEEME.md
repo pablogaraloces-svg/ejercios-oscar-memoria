@@ -104,6 +104,37 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 2.0 (ajustes en "El juego de los colores" + volumen en ambos juegos)
+
+**Esperar a que termine la voz antes de empezar**
+- Corregido: antes el juego esperaba un tiempo fijo (700ms) tras la
+  instrucción hablada, mucho más corto que lo que tarda realmente la
+  frase en decirse — así que la secuencia empezaba a mostrarse mientras
+  Cerebrín todavía estaba hablando. Ahora se espera de verdad a que la
+  voz termine del todo (con una pequeña pausa natural después), con una
+  red de seguridad por si el aviso de "voz terminada" del navegador
+  fallara alguna vez — verificado con dos simulaciones: una con la voz
+  funcionando con normalidad, y otra simulando ese fallo, confirmando
+  que el juego nunca se queda esperando para siempre.
+
+**Reiniciar y Salir, a un lateral**
+- Reubicados a la izquierda del tablero, en vertical, con el mismo
+  lenguaje visual discreto que ya usa Cerebrín Saltarín — accesibles sin
+  invadir ni restar protagonismo al tablero.
+
+**Cerebrín presente y animado**
+- La mascota aparece ahora junto al tablero durante toda la partida:
+  gesto de "pensando" mientras muestra la secuencia, celebración al
+  completar una ronda, y ánimo si hay algún fallo — reutilizando el
+  mismo sistema de animaciones que ya usa el resto de la aplicación.
+
+**Control de volumen en ambos juegos**
+- Nuevo deslizador de volumen, tanto en Cerebrín Saltarín como en El
+  juego de los colores, para subir o bajar el sonido del juego sin salir
+  de él. Escala música y efectos de forma proporcional, manteniendo
+  siempre la misma jerarquía (voz > efectos > música) — verificado con
+  una simulación numérica en varios niveles de volumen.
+
 ## 🆕 Novedades de la versión 1.9 (nuevo juego: "El juego de los colores")
 
 **Nuevo juego en la Sala de Juegos, inspirado en Simón**

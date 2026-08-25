@@ -17,6 +17,8 @@ let scheduleTimer = null;
 let nextStepTime = 0;
 let stepIndex = 0;
 let baseMusicVolume = 0.16;
+const BASE_SFX_LEVEL = 0.6;
+let masterVolume = 1; // control de volumen general del juego (0-1), ajustable desde el propio juego
 
 function ensureContext() {
   if (!audioCtx) {
@@ -27,10 +29,16 @@ function ensureContext() {
     musicGain.gain.value = 0;
     musicGain.connect(audioCtx.destination);
     sfxGain = audioCtx.createGain();
-    sfxGain.gain.value = 0.6;
+    sfxGain.gain.value = BASE_SFX_LEVEL * masterVolume;
     sfxGain.connect(audioCtx.destination);
   }
   return audioCtx;
+}
+
+/** Volumen de música "objetivo" actual, ya con el control general
+ * aplicado — la música nunca debe superar a la voz ni a los efectos. */
+function effectiveMusicVolume() {
+  return baseMusicVolume * masterVolume;
 }
 
 // Patrón de 16 pasos (dos compases), con silencios propios para que
@@ -122,8 +130,8 @@ function duckMusic() {
   const now = audioCtx.currentTime;
   musicGain.gain.cancelScheduledValues(now);
   musicGain.gain.setValueAtTime(musicGain.gain.value, now);
-  musicGain.gain.linearRampToValueAtTime(baseMusicVolume * 0.4, now + 0.06);
-  musicGain.gain.linearRampToValueAtTime(baseMusicVolume, now + 0.5);
+  musicGain.gain.linearRampToValueAtTime(effectiveMusicVolume() * 0.4, now + 0.06);
+  musicGain.gain.linearRampToValueAtTime(effectiveMusicVolume(), now + 0.5);
 }
 
 export const GameSounds = {
@@ -136,9 +144,25 @@ export const GameSounds = {
     nextStepTime = ctx.currentTime + 0.05;
     stepIndex = 0;
     musicGain.gain.cancelScheduledValues(ctx.currentTime);
-    musicGain.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.6);
+    musicGain.gain.linearRampToValueAtTime(effectiveMusicVolume(), ctx.currentTime + 0.6);
     if (!scheduleTimer) scheduleLoop();
   },
+
+  /** Control de volumen general del juego (0-1): escala tanto la
+   * música como los efectos, manteniendo siempre la misma proporción
+   * entre ellos (la música nunca "gana" a los efectos ni a la voz). */
+  setVolume(v) {
+    masterVolume = Math.max(0, Math.min(1, v));
+    if (sfxGain) sfxGain.gain.value = BASE_SFX_LEVEL * masterVolume;
+    if (running && musicGain && audioCtx) {
+      musicGain.gain.cancelScheduledValues(audioCtx.currentTime);
+      musicGain.gain.linearRampToValueAtTime(effectiveMusicVolume(), audioCtx.currentTime + 0.15);
+    }
+  },
+  getVolume() {
+    return masterVolume;
+  },
+
   stopMusic() {
     running = false;
     if (musicGain && audioCtx) {
