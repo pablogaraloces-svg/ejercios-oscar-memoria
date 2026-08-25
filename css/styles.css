@@ -312,7 +312,7 @@ body.high-contrast .family-title-elegant {
   background: var(--gradient-surface);
   border-radius: var(--radius-md);
   border: 3px solid var(--color-border);
-  min-height: 108px;
+  min-height: 250px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -328,13 +328,13 @@ body.high-contrast .family-title-elegant {
 .option-card:active { transform: scale(0.96); box-shadow: var(--btn-pressed); }
 .option-card:focus-visible { outline: 5px solid var(--color-focus); outline-offset: 4px; }
 .option-card .emoji {
-  font-size: 2.5rem;
+  font-size: 4.6rem;
   line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
+  width: 118px;
+  height: 118px;
   border-radius: var(--radius-full);
   background: var(--color-bg-soft);
   box-shadow: var(--shadow-inset);
@@ -374,10 +374,14 @@ body.high-contrast .family-title-elegant {
   grid-template-columns: repeat(2, 1fr);
   gap: var(--space-3);
   width: 100%;
-  max-width: 900px;
+  max-width: 980px;
   margin: 0 auto;
 }
 .grid-options.cols-3 { grid-template-columns: repeat(3, 1fr); }
+/* Con 3 columnas cada celda es más estrecha; se ajusta la proporción y
+   el icono para que sigan viéndose grandes y cómodos, sin desbordar. */
+.grid-options.cols-3 .option-card { min-height: 200px; }
+.grid-options.cols-3 .option-card .emoji { width: 92px; height: 92px; font-size: 3.6rem; }
 
 .progress-track {
   height: 20px;
@@ -737,12 +741,12 @@ body.high-contrast .family-title-elegant {
 
 /* ---------- Ejercicio: encuentra las diferencias ---------- */
 .diff-cell {
-  width: 80px;
-  height: 80px;
+  width: 96px;
+  height: 96px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.7rem;
+  font-size: 3.2rem;
   border-radius: var(--radius-sm);
   background: var(--color-bg-soft);
   border: 3px solid var(--color-border);
@@ -839,18 +843,18 @@ img, canvas, svg, video { max-width: 100%; }
   align-items: center;
   gap: 6px;
 }
-.puzzle-object-emoji { font-size: 3.4rem; line-height: 1; }
-.puzzle-arrow { font-size: 1.8rem; color: var(--color-text-soft); }
+.puzzle-object-emoji { font-size: 4.4rem; line-height: 1; }
+.puzzle-arrow { font-size: 2.1rem; color: var(--color-text-soft); }
 .puzzle-cell {
-  width: 84px;
-  height: 84px;
+  width: 106px;
+  height: 106px;
   border-radius: var(--radius-sm);
   background: var(--color-bg-soft);
   border: 3px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.2rem;
+  font-size: 2.8rem;
   flex-shrink: 0;
   box-shadow: var(--shadow-inset);
 }
@@ -867,7 +871,7 @@ img, canvas, svg, video { max-width: 100%; }
 }
 .puzzle-flying-piece {
   position: fixed;
-  font-size: 2.2rem;
+  font-size: 2.8rem;
   z-index: 300;
   pointer-events: none;
   opacity: 1;
@@ -1517,4 +1521,63 @@ body.high-contrast .home-bg-mascot { display: none; }
   font-size: var(--font-sm);
   background: var(--color-surface);
   color: var(--color-text);
+}
+
+/* ---------- Juego de descanso ---------- */
+.rest-game-wrap { gap: 14px; width: 100%; max-width: 760px; margin: 0 auto; }
+.rest-game-hud {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  margin-top: 4px;
+}
+.rest-game-points {
+  font-weight: 800;
+  font-size: var(--font-md);
+  color: var(--color-text);
+  white-space: nowrap;
+}
+.rest-game-canvas-wrap {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-soft), var(--btn-bevel-ghost);
+  border: 2px solid var(--color-border);
+  margin-top: 4px;
+}
+.rest-game-canvas { display: block; width: 100%; cursor: pointer; touch-action: manipulation; }
+/* Mismo sistema de relieve/respiración que el resto de botones
+   protagonistas de la app (p.ej. "Empezar el ratito de hoy"), para que
+   quede clara la llamada a la atención sin resultar exagerada. */
+.rest-game-jump-btn {
+  min-width: 280px;
+  font-size: var(--font-lg);
+  letter-spacing: 0.02em;
+  margin-top: 16px;
+  animation: btnBreathe 2.6s ease-in-out infinite;
+}
+
+/* ---------- Lista de categorías con Restablecer individual ---------- */
+.category-stat-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-soft);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+.category-stat-name {
+  flex: 1;
+  font-weight: 700;
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+.category-stat-pct {
+  font-weight: 800;
+  font-size: var(--font-md);
+  color: var(--color-warm);
+  min-width: 52px;
+  text-align: right;
 }

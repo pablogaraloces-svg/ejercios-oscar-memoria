@@ -104,6 +104,67 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 1.5 (dibujos más grandes, juego de descanso y estadísticas revisadas a fondo)
+
+**Ejercicios — dibujos más grandes y botones más cuadrados**
+- Botones de respuesta: de 108px a 250px de alto (proporción mucho menos
+  alargada, sin llegar a ser un cuadrado perfecto), con una variante
+  propia para las rejillas de 3 columnas (200px) para que ejercicios con
+  más opciones sigan viéndose cómodos.
+- Iconos dentro de los botones: de 64px a 118px (92px en rejillas de 3
+  columnas).
+- Dibujos de memoria, piezas del puzle de herramientas y recuadros de
+  diferencias, todos aumentados de forma coherente entre sí.
+- Nada de la estructura, lógica ni línea gráfica se ha tocado — solo
+  tamaños y proporciones.
+
+**Nuevo: Juego de descanso**
+- Al terminar los ejercicios cognitivos, un pequeño juego de reflejos
+  protagonizado por Cerebrín: corre automáticamente y solo hay que tocar
+  SALTAR para esquivar obstáculos. Sin vidas ni penalizaciones duras —
+  es un premio relajante, no un reto.
+- Puntuación sencilla, barra de progreso, meta, y opciones de Reiniciar
+  y Finalizar (con confirmación antes de cortar la partida a medias).
+- Al terminar (o finalizar antes de tiempo): "¡Muy bien!" + puntos +
+  Repetir/Finalizar. Finalizar continúa exactamente con el cierre normal
+  de la sesión, sin ningún cambio en ese sistema.
+- Completamente independiente de las estadísticas cognitivas: no llama
+  en ningún momento a `reportResult()` ni a la dificultad adaptativa.
+
+**Estadística de "dificultad" — corregida de raíz**
+- Encontrado un fallo real: el sistema solo contaba un fallo cuando
+  Óscar se rendía tras 4 intentos seguidos en el mismo ejercicio. Si
+  fallaba 1, 2 o 3 veces y luego acertaba, se contaba exactamente igual
+  que un acierto a la primera — la dificultad real quedaba muy
+  infravalorada. Corregido reutilizando el mismo dato que ya se
+  guardaba (número de pistas usadas antes de acertar), sin inventar
+  ningún sistema de cálculo nuevo.
+
+**Solapamiento de títulos de categorías — corregido de raíz**
+- Con hasta 9-10 categorías de ejercicio, el gráfico (de ancho fijo)
+  no tenía espacio suficiente y los títulos se pisaban entre sí. Ahora
+  el gráfico se ensancha automáticamente según haga falta (con scroll
+  horizontal en su contenedor si hay muchas categorías), y cada título
+  ajusta su tamaño de letra o se parte en dos líneas antes que
+  solaparse con el de al lado.
+
+**Restablecer estadística por categoría**
+- Nueva lista con cada categoría por separado (aciertos %) y su propio
+  botón "Restablecer", con confirmación explícita antes de borrar. Borra
+  solo esa categoría — el resto de estadísticas, la familia, la salud y
+  las sesiones no se ven afectadas en absoluto.
+
+**PDF "Enviar resumen" — reestructurado por completo**
+- Nueva organización profesional: Resumen cognitivo (nombre y periodo) →
+  Actividad (sesiones, ejercicios, tiempo total y medio) → Estadísticas
+  cognitivas (aciertos por categoría, en tabla) → Dificultad (con los
+  mismos datos ya corregidos) → Salud (con tabla Fecha/Oxígeno/Tensión)
+  → Medicación.
+- Nunca usa frases de diagnóstico ("todo está bien", "riesgo bajo") — es
+  un registro de seguimiento, no una valoración médica.
+- Comprobado que cabe correctamente en A4 sin solapamientos, incluso con
+  el máximo de registros de salud.
+
 ## 🆕 Novedades de la versión 1.4 (correcciones y diseño del ejercicio de diferencias)
 
 **Medicación y horarios**

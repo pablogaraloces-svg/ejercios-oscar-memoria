@@ -22,6 +22,7 @@ import { buildFamilyIdentityPhrase } from "../core/familyPhrase.js";
 import { buildSessionExercises, CATEGORY_LABELS } from "../exercises/index.js";
 import { burstConfetti, celebrateSuccess } from "../core/confetti.js";
 import { getDateKey } from "../core/dateUtils.js";
+import { RestGame } from "./restGame.js";
 
 const INACTIVITY_MS = 60000;
 const POSITIVE_MOODS = new Set(["Muy bien", "Bien"]);
@@ -64,6 +65,7 @@ export class SessionRunner {
       ...(reminders.length ? [{ type: "reminders", reminders }] : []),
       { type: "exercises_intro" },
       ...exercises.map((ex) => ({ type: "exercise", exercise: ex })),
+      { type: "rest_game" },
       { type: "closing" },
     ];
     this.renderStep();
@@ -162,6 +164,10 @@ export class SessionRunner {
     // encoge en los ejercicios concretos donde pueda molestar (ver
     // renderExercise → COMPACT_EXIT_KINDS).
     this.setExitFabCompact(false);
+    // Si veníamos del juego de descanso (o lo abandonamos por "atrás"),
+    // se detiene siempre su bucle de animación para no dejarlo corriendo
+    // de fondo sin necesidad.
+    this._restGame?.stop();
 
     const previousStep = this.steps[this._lastRenderedIndex];
     const currentStep = this.steps[this.stepIndex];
@@ -194,6 +200,7 @@ export class SessionRunner {
     else if (step.type === "reminders") this.renderReminders(step.reminders);
     else if (step.type === "exercises_intro") this.renderExercisesIntro();
     else if (step.type === "exercise") this.renderExercise(step.exercise);
+    else if (step.type === "rest_game") this.renderRestGame();
     else if (step.type === "closing") this.renderClosing();
   }
 
@@ -516,15 +523,16 @@ export class SessionRunner {
 
     const studyBox = document.createElement("div");
     studyBox.className = "row wrap center fade-in";
-    studyBox.style.gap = "26px";
+    studyBox.style.gap = "28px";
     studyBox.style.marginTop = "20px";
     ex.studyItems.forEach((item, i) => {
       const card = document.createElement("div");
       card.className = "card col center";
-      card.style.minWidth = "132px";
+      card.style.minWidth = "168px";
+      card.style.minHeight = "168px";
       // Animación suave e individual (tipo "genie"): cada dibujo respira a
       // su propio ritmo, para invitar a mirarlos con calma sin marear.
-      card.innerHTML = `<span class="study-item-breathe" style="font-size:3.9rem; animation-delay:${(i * 0.35).toFixed(2)}s;">${item.emoji}</span>`;
+      card.innerHTML = `<span class="study-item-breathe" style="font-size:5.2rem; animation-delay:${(i * 0.35).toFixed(2)}s;">${item.emoji}</span>`;
       studyBox.appendChild(card);
     });
     this.contentEl.appendChild(studyBox);
@@ -847,6 +855,125 @@ export class SessionRunner {
   }
 
   /* ---------------- Cierre ---------------- */
+
+  /**
+   * "Juego de descanso" — Cerebrín corre y salta obstáculos. Un único
+   * botón (SALTAR), sin vidas ni penalizaciones duras: es un premio
+   * relajante después de los ejercicios, no un reto. Totalmente
+   * independiente del sistema de estadísticas cognitivas (no llama a
+   * reportResult ni a adaptiveDifficulty en ningún momento).
+   */
+  renderRestGame() {
+    // Se limpia siempre el contenido explícitamente: este método también
+    // se llama directamente desde "Repetir" (no solo desde renderStep()),
+    // así que no puede depender de que ya venga vacío.
+    this.contentEl.innerHTML = "";
+    const box = document.createElement("div");
+    box.className = "col center rest-game-wrap";
+    box.innerHTML = `
+      <h2 class="title-xl" style="text-align:center;">🎮 Un ratito de diversión</h2>
+      <p class="text-md" style="text-align:center;">Toca SALTAR para ayudar a Cerebrín a esquivar los obstáculos.</p>
+      <div class="rest-game-hud">
+        <span class="rest-game-points" id="rest-game-points">Puntos: 0</span>
+        <div class="row" style="flex:1; align-items:center; gap:10px;">
+          <div class="progress-track"><div class="progress-fill" id="rest-game-progress-fill" style="width:0%;"></div></div>
+          <span class="pill">META</span>
+        </div>
+      </div>
+      <div class="rest-game-canvas-wrap">
+        <canvas class="rest-game-canvas" id="rest-game-canvas"></canvas>
+      </div>
+      <button class="btn btn-huge btn-success rest-game-jump-btn" id="rest-game-jump-btn">SALTAR</button>
+      <div class="row center" style="gap:16px; margin-top:14px;">
+        <button class="btn btn-ghost" id="rest-game-restart-btn">🔄 Reiniciar</button>
+        <button class="btn btn-ghost" id="rest-game-finish-btn">Finalizar</button>
+      </div>
+    `;
+    this.contentEl.appendChild(box);
+    this.say("Ahora un ratito de diversión: toca saltar para ayudar a Cerebrín.");
+
+    const canvas = box.querySelector("#rest-game-canvas");
+    const pointsLabel = box.querySelector("#rest-game-points");
+    const progressFill = box.querySelector("#rest-game-progress-fill");
+    const jumpBtn = box.querySelector("#rest-game-jump-btn");
+
+    const game = new RestGame(canvas, {
+      onProgress: ({ points, progress, done }) => {
+        pointsLabel.textContent = `Puntos: ${Math.floor(points)}`;
+        progressFill.style.width = `${Math.round(progress * 100)}%`;
+        if (done) this.showRestGameSummary(box, game);
+      },
+    });
+    this._restGame = game;
+    game.start();
+
+    const doJump = () => game.jump();
+    jumpBtn.addEventListener("click", doJump);
+    // También se puede saltar tocando el propio lienzo, para que resulte
+    // aún más natural e inmediato.
+    canvas.addEventListener("click", doJump);
+
+    box.querySelector("#rest-game-restart-btn").onclick = () => {
+      game.stop();
+      game.reset();
+      game.start();
+      pointsLabel.textContent = "Puntos: 0";
+      progressFill.style.width = "0%";
+    };
+
+    box.querySelector("#rest-game-finish-btn").onclick = () => {
+      this.confirmRestGameExit(() => this.showRestGameSummary(box, game));
+    };
+  }
+
+  /** "¿Quieres finalizar el juego?" — confirmación antes de cortar la
+   * partida a medias (reutiliza el modal genérico ya existente). */
+  confirmRestGameExit(onConfirm) {
+    const modal = document.getElementById("generic-modal");
+    const modalBox = document.getElementById("generic-modal-box");
+    if (!modal || !modalBox) {
+      onConfirm();
+      return;
+    }
+    modalBox.innerHTML = `
+      <h2 class="title-lg">¿Quieres finalizar el juego?</h2>
+      <p class="text-base" style="margin:16px 0 28px;">Puedes seguir jugando un poco más, o pasar ya a terminar el ratito de hoy.</p>
+      <div class="row center wrap" style="gap:16px;">
+        <button class="btn btn-ghost" id="rest-game-continue-btn">Continuar</button>
+        <button class="btn btn-warm" id="rest-game-confirm-finish-btn">Finalizar</button>
+      </div>
+    `;
+    modal.classList.add("active");
+    modalBox.querySelector("#rest-game-continue-btn").onclick = () => modal.classList.remove("active");
+    modalBox.querySelector("#rest-game-confirm-finish-btn").onclick = () => {
+      modal.classList.remove("active");
+      this._restGame?.stop();
+      onConfirm();
+    };
+  }
+
+  /** Pantalla de cierre del propio juego: "¡Muy bien!" + puntos +
+   * REPETIR / FINALIZAR (FINALIZAR continúa el cierre normal de la
+   * sesión, sin tocarlo). */
+  showRestGameSummary(box, game) {
+    game.stop();
+    const finalPoints = Math.floor(game.points);
+    box.innerHTML = `
+      <img src="assets/mascot/cerebrin.png" alt="Cerebrín" class="closing-mascot" style="width:min(30vw,180px);" />
+      <h2 class="title-xl" style="text-align:center;">¡Muy bien!</h2>
+      <p class="text-lg" style="text-align:center; font-weight:800; color:var(--color-success);">Puntos conseguidos: ${finalPoints}</p>
+      <p class="text-md" style="text-align:center;">¿Quieres volver a jugar?</p>
+      <div class="row center wrap" style="gap:16px; margin-top:10px;">
+        <button class="btn btn-accent" id="rest-game-repeat-btn">🔄 Repetir</button>
+        <button class="btn btn-success btn-huge" id="rest-game-done-btn">Finalizar</button>
+      </div>
+    `;
+    burstConfetti(24);
+    this.say(`Muy bien. Has conseguido ${finalPoints} puntos.`);
+
+    box.querySelector("#rest-game-repeat-btn").onclick = () => this.renderRestGame();
+    box.querySelector("#rest-game-done-btn").onclick = () => this.next();
+  }
 
   async renderClosing() {
     const box = document.createElement("div");

@@ -15,6 +15,7 @@ import {
   getMoodByDate,
   summarizeMoodByDate,
   resetStats,
+  resetCategoryStat,
 } from "../core/reports.js";
 import { canvasesToPdfBlob, shareOrDownloadPdf } from "../core/pdfExport.js";
 import { getHealthEntries, getMonthlyHealthAverages, monthLabel, formatAverage } from "../core/health.js";
@@ -82,14 +83,72 @@ export async function renderReports(rootEl, ctx) {
   const catStats = await getCategoryStats(ctx.profile.id);
   const catCard = document.createElement("div");
   catCard.className = "card";
-  catCard.innerHTML = `<h3 class="title-lg">Dónde tiene más dificultad</h3><p class="text-md">Porcentaje de fallos por tipo de ejercicio.</p>`;
+  catCard.innerHTML = `<h3 class="title-lg">Dónde tiene más dificultad</h3><p class="text-md">Porcentaje de intentos con alguna dificultad (falló o necesitó pistas) por tipo de ejercicio.</p>`;
+  // Si hay muchas categorías, el gráfico se ensancha para que ningún
+  // título se pise con otro; el contenedor permite deslizar hacia los
+  // lados para verlas todas cómodamente (distribución responsive).
+  const catCanvasWrap = document.createElement("div");
+  catCanvasWrap.style.overflowX = "auto";
+  catCanvasWrap.style.width = "100%";
   const catCanvas = document.createElement("canvas");
-  catCanvas.width = 900; catCanvas.height = 260;
-  catCanvas.style.width = "100%"; catCanvas.style.height = "auto";
-  catCard.appendChild(catCanvas);
+  catCanvas.style.display = "block";
+  catCanvas.style.height = "auto";
+  catCanvasWrap.appendChild(catCanvas);
+  catCard.appendChild(catCanvasWrap);
   rootEl.appendChild(catCard);
   drawCategoryErrorChart(catCanvas, catStats);
+  catCanvas.style.width = catCanvas.width <= 900 ? "100%" : `${catCanvas.width}px`;
   charts.category = catCanvas;
+
+  // Lista de cada categoría con su propio botón "Restablecer": permite
+  // borrar los datos de UNA sola categoría (nunca todas a la vez), y
+  // siempre con confirmación antes de borrar nada.
+  if (catStats.length) {
+    const catListCard = document.createElement("div");
+    catListCard.className = "card col";
+    catListCard.innerHTML = `<h3 class="title-lg">Cada categoría por separado</h3>`;
+    const catList = document.createElement("div");
+    catList.className = "col";
+    catList.style.gap = "10px";
+    catList.style.marginTop = "10px";
+    catStats.forEach((s) => {
+      const row = document.createElement("div");
+      row.className = "category-stat-row";
+      row.innerHTML = `
+        <span class="category-stat-name">${s.label}</span>
+        <span class="category-stat-pct">${Math.round(s.failRate * 100)}%</span>
+      `;
+      const resetBtn = document.createElement("button");
+      resetBtn.className = "btn btn-ghost";
+      resetBtn.textContent = "Restablecer";
+      resetBtn.onclick = () => confirmResetCategory(s.category, s.label);
+      row.appendChild(resetBtn);
+      catList.appendChild(row);
+    });
+    catListCard.appendChild(catList);
+    rootEl.appendChild(catListCard);
+  }
+
+  function confirmResetCategory(category, label) {
+    const modal = document.getElementById("generic-modal");
+    const modalBox = document.getElementById("generic-modal-box");
+    if (!modal || !modalBox) return;
+    modalBox.innerHTML = `
+      <h2 class="title-lg">¿Seguro que quieres borrar esta estadística?</h2>
+      <p class="text-base" style="margin:16px 0 28px;">Esta acción eliminará los datos registrados de <strong>${label}</strong> y no se podrá deshacer. El resto de estadísticas no se ven afectadas.</p>
+      <div class="row center wrap" style="gap:16px;">
+        <button class="btn btn-ghost" id="cat-reset-cancel">Cancelar</button>
+        <button class="btn btn-warm" id="cat-reset-confirm">Borrar</button>
+      </div>
+    `;
+    modal.classList.add("active");
+    modalBox.querySelector("#cat-reset-cancel").onclick = () => modal.classList.remove("active");
+    modalBox.querySelector("#cat-reset-confirm").onclick = async () => {
+      modal.classList.remove("active");
+      await resetCategoryStat(ctx.profile.id, category);
+      await renderReports(rootEl, ctx);
+    };
+  }
 
   // Por hora del día
   const hourBuckets = getSessionHourDistribution(sessions);
@@ -241,6 +300,8 @@ export async function renderReports(rootEl, ctx) {
     charts,
     stats: { totalSessions, totalExercises, avgAccuracy, streak },
     moodByDate,
+    catStats,
+    sessions,
     profileName: ctx.profile.name,
   };
 }
@@ -447,6 +508,37 @@ function createPdfPageBuilder() {
     spacer(h = 14) {
       cursorY += h;
     },
+    /** Tabla sencilla con cabecera resaltada y filas alternas, para que
+     * se lea con claridad (p.ej. Fecha / Oxígeno / Tensión en Salud). */
+    table(headers, rows) {
+      const contentW = PAGE_W - MARGIN * 2;
+      const colW = contentW / headers.length;
+      const rowH = 36;
+      api.ensureSpace(rowH * (rows.length + 1) + 16);
+
+      ctx.fillStyle = "#EFE6D2";
+      ctx.fillRect(MARGIN, cursorY, contentW, rowH);
+      ctx.fillStyle = "#2E2E2E";
+      ctx.font = "bold 18px sans-serif";
+      ctx.textAlign = "left";
+      headers.forEach((head, i) => ctx.fillText(head, MARGIN + i * colW + 16, cursorY + rowH * 0.66));
+      cursorY += rowH;
+
+      rows.forEach((row, ri) => {
+        if (ri % 2 === 1) {
+          ctx.fillStyle = "#F5F1E6";
+          ctx.fillRect(MARGIN, cursorY, contentW, rowH);
+        }
+        ctx.fillStyle = "#4A4A4A";
+        ctx.font = "17px sans-serif";
+        row.forEach((cell, ci) => ctx.fillText(String(cell), MARGIN + ci * colW + 16, cursorY + rowH * 0.66));
+        cursorY += rowH;
+      });
+      ctx.strokeStyle = "#E4DFD3";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(MARGIN, cursorY - rowH * (rows.length + 1), contentW, rowH * (rows.length + 1));
+      cursorY += 14;
+    },
     getPages() {
       return pages;
     },
@@ -456,58 +548,95 @@ function createPdfPageBuilder() {
 
 export async function exportReportPdf(ctx) {
   if (!lastCharts) return { status: "sin-datos" };
-  const { charts, stats, moodByDate, profileName } = lastCharts;
+  const { charts, stats, moodByDate, catStats, sessions, profileName } = lastCharts;
 
   const pdf = createPdfPageBuilder();
+  const today = new Date();
 
-  pdf.title("Resumen de estadísticas");
-  pdf.text(`${profileName} — ${new Date().toLocaleDateString("es-ES")}`, 26);
+  // ---------- Cabecera: RESUMEN COGNITIVO ----------
+  pdf.title("Resumen cognitivo");
+  pdf.text(`Nombre: ${profileName}`, 24);
+  const firstSession = sessions[0];
+  const periodStart = firstSession ? formatDateMediumEs(firstSession.date) : "—";
+  pdf.text(`Periodo: ${periodStart} — ${formatDateMediumEs(getDateKey(today))}`, 24);
+  pdf.text(`Documento generado el ${today.toLocaleDateString("es-ES")} a las ${today.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}.`, 16);
+  pdf.spacer(16);
+
+  // ---------- ACTIVIDAD ----------
+  const totalMinutes = sessions.reduce((acc, s) => acc + (s.durationMin || 0), 0);
+  const avgMinutes = stats.totalSessions ? Math.round(totalMinutes / stats.totalSessions) : 0;
+  pdf.heading("Actividad");
+  pdf.text(`Número de sesiones: ${stats.totalSessions}`);
+  pdf.text(`Ejercicios realizados: ${stats.totalExercises}`);
+  pdf.text(`Tiempo total dedicado: ${totalMinutes} minutos`);
+  pdf.text(`Tiempo medio por sesión: ${avgMinutes} minutos`);
+  pdf.text(`Días seguidos consecutivos: ${stats.streak}`);
+  if (charts.duration) { pdf.spacer(4); pdf.image(charts.duration); }
   pdf.spacer(10);
 
-  // Resumen general (siempre el primer bloque: si se añade una nueva
-  // estadística "de un vistazo" en el futuro, añadir aquí una línea más).
-  pdf.heading("Resumen general");
-  pdf.text(`Días seguidos: ${stats.streak}`);
-  pdf.text(`Sesiones totales: ${stats.totalSessions}`);
-  pdf.text(`Ejercicios completados: ${stats.totalExercises}`);
-  pdf.text(`Precisión media: ${stats.avgAccuracy}%`);
-  pdf.spacer(10);
+  // ---------- ESTADÍSTICAS COGNITIVAS (una sección clara por categoría) ----------
+  if (catStats.length) {
+    pdf.heading("Estadísticas cognitivas");
+    pdf.text("Porcentaje de aciertos por tipo de ejercicio.", 18);
+    pdf.spacer(4);
+    pdf.table(
+      ["Categoría", "Aciertos", "Intentos registrados"],
+      catStats.map((s) => [s.label, `${Math.round(s.successRate * 100)}%`, s.total])
+    );
+  }
+  if (charts.accuracy) { pdf.heading("Evolución de las últimas sesiones"); pdf.image(charts.accuracy); }
 
-  // Gráficas (si se añade una gráfica nueva a la pantalla de
-  // Estadísticas, basta con guardarla en `charts.xxx` en renderReports()
-  // y añadir aquí una línea `pdf.image(charts.xxx)` más).
-  if (charts.accuracy) { pdf.heading("Últimas sesiones"); pdf.image(charts.accuracy); }
-  if (charts.duration) { pdf.heading("Tiempo dedicado cada día"); pdf.image(charts.duration); }
-  if (charts.category) { pdf.heading("Dónde tiene más dificultad"); pdf.image(charts.category); }
+  // ---------- DIFICULTAD ----------
+  // Solo se incluye si hay datos reales que mostrar (nunca un cálculo
+  // inventado): se basa en el mismo registro de aciertos/pistas que el
+  // resto de estadísticas, sin ninguna interpretación médica añadida.
+  if (catStats.length) {
+    pdf.heading("Dificultad");
+    pdf.text("Porcentaje de intentos en los que hubo alguna dificultad (falló o necesitó alguna pista antes de acertar), por categoría.", 18);
+    pdf.spacer(4);
+    pdf.table(
+      ["Categoría", "Dificultad"],
+      catStats.map((s) => [s.label, `${Math.round(s.failRate * 100)}%`])
+    );
+    if (charts.category) { pdf.spacer(6); pdf.image(charts.category); }
+  }
   if (charts.hour) { pdf.heading("A qué horas hace las sesiones"); pdf.image(charts.hour); }
   if (charts.mood) { pdf.heading("Cómo dice sentirse"); pdf.image(charts.mood); }
   if (charts.adherence) { pdf.heading("Cumplimiento de recordatorios"); pdf.image(charts.adherence); }
 
-  // Calendario de ánimo del mes
   pdf.heading("Calendario de ánimo");
   pdf.moodCalendar(moodByDate);
   pdf.spacer(10);
 
-  // Salud (si hay datos registrados)
+  // ---------- SALUD ----------
+  // Únicamente un registro de seguimiento: nunca un diagnóstico ni una
+  // valoración médica, solo los datos tal y como se han introducido.
   const healthEntries = await getHealthEntries(ctx.profile.id);
   if (healthEntries.length) {
     const avg = await getMonthlyHealthAverages(ctx.profile.id);
     pdf.heading("Salud");
+    pdf.text(`Registro de seguimiento (no sustituye la valoración de un profesional sanitario).`, 16);
+    pdf.spacer(4);
     pdf.text(
-      `Promedio de ${monthLabel(avg.month)}: oxígeno ${
-        avg.avgOxygen !== null ? formatAverage(avg.avgOxygen) + "%" : "—"
-      }, tensión ${formatAverage(avg.avgSystolic, 0)} / ${formatAverage(avg.avgDiastolic, 0)}.`
+      `🫁 Oxígeno en sangre — promedio de ${monthLabel(avg.month)}: ${
+        avg.avgOxygen !== null ? formatAverage(avg.avgOxygen) + "%" : "sin datos suficientes"
+      }.`
     );
-    pdf.spacer(6);
-    healthEntries.slice(0, 20).forEach((e) => {
-      const parts = [];
-      if (e.oxygen !== null) parts.push(`Oxígeno: ${e.oxygen}%`);
-      if (e.systolic !== null || e.diastolic !== null) parts.push(`Tensión: ${e.systolic ?? "—"} / ${e.diastolic ?? "—"}`);
-      pdf.text(`${formatDateMediumEs(e.date)} — ${parts.join(" · ") || "Sin datos"}`, 20);
-    });
+    pdf.text(
+      `❤️ Tensión arterial — media sistólica: ${formatAverage(avg.avgSystolic, 0)} · media diastólica: ${formatAverage(avg.avgDiastolic, 0)}.`
+    );
+    pdf.spacer(8);
+    pdf.table(
+      ["Fecha", "Oxígeno", "Tensión"],
+      healthEntries.slice(0, 25).map((e) => [
+        formatDateMediumEs(e.date),
+        e.oxygen !== null ? `${e.oxygen}%` : "—",
+        e.systolic !== null || e.diastolic !== null ? `${e.systolic ?? "—"} / ${e.diastolic ?? "—"}` : "—",
+      ])
+    );
   }
 
-  // Medicación (si hay alguna registrada en la ficha del perfil)
+  // ---------- MEDICACIÓN ----------
   const medGroupsPdf = [
     { key: "morning", label: "Mañana" },
     { key: "noon", label: "Mediodía" },
@@ -519,15 +648,15 @@ export async function exportReportPdf(ctx) {
     medGroupsPdf.forEach((g) => {
       const entries = medicationsPdf[g.key] || [];
       if (!entries.length) return;
-      pdf.text(g.label, 24);
+      pdf.text(g.label, 22);
       entries.forEach((m) => {
-        pdf.text(`${m.name} — ${m.quantity}${m.time ? ` — ${m.time}` : ""}`, 20);
+        pdf.text(`${m.name} — ${m.quantity}${m.time ? ` — ${m.time}` : ""}`, 18);
       });
       pdf.spacer(4);
     });
   }
 
   const blob = canvasesToPdfBlob(pdf.getPages());
-  const filename = `estadisticas_${profileName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  const filename = `resumen_cognitivo_${profileName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
   return { status: await shareOrDownloadPdf(blob, filename) };
 }
