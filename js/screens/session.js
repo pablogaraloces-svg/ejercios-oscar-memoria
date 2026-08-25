@@ -169,6 +169,9 @@ export class SessionRunner {
     // siempre su música/bucle de animación, para no dejarlo corriendo de
     // fondo sin necesidad.
     this._gamePlayer?.destroy();
+    // El contexto especial de "diferencias" (ver showVisualHint/revealCorrect)
+    // solo debe vivir mientras ese ejercicio concreto está en pantalla.
+    this._spotDiffContext = null;
 
     const previousStep = this.steps[this._lastRenderedIndex];
     const currentStep = this.steps[this.stepIndex];
@@ -567,7 +570,15 @@ export class SessionRunner {
 
     ex.options.forEach((opt) => {
       const btn = document.createElement("button");
-      btn.className = compact ? "option-card option-card-compact" : "option-card";
+      // Familia usa su propia variante compacta (fotografía + nombre +
+      // respuestas ya ocupa bastante espacio); Cálculo y Herramientas se
+      // acercan a la proporción de referencia (Animales), pero algo más
+      // ajustados, tal y como se ha pedido.
+      let cardClass = "option-card";
+      if (compact) cardClass += " option-card-compact";
+      else if (ex.category === "calculo") cardClass += " option-card-calc";
+      else if (ex.category === "herramientas") cardClass += " option-card-tools";
+      btn.className = cardClass;
       if (opt.svgIcon) {
         btn.innerHTML = opt.hideLabel
           ? `<span class="emoji tool-icon">${opt.svgIcon}</span>`
@@ -582,7 +593,10 @@ export class SessionRunner {
           ? `<span class="emoji">${opt.emoji}</span>`
           : `<span class="emoji">${opt.emoji}</span><span>${opt.label}</span>`;
       } else {
-        btn.innerHTML = `<span class="option-card-number">${opt.label}</span>`;
+        // Sin emoji/color/icono: puede ser un número (Cálculo) o un
+        // nombre de familiar (Familia) — cada uno con su propia clase,
+        // para no compartir sin querer el mismo tamaño de letra.
+        btn.innerHTML = `<span class="${compact ? "option-card-name" : "option-card-number"}">${opt.label}</span>`;
       }
       btn.dataset.correct = opt.correct ? "1" : "0";
       btn.onclick = () => this.handleAnswer(ex, btn, opt, hintFlow);
@@ -720,8 +734,19 @@ export class SessionRunner {
     }
   }
 
-  /** Pista visual (2º-3º error): parpadeo en el botón correcto. */
+  /** Pista visual (2º-3º error): parpadeo en el botón correcto. En el
+   * ejercicio de diferencias no hay "un botón correcto" (hay varias
+   * celdas por encontrar en el panel B), así que se reutiliza aquí mismo
+   * el mismo lenguaje visual (btn-wiggle-hint) pero aplicado a esas
+   * celdas — nunca se deja sin ninguna animación. */
   showVisualHint() {
+    if (this._spotDiffContext) {
+      const { panelB, ex, found } = this._spotDiffContext;
+      ex.diffPositions
+        .filter((p) => !found.has(p))
+        .forEach((p) => panelB.children[p]?.classList.add("btn-wiggle-hint"));
+      return;
+    }
     const correctBtn = this.optionButtons?.find((b) => b.dataset.correct === "1");
     correctBtn?.classList.add("btn-wiggle-hint");
   }
@@ -735,6 +760,13 @@ export class SessionRunner {
   }
 
   revealCorrect(ex) {
+    // En diferencias, "rendirse" no significa lo mismo que en el resto de
+    // ejercicios: aquí puede haber varias celdas por encontrar, y Óscar
+    // debe poder seguir intentándolo con calma hasta encontrarlas todas
+    // (el propio ejercicio ya resalta lo que falta). No tiene sentido
+    // hablar "era esta" ni avanzar solo a la siguiente pantalla mientras
+    // el ejercicio sigue incompleto.
+    if (this._spotDiffContext) return;
     const correctBtn = this.optionButtons?.find((b) => b.dataset.correct === "1");
     correctBtn?.classList.add("correct-flash");
     const msg = applyNameBudget(
@@ -803,6 +835,10 @@ export class SessionRunner {
     this.contentEl.appendChild(wrap);
 
     const found = new Set();
+    // Contexto compartido para que showVisualHint()/revealCorrect() sepan
+    // que este ejercicio no funciona como los demás (varias celdas por
+    // encontrar, no "una respuesta correcta").
+    this._spotDiffContext = { panelB, ex, found };
 
     const onCellTap = async (idx, cell) => {
       if (found.has(idx)) return;

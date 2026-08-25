@@ -11,15 +11,24 @@
  * quieren guardar) viven aparte, en core/gameStats.js.
  *
  * Se comunica con el exterior únicamente mediante callbacks (onJump,
- * onObstacleCleared, onObstacleHit, onPrizeCollected, onGoalReached,
- * onProgress), para que el sonido, la música y la voz puedan
- * engancharse sin que este archivo necesite saber nada de audio.
+ * onObstacleCleared, onObstacleHit, onPrizeCollected, onPrizeMissed,
+ * onGoalReached, onProgress), para que el sonido, la música y la voz
+ * puedan engancharse sin que este archivo necesite saber nada de audio.
  */
 
 const GAME_DURATION_MS = 5 * 60 * 1000; // ~5 minutos, ajustable aquí
 const GROUND_RATIO = 0.78; // el suelo vive al 78% de la altura del lienzo
 const CEREBRIN_X_RATIO = 0.22; // Cerebrín se queda fijo a la izquierda; el mundo se mueve hacia él
 const CEREBRIN_SIZE = 96; // ancho de referencia del dibujo, en px
+
+// Animales-obstáculo: reconocibles, grandes y simpáticos. Cada uno con
+// su combinación de colores propia para distinguirse de un vistazo.
+const ANIMALS = [
+  { kind: "goat", body: "#C9A876", accent: "#8B7355" }, // cabra
+  { kind: "sheep", body: "#F7F2E7", accent: "#2B2B2E" }, // oveja
+  { kind: "donkey", body: "#9B9B93", accent: "#5A5A52" }, // burro
+  { kind: "cow", body: "#FDFBF7", accent: "#3A3A3A" }, // vaca
+];
 
 export class RestGame {
   constructor(canvas, callbacks = {}) {
@@ -59,8 +68,7 @@ export class RestGame {
     this.groundY = this.h * GROUND_RATIO;
     this.cerebrinX = this.w * CEREBRIN_X_RATIO;
     // Alto real del dibujo respetando su proporción original, para que
-    // los pies queden EXACTAMENTE apoyados en el suelo (antes se
-    // asumía un dibujo cuadrado, y quedaba flotando unos px por encima).
+    // los pies queden EXACTAMENTE apoyados en el suelo.
     const ratio = this.mascotImg.naturalHeight && this.mascotImg.naturalWidth
       ? this.mascotImg.naturalHeight / this.mascotImg.naturalWidth
       : 0.905;
@@ -73,16 +81,18 @@ export class RestGame {
     this.points = 0;
     this.obstacles = [];
     this.prizes = [];
-    this.nextObstacleAt = 1400;
+    this.nextObstacleAt = 1600;
     this.nextPrizeAt = 5200;
     this.cerebrinY = 0; // desplazamiento respecto al suelo (0 = en el suelo, negativo = en el aire)
     this.velocityY = 0;
     this.jumping = false;
     this.squash = 1; // efecto visual de "chafado" al despegar/aterrizar
+    this.shakeUntil = 0; // temblor breve de Cerebrín al chocar
     this.finished = false;
-    this.scrollSpeed = 200; // px/s, sube ligeramente con el progreso
+    this.scrollSpeed = 190; // px/s, sube ligeramente con el progreso
     this._announcedNearGoal = false;
     this._announcedAlmostThere = false;
+    this._nextPrizeIsBalloon = 0;
   }
 
   start() {
@@ -99,9 +109,11 @@ export class RestGame {
   jump() {
     if (this.jumping || this.finished) return;
     this.jumping = true;
-    // Impulso pensado para que se anticipe con facilidad: ni demasiado
-    // alto ni demasiado rápido (aprox. 0,7s de vuelo completo).
-    this.velocityY = -520;
+    // Salto con más recorrido que antes, para pasar con margen por
+    // encima de un animal (cabra, oveja, burro o vaca) sin llegar a
+    // rozarlo, manteniendo un vuelo natural y fácil de anticipar
+    // (~0,95s de principio a fin).
+    this.velocityY = -620;
     this.squash = 1.18; // pequeño "estirón" al despegar
     this.callbacks.onJump?.();
   }
@@ -145,12 +157,18 @@ export class RestGame {
     }
   }
 
+  /** Suma (o resta, con un mínimo de 0 para no confundir con números
+   * negativos) puntos, siempre a través de aquí. */
+  addPoints(amount) {
+    this.points = Math.max(0, this.points + amount);
+  }
+
   _update(dt) {
     const progress = this._progress();
     // Progresión suave y siempre accesible: al principio despacio y con
     // obstáculos muy separados; hacia el final, un poco más de ritmo,
     // pero nunca exigente.
-    this.scrollSpeed = 195 + progress * 75;
+    this.scrollSpeed = 190 + progress * 65;
 
     // Física del salto (parábola: impulso, subida, aire, bajada,
     // aterrizaje), con un pequeño efecto de "chafado" al tocar el suelo
@@ -168,10 +186,6 @@ export class RestGame {
     // El efecto de chafado se recupera suavemente hacia 1 (tamaño normal).
     this.squash += (1 - this.squash) * Math.min(1, dt * 10);
 
-    // Los puntos solo suben por buenos saltos (superar un obstáculo) o
-    // por conseguir estrellas/pájaros — nunca por el mero hecho de
-    // avanzar por el recorrido.
-
     this._updateObstacles(dt, progress);
     this._updatePrizes(dt, progress);
   }
@@ -180,35 +194,40 @@ export class RestGame {
     this.nextObstacleAt -= dt * 1000;
     if (this.nextObstacleAt <= 0) {
       // Espaciado siempre generoso (persona mayor: tiempo de sobra para
-      // reaccionar), con una variedad muy ligera según el progreso.
-      const minGap = 2700 - progress * 900;
-      const maxGap = 3700 - progress * 900;
+      // reaccionar), con secuencias que nunca se aceleran demasiado.
+      const minGap = 2800 - progress * 800;
+      const maxGap = 3800 - progress * 800;
       this.nextObstacleAt = minGap + Math.random() * (maxGap - minGap);
-      // Más pequeños en general; de vez en cuando alguno más largo
-      // (nunca más alto) para dar algo de variedad sin complicar el salto.
-      const isLong = Math.random() < 0.25;
+      const animal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
       this.obstacles.push({
+        animal,
         x: this.w + 40,
-        width: isLong ? 66 + Math.random() * 20 : 28 + Math.random() * 10,
-        height: 26 + Math.random() * 12,
+        width: 62,
+        height: 52,
         cleared: false,
         hit: false,
-        hitAt: 0,
+        hitAt: -9999,
         wobble: Math.random() * Math.PI * 2,
+        legPhase: 0,
       });
     }
 
-    const cerebrinLeft = this.cerebrinX - CEREBRIN_SIZE / 2 + 14;
-    const cerebrinRight = this.cerebrinX + CEREBRIN_SIZE / 2 - 14;
+    // Hitbox algo más generosa que el dibujo visible por fuera (para no
+    // penalizar nunca un roce mínimo), pero SIN pasarse — corresponde
+    // razonablemente con el tamaño real del animal.
+    const tolerance = 10;
+    const cerebrinLeft = this.cerebrinX - CEREBRIN_SIZE / 2 + 18 + tolerance;
+    const cerebrinRight = this.cerebrinX + CEREBRIN_SIZE / 2 - 18 - tolerance;
     const cerebrinBottom = this.groundY + this.cerebrinY;
 
     this.obstacles.forEach((ob) => {
       ob.x -= this.scrollSpeed * dt;
       ob.wobble += dt * 4;
+      ob.legPhase += dt * 8;
 
-      const obLeft = ob.x;
-      const obRight = ob.x + ob.width;
-      const obTop = this.groundY - ob.height;
+      const obLeft = ob.x + tolerance;
+      const obRight = ob.x + ob.width - tolerance;
+      const obTop = this.groundY - ob.height + tolerance * 0.6;
 
       const overlapX = cerebrinRight > obLeft && cerebrinLeft < obRight;
       const overlapY = cerebrinBottom > obTop;
@@ -216,11 +235,13 @@ export class RestGame {
       if (overlapX && overlapY && !ob.hit && !ob.cleared) {
         ob.hit = true; // un pequeño "tropiezo" sin consecuencias graves: no hay vidas ni fin de partida
         ob.hitAt = this.elapsed;
+        this.addPoints(-5); // penalización moderada por chocar
+        this.shakeUntil = this.elapsed + 260; // Cerebrín tiembla un instante
         this.callbacks.onObstacleHit?.();
       }
       if (!ob.cleared && !ob.hit && obRight < cerebrinLeft) {
         ob.cleared = true;
-        this.points += 10;
+        this.addPoints(10); // buen salto: superó el animal sin rozarlo
         this.callbacks.onObstacleCleared?.();
       }
     });
@@ -230,30 +251,32 @@ export class RestGame {
   _updatePrizes(dt, progress) {
     this.nextPrizeAt -= dt * 1000;
     if (this.nextPrizeAt <= 0) {
-      // Con bastante menos frecuencia que los obstáculos, y solo si no
-      // hay ningún obstáculo cerca de esa misma zona — así nunca hace
-      // falta reaccionar a dos cosas a la vez.
+      // Con bastante menos frecuencia que los animales, y solo si no hay
+      // ninguno cerca de esa misma zona — así nunca hace falta
+      // reaccionar a dos cosas a la vez.
       const tooClose = this.obstacles.some((ob) => ob.x > this.w - 60 && ob.x < this.w + 220);
       if (!tooClose) {
-        // Se alternan estrellas y pájaros, cada uno con su propia
-        // puntuación, para dar algo de variedad visual.
-        this._nextPrizeIsBird = !this._nextPrizeIsBird;
-        const type = this._nextPrizeIsBird ? "bird" : "star";
+        // Se turnan estrella / pájaro / globo, cada uno con su propio
+        // valor, para dar variedad sin complicar nada.
+        const cycle = ["star", "bird", "balloon"];
+        const type = cycle[this._nextPrizeIsBalloon % cycle.length];
+        this._nextPrizeIsBalloon++;
+        const points = type === "star" ? 20 : type === "bird" ? 30 : [10, 40, 100][Math.floor(Math.random() * 3)];
         this.prizes.push({
           type,
+          points,
           x: this.w + 60,
           // Altura calculada para que SIEMPRE haga falta saltar (por
           // encima de la cabeza de Cerebrín de pie, ~85px) y SIEMPRE sea
-          // alcanzable en el punto más alto del salto (~185px), con
-          // margen de sobra en ambos extremos para que no haga falta un
-          // salto perfectamente cronometrado.
-          y: 115 + Math.random() * 30,
-          size: type === "star" ? 40 : 36,
-          points: type === "star" ? 20 : 30,
+          // alcanzable en el punto más alto del salto (ahora ~148px, con
+          // margen de sobra en ambos extremos).
+          y: 118 + Math.random() * 34,
+          size: type === "star" ? 44 : type === "bird" ? 38 : 46,
           collected: false,
+          missed: false,
           spin: 0,
         });
-        this.nextPrizeAt = 5200 + Math.random() * 2600;
+        this.nextPrizeAt = 5000 + Math.random() * 2600;
       } else {
         this.nextPrizeAt = 500; // se reintenta enseguida en cuanto haya hueco
       }
@@ -266,7 +289,7 @@ export class RestGame {
     this.prizes.forEach((pr) => {
       pr.x -= this.scrollSpeed * dt;
       pr.spin += dt * 2.4;
-      if (pr.collected) return;
+      if (pr.collected || pr.missed) return;
       const prLeft = pr.x - pr.size / 2;
       const prRight = pr.x + pr.size / 2;
       const prTop = this.groundY - pr.y - pr.size / 2;
@@ -275,11 +298,17 @@ export class RestGame {
       const overlapY = cerebrinTop < prBottom && this.groundY + this.cerebrinY > prTop;
       if (overlapX && overlapY) {
         pr.collected = true;
-        this.points += pr.points;
+        this.addPoints(pr.points);
         this.callbacks.onPrizeCollected?.();
+      } else if (prRight < 0) {
+        // Se quedó sin cogerlo: penalización pequeña, para animar a
+        // intentarlo la próxima vez sin que resulte grave.
+        pr.missed = true;
+        this.addPoints(-3);
+        this.callbacks.onPrizeMissed?.();
       }
     });
-    this.prizes = this.prizes.filter((pr) => pr.x > -40);
+    this.prizes = this.prizes.filter((pr) => pr.x > -60);
   }
 
   _draw() {
@@ -306,7 +335,7 @@ export class RestGame {
       ctx.fill();
     });
 
-    // Suelo
+    // Suelo (con un poco de "hierba" sencilla)
     ctx.fillStyle = "#E7E0CF";
     ctx.fillRect(0, groundY, w, h - groundY);
     ctx.strokeStyle = "#C9BFA0";
@@ -331,35 +360,31 @@ export class RestGame {
       ctx.fill();
     }
 
-    // Obstáculos: bloques redondeados y amistosos, con un ligero
-    // balanceo. Al chocar, se ponen en rojo claro y hacen una pequeña
-    // sacudida a modo de "señal de error", breve y nada agresiva.
+    // Animales-obstáculo: al chocar, se ponen en rojo y van recuperando
+    // su color original poco a poco (nunca se quedan en rojo fijo), con
+    // una pequeña sacudida a modo de señal de error.
     this.obstacles.forEach((ob) => {
       const bob = Math.sin(ob.wobble) * 2;
       const sinceHit = ob.hit ? this.elapsed - ob.hitAt : Infinity;
       const shake = sinceHit < 260 ? Math.sin(sinceHit * 0.14) * (1 - sinceHit / 260) * 6 : 0;
+      const hitFade = ob.hit ? Math.max(0, 1 - sinceHit / 700) : 0; // 0 = color normal, 1 = rojo total
       ctx.save();
-      ctx.translate(ob.x + ob.width / 2 + shake, groundY - ob.height / 2 + bob);
-      ctx.fillStyle = ob.hit ? "#E63946" : "#7FA8DE";
-      this._roundedRectPath(ctx, -ob.width / 2, -ob.height / 2, ob.width, ob.height, 10);
-      ctx.fill();
-      if (ob.hit && sinceHit < 260) {
-        ctx.strokeStyle = "rgba(230, 57, 70, 0.55)";
-        ctx.lineWidth = 3;
-        this._roundedRectPath(ctx, -ob.width / 2 - 4, -ob.height / 2 - 4, ob.width + 8, ob.height + 8, 12);
-        ctx.stroke();
-      }
+      ctx.translate(ob.x + ob.width / 2 + shake, groundY + bob);
+      this._animalPath(ctx, ob.animal, ob.width, ob.height, ob.legPhase, hitFade);
       ctx.restore();
     });
 
-    // Premios: estrellas y pajaritos que se mecen suavemente en el aire.
+    // Premios: estrellas, pajaritos y globos, cada uno con su valor bien
+    // visible, meciéndose suavemente en el aire.
     this.prizes.forEach((pr) => {
-      if (pr.collected) return;
+      if (pr.collected || pr.missed) return;
       ctx.save();
       ctx.translate(pr.x, groundY - pr.y);
       if (pr.type === "bird") {
         ctx.rotate(Math.sin(pr.spin) * 0.12);
         this._birdPath(ctx, pr.size);
+      } else if (pr.type === "balloon") {
+        this._balloonPath(ctx, pr.size, pr.points, Math.sin(pr.spin) * 0.08);
       } else {
         ctx.rotate(Math.sin(pr.spin) * 0.35);
         ctx.fillStyle = "#F5A93E";
@@ -367,14 +392,24 @@ export class RestGame {
         ctx.fill();
       }
       ctx.restore();
+      if (pr.type === "star" || pr.type === "bird") {
+        ctx.save();
+        ctx.fillStyle = "#2B2B2E";
+        ctx.font = "bold 15px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(`+${pr.points}`, pr.x, groundY - pr.y + pr.size / 2 + 18);
+        ctx.restore();
+      }
     });
 
-    // Cerebrín: apoyado exactamente sobre la línea del suelo (el alto
-    // real del dibujo respeta su proporción original), con un pequeño
-    // efecto de "chafado" al despegar/aterrizar para reforzar el salto.
+    // Cerebrín: apoyado exactamente sobre la línea del suelo, con un
+    // pequeño efecto de "chafado" al despegar/aterrizar, y un temblor
+    // rápido y breve si acaba de chocar ("¡Ups!").
     const groundContactY = groundY + this.cerebrinY;
+    const shaking = this.elapsed < this.shakeUntil;
+    const shakeX = shaking ? Math.sin(this.elapsed * 0.09) * 5 : 0;
     ctx.save();
-    ctx.translate(this.cerebrinX, groundContactY);
+    ctx.translate(this.cerebrinX + shakeX, groundContactY);
     ctx.scale(1 / this.squash, this.squash);
     if (this.mascotImg.complete && this.mascotImg.naturalWidth) {
       const dh = this.cerebrinDrawH;
@@ -424,17 +459,14 @@ export class RestGame {
    * dibujado a mano — sin copiar ningún personaje existente. */
   _birdPath(ctx, size) {
     const r = size / 2;
-    // Cuerpo
     ctx.fillStyle = "#4E7FBF";
     ctx.beginPath();
     ctx.ellipse(0, 0, r, r * 0.78, 0, 0, Math.PI * 2);
     ctx.fill();
-    // Ala
     ctx.fillStyle = "#395E91";
     ctx.beginPath();
     ctx.ellipse(-r * 0.15, r * 0.05, r * 0.55, r * 0.34, -0.3, 0, Math.PI * 2);
     ctx.fill();
-    // Pico
     ctx.fillStyle = "#F5A93E";
     ctx.beginPath();
     ctx.moveTo(r * 0.85, -r * 0.08);
@@ -442,10 +474,157 @@ export class RestGame {
     ctx.lineTo(r * 0.85, r * 0.18);
     ctx.closePath();
     ctx.fill();
-    // Ojo
     ctx.fillStyle = "#2B2B2E";
     ctx.beginPath();
     ctx.arc(r * 0.42, -r * 0.22, r * 0.1, 0, Math.PI * 2);
     ctx.fill();
+  }
+
+  /** Globo de colores con su valor de puntos integrado y bien legible. */
+  _balloonPath(ctx, size, points, tilt) {
+    const colors = { 10: "#7FA8DE", 40: "#F5A93E", 100: "#E85F73" };
+    ctx.save();
+    ctx.rotate(tilt);
+    const r = size / 2;
+    // Hilo
+    ctx.strokeStyle = "#B0A98C";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, r * 1.1);
+    ctx.lineTo(0, r * 1.9);
+    ctx.stroke();
+    // Globo
+    ctx.fillStyle = colors[points] || "#7FA8DE";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r * 0.86, r, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Brillo
+    ctx.fillStyle = "rgba(255,255,255,0.35)";
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.3, -r * 0.35, r * 0.22, r * 0.3, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+    // Nudo
+    ctx.fillStyle = colors[points] || "#7FA8DE";
+    ctx.beginPath();
+    ctx.moveTo(-4, r * 0.95);
+    ctx.lineTo(4, r * 0.95);
+    ctx.lineTo(0, r * 1.12);
+    ctx.closePath();
+    ctx.fill();
+    // Valor, integrado y legible
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "bold 15px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`+${points}`, 0, -2);
+    ctx.textBaseline = "alphabetic";
+    ctx.restore();
+  }
+
+  /**
+   * Animal-obstáculo genérico: silueta grande, reconocible y simpática,
+   * con las patas moviéndose ligeramente para dar sensación de carrera.
+   * `hitFade` (0-1) tiñe de rojo el cuerpo al chocar, recuperando su
+   * color original poco a poco.
+   */
+  _animalPath(ctx, animal, width, height, legPhase, hitFade) {
+    const bodyColor = this._mixWithRed(animal.body, hitFade);
+    const accentColor = this._mixWithRed(animal.accent, hitFade * 0.7);
+    const legSwing = Math.sin(legPhase) * 5;
+
+    // Patas
+    ctx.strokeStyle = accentColor;
+    ctx.lineWidth = 5;
+    ctx.lineCap = "round";
+    [-width * 0.28, -width * 0.08, width * 0.1, width * 0.3].forEach((lx, i) => {
+      const sw = i % 2 === 0 ? legSwing : -legSwing;
+      ctx.beginPath();
+      ctx.moveTo(lx, -height * 0.22);
+      ctx.lineTo(lx + sw * 0.3, 0);
+      ctx.stroke();
+    });
+
+    // Cuerpo
+    ctx.fillStyle = bodyColor;
+    ctx.beginPath();
+    ctx.ellipse(0, -height * 0.42, width * 0.42, height * 0.32, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Cabeza y rasgos distintivos por tipo de animal
+    const headX = width * 0.36;
+    const headY = -height * 0.55;
+    ctx.fillStyle = bodyColor;
+    ctx.beginPath();
+    ctx.ellipse(headX, headY, width * 0.18, height * 0.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (animal.kind === "sheep") {
+      // Lana rizada (varios círculos superpuestos) y patas negras ya cubren el resto.
+      ctx.fillStyle = bodyColor;
+      [[-0.1, -0.2], [0.08, -0.32], [-0.28, -0.1]].forEach(([dx, dy]) => {
+        ctx.beginPath();
+        ctx.arc(width * dx, height * dy - height * 0.42, width * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.fillStyle = accentColor;
+      ctx.beginPath();
+      ctx.ellipse(headX + 4, headY + 2, width * 0.1, height * 0.11, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (animal.kind === "goat") {
+      // Cuernecitos y barbita
+      ctx.strokeStyle = accentColor;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(headX - 2, headY - height * 0.18);
+      ctx.lineTo(headX - 6, headY - height * 0.32);
+      ctx.moveTo(headX + 6, headY - height * 0.18);
+      ctx.lineTo(headX + 10, headY - height * 0.32);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(headX + 2, headY + height * 0.16);
+      ctx.lineTo(headX + 2, headY + height * 0.28);
+      ctx.stroke();
+    } else if (animal.kind === "donkey") {
+      // Orejas largas: rasgo distintivo inmediato
+      ctx.fillStyle = accentColor;
+      ctx.beginPath();
+      ctx.ellipse(headX - 4, headY - height * 0.32, width * 0.06, height * 0.22, -0.3, 0, Math.PI * 2);
+      ctx.ellipse(headX + 8, headY - height * 0.32, width * 0.06, height * 0.22, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (animal.kind === "cow") {
+      // Manchas
+      ctx.fillStyle = accentColor;
+      [[-0.12, -0.4], [0.14, -0.36], [-0.02, -0.5]].forEach(([dx, dy]) => {
+        ctx.beginPath();
+        ctx.ellipse(width * dx, height * dy, width * 0.09, height * 0.07, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.beginPath();
+      ctx.moveTo(headX - 3, headY - height * 0.18);
+      ctx.lineTo(headX - 5, headY - height * 0.28);
+      ctx.moveTo(headX + 5, headY - height * 0.18);
+      ctx.lineTo(headX + 7, headY - height * 0.28);
+      ctx.strokeStyle = "#E7DCC0";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+
+    // Ojo (mismo para todos, da vida al conjunto)
+    ctx.fillStyle = "#2B2B2E";
+    ctx.beginPath();
+    ctx.arc(headX + width * 0.06, headY - height * 0.02, 2.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  /** Mezcla un color hexadecimal con rojo, en la proporción `amount`
+   * (0 = color original, 1 = rojo total) — para el efecto de choque. */
+  _mixWithRed(hex, amount) {
+    if (amount <= 0) return hex;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const target = [230, 57, 70];
+    const mix = (c, t) => Math.round(c + (t - c) * amount);
+    return `rgb(${mix(r, target[0])}, ${mix(g, target[1])}, ${mix(b, target[2])})`;
   }
 }

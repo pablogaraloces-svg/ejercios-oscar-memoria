@@ -104,6 +104,66 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 1.8 (pista de diferencias, proporciones y Cerebrín Saltarín a fondo)
+
+**Ejercicio de "Las Diferencias" — pista corregida de raíz**
+- Encontrado el motivo exacto: el sistema de pistas visuales de toda la
+  app se basa en localizar "el botón correcto" entre las respuestas, pero
+  este ejercicio no tiene un único botón correcto (tiene varias celdas
+  por encontrar), así que la pista hablaba pero nunca llegaba a animar
+  nada. Corregido reutilizando exactamente el mismo lenguaje visual que
+  el resto de ejercicios (parpadeo suave), aplicado ahora a las celdas
+  correctas de este ejercicio en concreto.
+- **De paso, corregido un problema más serio del mismo origen**: al
+  cuarto fallo, el sistema también hablaba "no te preocupes, era esta" y
+  programaba el avance automático a la siguiente pantalla — aunque Óscar
+  no hubiera encontrado todavía las diferencias. Ahora el ejercicio deja
+  que siga intentándolo con calma hasta encontrarlas todas.
+
+**Proporciones — familia, cálculo y herramientas más compactos**
+- Referencia usada: Animales (sin tocar). Familia, Cálculo y Herramientas
+  ajustados para acercarse a ese mismo equilibrio.
+- **Corregido un fallo real que yo mismo había introducido** en la
+  versión anterior: al agrandar los números de Cálculo, usé por error la
+  misma rama de código que también muestra los nombres de Familia — así
+  que los nombres se agrandaron sin querer a la vez. Separados
+  correctamente, cada uno con su propio tamaño.
+- Cálculo: cuadrados y números reducidos, además de la cuenta visual de
+  abajo, para que quepa todo sin scroll.
+- Herramientas: botones ligeramente más compactos, icono todavía grande
+  y fácil de identificar.
+
+**Cerebrín Saltarín — revisión a fondo**
+- **Animales sustituyen a los cuadrados**: cabra, oveja, burro y vaca,
+  cada uno dibujado a mano con rasgos propios para reconocerse de un
+  vistazo (orejas largas del burro, cuernos y barba de la cabra, lana
+  rizada de la oveja, manchas de la vaca).
+- Salto más alto (verificado matemáticamente: 90px de margen de sobra
+  sobre la altura del animal), manteniéndose natural y fácil de
+  anticipar.
+- Hitbox revisada: con un margen de tolerancia para que un roce mínimo
+  nunca cuente como choque.
+- Al chocar: el animal se tiñe de rojo y recupera su color original
+  progresivamente (no se queda en rojo fijo), con una pequeña sacudida.
+  Cerebrín tiembla rápidamente un instante y recupera el control de
+  inmediato — el juego nunca se detiene.
+- Nuevo sistema de puntuación con penalización moderada: -5 puntos al
+  chocar, -3 puntos si un premio se queda sin coger — nunca baja de
+  cero, para no confundir con números negativos (verificado con una
+  simulación).
+- Globos de colores (+10 / +40 / +100, con el valor integrado y legible
+  dentro del propio globo), además de las estrellas (+20) ya existentes,
+  ambos con su valor siempre visible.
+- Música mejorada: patrón más musical (con silencios propios, no una
+  simple repetición nota a nota) y percusión ligera (bombo + hi-hat) para
+  una producción más rica, con el volumen ligeramente más alto pero
+  manteniendo siempre la jerarquía voz > efectos > música.
+- **Controles rediseñados por completo**: SALTAR ahora es un botón
+  redondo, rojo, con letras blancas, relieve y sombra de máquina arcade
+  real, situado a la derecha. Reiniciar y Salir, más discretos, a la
+  izquierda. El escenario queda limpio y centrado, sin ningún botón
+  encima.
+
 ## 🆕 Novedades de la versión 1.7 (proporciones de ejercicios y ajustes finos de Cerebrín Saltarín)
 
 **Página principal**

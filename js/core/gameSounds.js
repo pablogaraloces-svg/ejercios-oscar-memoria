@@ -33,16 +33,29 @@ function ensureContext() {
   return audioCtx;
 }
 
-// Patrón corto, alegre y ligeramente retro (bajo + melodía), pensado
-// para repetirse en bucle sin que se note el corte — 8 pasos, tempo
-// tranquilo, ondas cuadrada/triángulo para el aire "chiptune" clásico,
-// siempre a volumen moderado para no tapar la voz ni los efectos.
-const BASS_PATTERN = [130.81, 130.81, 164.81, 130.81, 146.83, 146.83, 174.61, 130.81];
-const MELODY_PATTERN = [523.25, 659.25, 587.33, 523.25, 587.33, 493.88, 440.0, 493.88];
-const STEP_DUR = 0.27;
+// Patrón de 16 pasos (dos compases), con silencios propios para que
+// suene con más vida que una simple repetición nota-a-nota — bajo +
+// melodía + percusión ligera (bombo + hi-hat), estética chiptune clásica
+// pero con más producción que una única línea plana. Tempo tranquilo y
+// siempre a volumen moderado, para no tapar nunca la voz ni los efectos.
+const BASS_PATTERN = [130.81, 0, 130.81, 164.81, 0, 164.81, 130.81, 0, 146.83, 0, 146.83, 174.61, 0, 164.81, 146.83, 0];
+const MELODY_PATTERN = [523.25, 0, 659.25, 587.33, 523.25, 0, 587.33, 659.25, 493.88, 0, 587.33, 523.25, 440.0, 0, 493.88, 440.0];
+const KICK_STEPS = new Set([0, 8]);
+const HIHAT_STEPS = new Set([2, 4, 6, 10, 12, 14]);
+const STEP_DUR = 0.19;
+
+let noiseBuffer = null;
+function getNoiseBuffer(ctx) {
+  if (noiseBuffer) return noiseBuffer;
+  const size = Math.floor(ctx.sampleRate * 0.05);
+  noiseBuffer = ctx.createBuffer(1, size, ctx.sampleRate);
+  const data = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < size; i++) data[i] = Math.random() * 2 - 1;
+  return noiseBuffer;
+}
 
 function playChiptuneNote(freq, startTime, duration, gainNode, wave, peak) {
-  if (!audioCtx) return;
+  if (!audioCtx || !freq) return;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = wave;
@@ -56,18 +69,50 @@ function playChiptuneNote(freq, startTime, duration, gainNode, wave, peak) {
   osc.stop(startTime + duration + 0.05);
 }
 
+function playHihat(startTime) {
+  const src = audioCtx.createBufferSource();
+  src.buffer = getNoiseBuffer(audioCtx);
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = "highpass";
+  filter.frequency.value = 6500;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.05, startTime);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.035);
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(musicGain);
+  src.start(startTime);
+  src.stop(startTime + 0.04);
+}
+
+function playKick(startTime) {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(118, startTime);
+  osc.frequency.exponentialRampToValueAtTime(42, startTime + 0.11);
+  gain.gain.setValueAtTime(0.18, startTime);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.14);
+  osc.connect(gain);
+  gain.connect(musicGain);
+  osc.start(startTime);
+  osc.stop(startTime + 0.15);
+}
+
 function scheduleLoop() {
   if (!running || !audioCtx) return;
   const now = audioCtx.currentTime;
   const lookAhead = 0.9; // se programa con margen (scheduler "look-ahead"), así el bucle es fluido y sin cortes
   while (nextStepTime < now + lookAhead) {
     const i = stepIndex % BASS_PATTERN.length;
-    playChiptuneNote(BASS_PATTERN[i], nextStepTime, STEP_DUR * 0.92, musicGain, "triangle", 0.15);
-    playChiptuneNote(MELODY_PATTERN[i], nextStepTime, STEP_DUR * 0.8, musicGain, "square", 0.09);
+    playChiptuneNote(BASS_PATTERN[i], nextStepTime, STEP_DUR * 0.92, musicGain, "triangle", 0.16);
+    playChiptuneNote(MELODY_PATTERN[i], nextStepTime, STEP_DUR * 0.8, musicGain, "square", 0.1);
+    if (KICK_STEPS.has(i)) playKick(nextStepTime);
+    if (HIHAT_STEPS.has(i)) playHihat(nextStepTime);
     stepIndex++;
     nextStepTime += STEP_DUR;
   }
-  scheduleTimer = setTimeout(scheduleLoop, 120);
+  scheduleTimer = setTimeout(scheduleLoop, 100);
 }
 
 /** Agacha un instante la música para que el efecto se oiga con
@@ -82,7 +127,7 @@ function duckMusic() {
 }
 
 export const GameSounds = {
-  startMusic(volume = 0.16) {
+  startMusic(volume = 0.2) {
     const ctx = ensureContext();
     if (!ctx) return;
     baseMusicVolume = volume;

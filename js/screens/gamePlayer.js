@@ -23,7 +23,7 @@ export function renderCerebrinSaltarin(container, { mode, profile, onExit }) {
   box.className = "col center rest-game-wrap";
   box.innerHTML = `
     <h2 class="title-xl" style="text-align:center;">🕹️ Cerebrín Saltarín</h2>
-    <p class="text-md" style="text-align:center;">Toca SALTAR para esquivar obstáculos y coger premios ⭐</p>
+    <p class="text-md" style="text-align:center;">Salta para esquivar a los animales y coger premios ⭐🎈</p>
     <div class="rest-game-hud">
       <span class="rest-game-points" id="rg-points">Puntos: 0</span>
       <div class="row" style="flex:1; align-items:center; gap:10px;">
@@ -31,15 +31,19 @@ export function renderCerebrinSaltarin(container, { mode, profile, onExit }) {
         <span class="pill">META</span>
       </div>
     </div>
-    <div class="rest-game-canvas-wrap">
-      <canvas class="rest-game-canvas" id="rg-canvas"></canvas>
-    </div>
-    <div class="rest-game-controls">
+    <div class="rest-game-arcade-row">
       <div class="rest-game-side-btns">
-        <button class="btn btn-ghost rest-game-icon-btn" id="rg-restart-btn" aria-label="Reiniciar" title="Reiniciar">🔄</button>
-        <button class="btn btn-ghost rest-game-icon-btn" id="rg-finish-btn" aria-label="Salir" title="Salir">🚪</button>
+        <button class="rest-game-side-btn" id="rg-restart-btn" aria-label="Reiniciar">
+          <span class="rest-game-side-btn-icon">🔄</span><span>Reiniciar</span>
+        </button>
+        <button class="rest-game-side-btn" id="rg-finish-btn" aria-label="Salir">
+          <span class="rest-game-side-btn-icon">🚪</span><span>Salir</span>
+        </button>
       </div>
-      <button class="btn btn-huge btn-success rest-game-jump-btn" id="rg-jump-btn">SALTAR</button>
+      <div class="rest-game-canvas-wrap">
+        <canvas class="rest-game-canvas" id="rg-canvas"></canvas>
+      </div>
+      <button class="rest-game-jump-arcade-btn" id="rg-jump-btn">SALTAR</button>
     </div>
   `;
   container.appendChild(box);
@@ -49,7 +53,7 @@ export function renderCerebrinSaltarin(container, { mode, profile, onExit }) {
   const progressFill = box.querySelector("#rg-progress-fill");
   const jumpBtn = box.querySelector("#rg-jump-btn");
 
-  GameSounds.startMusic(0.16);
+  GameSounds.startMusic(0.2);
   const startedAt = Date.now();
   let summaryShown = false;
 
@@ -58,6 +62,7 @@ export function renderCerebrinSaltarin(container, { mode, profile, onExit }) {
     onObstacleCleared: () => GameSounds.playClear(),
     onObstacleHit: () => GameSounds.playHit(),
     onPrizeCollected: () => GameSounds.playPrize(),
+    onPrizeMissed: () => {}, // penalización silenciosa: no hace falta un sonido específico, ya se ve reflejado en los puntos
     onGoalReached: () => GameSounds.playVictory(),
     // Refuerzo hablado puntual, nunca continuo — como pide el diseño.
     onNearGoal: () => Voice.say("¡Ya falta poquito!"),
