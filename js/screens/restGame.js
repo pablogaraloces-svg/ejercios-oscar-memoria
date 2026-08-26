@@ -24,10 +24,18 @@ const CEREBRIN_SIZE = 96; // ancho de referencia del dibujo, en px
 // Animales-obstáculo: reconocibles, grandes y simpáticos. Cada uno con
 // su combinación de colores propia para distinguirse de un vistazo.
 const ANIMALS = [
-  { kind: "goat", body: "#C9A876", accent: "#8B7355" }, // cabra
-  { kind: "sheep", body: "#F7F2E7", accent: "#2B2B2E" }, // oveja
-  { kind: "donkey", body: "#9B9B93", accent: "#5A5A52" }, // burro
-  { kind: "cow", body: "#FDFBF7", accent: "#3A3A3A" }, // vaca
+  { kind: "goat", emoji: "🐐" },
+  { kind: "sheep", emoji: "🐑" },
+  { kind: "donkey", emoji: "🫏" },
+  { kind: "cow", emoji: "🐮" },
+];
+
+// Más peso para los globos (aparecen con más frecuencia que el resto),
+// alternando también con frutas — variedad de premios "que flotan".
+const PRIZE_CYCLE = ["star", "balloon", "fruit", "balloon", "bird", "balloon"];
+const FRUITS = [
+  { kind: "apple", points: 15 },
+  { kind: "cherry", points: 25 },
 ];
 
 export class RestGame {
@@ -256,14 +264,23 @@ export class RestGame {
       // reaccionar a dos cosas a la vez.
       const tooClose = this.obstacles.some((ob) => ob.x > this.w - 60 && ob.x < this.w + 220);
       if (!tooClose) {
-        // Se turnan estrella / pájaro / globo, cada uno con su propio
-        // valor, para dar variedad sin complicar nada.
-        const cycle = ["star", "bird", "balloon"];
-        const type = cycle[this._nextPrizeIsBalloon % cycle.length];
+        // Se turnan estrella / pájaro / fruta / globo — con más peso para
+        // los globos, que ahora aparecen con más frecuencia.
+        const type = PRIZE_CYCLE[this._nextPrizeIsBalloon % PRIZE_CYCLE.length];
         this._nextPrizeIsBalloon++;
-        const points = type === "star" ? 20 : type === "bird" ? 30 : [10, 40, 100][Math.floor(Math.random() * 3)];
+        let points;
+        let fruitKind = null;
+        if (type === "star") points = 20;
+        else if (type === "bird") points = 30;
+        else if (type === "balloon") points = [10, 40, 100][Math.floor(Math.random() * 3)];
+        else {
+          const fruit = FRUITS[Math.floor(Math.random() * FRUITS.length)];
+          fruitKind = fruit.kind;
+          points = fruit.points;
+        }
         this.prizes.push({
           type,
+          fruitKind,
           points,
           x: this.w + 60,
           // Altura calculada para que SIEMPRE haga falta saltar (por
@@ -271,12 +288,13 @@ export class RestGame {
           // alcanzable en el punto más alto del salto (ahora ~148px, con
           // margen de sobra en ambos extremos).
           y: 118 + Math.random() * 34,
-          size: type === "star" ? 44 : type === "bird" ? 38 : 46,
+          size: type === "star" ? 44 : type === "bird" ? 38 : type === "fruit" ? 38 : 46,
           collected: false,
           missed: false,
           spin: 0,
         });
-        this.nextPrizeAt = 5000 + Math.random() * 2600;
+        // Más frecuentes que antes, para que haya más premios al saltar.
+        this.nextPrizeAt = 3300 + Math.random() * 1500;
       } else {
         this.nextPrizeAt = 500; // se reintenta enseguida en cuanto haya hueco
       }
@@ -374,8 +392,8 @@ export class RestGame {
       ctx.restore();
     });
 
-    // Premios: estrellas, pajaritos y globos, cada uno con su valor bien
-    // visible, meciéndose suavemente en el aire.
+    // Premios: estrellas, pajaritos, globos y frutas, cada uno con su
+    // valor bien visible, meciéndose suavemente en el aire.
     this.prizes.forEach((pr) => {
       if (pr.collected || pr.missed) return;
       ctx.save();
@@ -385,6 +403,9 @@ export class RestGame {
         this._birdPath(ctx, pr.size);
       } else if (pr.type === "balloon") {
         this._balloonPath(ctx, pr.size, pr.points, Math.sin(pr.spin) * 0.08);
+      } else if (pr.type === "fruit") {
+        ctx.rotate(Math.sin(pr.spin) * 0.18);
+        this._fruitPath(ctx, pr.fruitKind, pr.size);
       } else {
         ctx.rotate(Math.sin(pr.spin) * 0.35);
         ctx.fillStyle = "#F5A93E";
@@ -392,7 +413,7 @@ export class RestGame {
         ctx.fill();
       }
       ctx.restore();
-      if (pr.type === "star" || pr.type === "bird") {
+      if (pr.type === "star" || pr.type === "bird" || pr.type === "fruit") {
         ctx.save();
         ctx.fillStyle = "#2B2B2E";
         ctx.font = "bold 15px sans-serif";
@@ -521,110 +542,85 @@ export class RestGame {
     ctx.restore();
   }
 
-  /**
-   * Animal-obstáculo genérico: silueta grande, reconocible y simpática,
-   * con las patas moviéndose ligeramente para dar sensación de carrera.
-   * `hitFade` (0-1) tiñe de rojo el cuerpo al chocar, recuperando su
-   * color original poco a poco.
-   */
-  _animalPath(ctx, animal, width, height, legPhase, hitFade) {
-    const bodyColor = this._mixWithRed(animal.body, hitFade);
-    const accentColor = this._mixWithRed(animal.accent, hitFade * 0.7);
-    const legSwing = Math.sin(legPhase) * 5;
-
-    // Patas
-    ctx.strokeStyle = accentColor;
-    ctx.lineWidth = 5;
-    ctx.lineCap = "round";
-    [-width * 0.28, -width * 0.08, width * 0.1, width * 0.3].forEach((lx, i) => {
-      const sw = i % 2 === 0 ? legSwing : -legSwing;
+  /** Fruta sencilla y reconocible (manzana o cereza), dibujada a mano. */
+  _fruitPath(ctx, kind, size) {
+    const r = size / 2;
+    if (kind === "cherry") {
+      // Dos cerezas unidas por un tallito, rojo intenso.
+      ctx.strokeStyle = "#4F9868";
+      ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.moveTo(lx, -height * 0.22);
-      ctx.lineTo(lx + sw * 0.3, 0);
+      ctx.moveTo(0, -r * 0.9);
+      ctx.quadraticCurveTo(r * 0.1, -r * 1.3, r * 0.35, -r * 1.35);
+      ctx.moveTo(0, -r * 0.9);
+      ctx.quadraticCurveTo(-r * 0.1, -r * 1.15, -r * 0.3, -r * 0.95);
       ctx.stroke();
-    });
-
-    // Cuerpo
-    ctx.fillStyle = bodyColor;
-    ctx.beginPath();
-    ctx.ellipse(0, -height * 0.42, width * 0.42, height * 0.32, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Cabeza y rasgos distintivos por tipo de animal
-    const headX = width * 0.36;
-    const headY = -height * 0.55;
-    ctx.fillStyle = bodyColor;
-    ctx.beginPath();
-    ctx.ellipse(headX, headY, width * 0.18, height * 0.2, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    if (animal.kind === "sheep") {
-      // Lana rizada (varios círculos superpuestos) y patas negras ya cubren el resto.
-      ctx.fillStyle = bodyColor;
-      [[-0.1, -0.2], [0.08, -0.32], [-0.28, -0.1]].forEach(([dx, dy]) => {
+      ctx.fillStyle = "#C8253D";
+      [[-r * 0.32, -r * 0.55], [r * 0.28, -r * 0.35]].forEach(([cx, cy]) => {
         ctx.beginPath();
-        ctx.arc(width * dx, height * dy - height * 0.42, width * 0.2, 0, Math.PI * 2);
+        ctx.arc(cx, cy, r * 0.42, 0, Math.PI * 2);
         ctx.fill();
       });
-      ctx.fillStyle = accentColor;
+      ctx.fillStyle = "rgba(255,255,255,0.4)";
       ctx.beginPath();
-      ctx.ellipse(headX + 4, headY + 2, width * 0.1, height * 0.11, 0, 0, Math.PI * 2);
+      ctx.arc(-r * 0.42, -r * 0.65, r * 0.12, 0, Math.PI * 2);
       ctx.fill();
-    } else if (animal.kind === "goat") {
-      // Cuernecitos y barbita
-      ctx.strokeStyle = accentColor;
-      ctx.lineWidth = 4;
+    } else {
+      // Manzana: cuerpo redondeado, hoja y rabito.
+      ctx.fillStyle = "#4F9868";
       ctx.beginPath();
-      ctx.moveTo(headX - 2, headY - height * 0.18);
-      ctx.lineTo(headX - 6, headY - height * 0.32);
-      ctx.moveTo(headX + 6, headY - height * 0.18);
-      ctx.lineTo(headX + 10, headY - height * 0.32);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(headX + 2, headY + height * 0.16);
-      ctx.lineTo(headX + 2, headY + height * 0.28);
-      ctx.stroke();
-    } else if (animal.kind === "donkey") {
-      // Orejas largas: rasgo distintivo inmediato
-      ctx.fillStyle = accentColor;
-      ctx.beginPath();
-      ctx.ellipse(headX - 4, headY - height * 0.32, width * 0.06, height * 0.22, -0.3, 0, Math.PI * 2);
-      ctx.ellipse(headX + 8, headY - height * 0.32, width * 0.06, height * 0.22, 0.2, 0, Math.PI * 2);
+      ctx.ellipse(r * 0.22, -r * 1.05, r * 0.22, r * 0.13, 0.5, 0, Math.PI * 2);
       ctx.fill();
-    } else if (animal.kind === "cow") {
-      // Manchas
-      ctx.fillStyle = accentColor;
-      [[-0.12, -0.4], [0.14, -0.36], [-0.02, -0.5]].forEach(([dx, dy]) => {
-        ctx.beginPath();
-        ctx.ellipse(width * dx, height * dy, width * 0.09, height * 0.07, 0.3, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      ctx.beginPath();
-      ctx.moveTo(headX - 3, headY - height * 0.18);
-      ctx.lineTo(headX - 5, headY - height * 0.28);
-      ctx.moveTo(headX + 5, headY - height * 0.18);
-      ctx.lineTo(headX + 7, headY - height * 0.28);
-      ctx.strokeStyle = "#E7DCC0";
+      ctx.strokeStyle = "#8B5E3C";
       ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, -r * 0.78);
+      ctx.lineTo(r * 0.06, -r * 1.05);
       ctx.stroke();
+      ctx.fillStyle = "#E1462F";
+      ctx.beginPath();
+      ctx.arc(-r * 0.18, 0, r * 0.62, 0, Math.PI * 2);
+      ctx.arc(r * 0.22, 0, r * 0.62, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.35)";
+      ctx.beginPath();
+      ctx.ellipse(-r * 0.28, -r * 0.22, r * 0.14, r * 0.22, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
     }
 
-    // Ojo (mismo para todos, da vida al conjunto)
-    ctx.fillStyle = "#2B2B2E";
-    ctx.beginPath();
-    ctx.arc(headX + width * 0.06, headY - height * 0.02, 2.6, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  /**
+   * Animal-obstáculo: el mismo emoji ya usado en el ejercicio de
+   * Animales (🐐🐑🫏🐮), reconocible al instante — mucho más claro que
+   * una silueta dibujada a mano, y sin el problema de la oveja
+   * apenas distinguible del fondo.
+   *
+   * Como un emoji no se puede "recolorear" directamente, el aviso de
+   * choque se hace con un resplandor rojo detrás del animal que se
+   * desvanece poco a poco (mismo efecto percibido: "chocó, ahora se
+   * nota en rojo, y se recupera solo").
+   */
+  _animalPath(ctx, animal, width, height, legPhase, hitFade) {
+    const bob = Math.abs(Math.sin(legPhase)) * 4; // pequeño rebote al correr
 
-  /** Mezcla un color hexadecimal con rojo, en la proporción `amount`
-   * (0 = color original, 1 = rojo total) — para el efecto de choque. */
-  _mixWithRed(hex, amount) {
-    if (amount <= 0) return hex;
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    const target = [230, 57, 70];
-    const mix = (c, t) => Math.round(c + (t - c) * amount);
-    return `rgb(${mix(r, target[0])}, ${mix(g, target[1])}, ${mix(b, target[2])})`;
+    if (hitFade > 0) {
+      ctx.save();
+      const glow = ctx.createRadialGradient(0, -height * 0.45, 2, 0, -height * 0.45, width * 0.7);
+      glow.addColorStop(0, `rgba(230, 57, 70, ${0.55 * hitFade})`);
+      glow.addColorStop(1, "rgba(230, 57, 70, 0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(0, -height * 0.45, width * 0.7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.save();
+    ctx.font = `${Math.round(height * 1.55)}px sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.fillText(animal.emoji, 0, -bob + 2);
+    ctx.restore();
   }
 }

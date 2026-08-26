@@ -17,12 +17,11 @@ let scheduleTimer = null;
 let nextStepTime = 0;
 let stepIndex = 0;
 let baseMusicVolume = 0.16;
-// Subido para que, con el regulador de volumen al máximo, el juego suene
-// a un nivel comparable al de la voz (que siempre habla a volumen
-// máximo por defecto) — antes se quedaba muy por debajo, incluso con el
-// regulador a tope. El propio regulador de cada juego sigue siendo
-// quien decide el nivel final que se quiere escuchar.
-const BASE_SFX_LEVEL = 1.3;
+// Subido de nuevo (segunda ronda de ajuste): el usuario sigue
+// notándolo bajo incluso con el regulador al máximo. Se comprobó con
+// una simulación que, incluso en el peor caso posible (varios sonidos
+// solapados a la vez), no llega a saturar.
+const BASE_SFX_LEVEL = 2.0;
 let masterVolume = 1; // control de volumen general del juego (0-1), ajustable desde el propio juego
 
 function ensureContext() {
@@ -140,7 +139,7 @@ function duckMusic() {
 }
 
 export const GameSounds = {
-  startMusic(volume = 0.4) {
+  startMusic(volume = 0.65) {
     const ctx = ensureContext();
     if (!ctx) return;
     baseMusicVolume = volume;
@@ -198,23 +197,45 @@ export const GameSounds = {
   },
 
   /** Efecto de tropiezo/choque: claro pero suave, nunca agresivo. */
+  /** Efecto de tropiezo/choque: claro pero suave, nunca agresivo.
+   * Combina un tono descendente con un golpe de textura (ruido breve),
+   * para que se note claramente incluso con la música sonando de fondo
+   * (antes era un tono grave y suave, muy parecido al bajo de la
+   * música, y quedaba camuflado). */
   playHit() {
     const ctx = ensureContext();
     if (!ctx) return;
     duckMusic();
     const t = ctx.currentTime;
+
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(220, t);
-    osc.frequency.exponentialRampToValueAtTime(110, t + 0.18);
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(280, t);
+    osc.frequency.exponentialRampToValueAtTime(90, t + 0.16);
     gain.gain.setValueAtTime(0.001, t);
-    gain.gain.exponentialRampToValueAtTime(0.22, t + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+    gain.gain.exponentialRampToValueAtTime(0.4, t + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
     osc.connect(gain);
     gain.connect(sfxGain);
     osc.start(t);
     osc.stop(t + 0.25);
+
+    // Golpe de textura corto (ruido filtrado), a modo de "porrazo suave"
+    // que se distingue de cualquier nota musical, sea cual sea su tono.
+    const noiseSrc = ctx.createBufferSource();
+    noiseSrc.buffer = getNoiseBuffer(ctx);
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = "lowpass";
+    noiseFilter.frequency.value = 900;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.3, t);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    noiseSrc.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(sfxGain);
+    noiseSrc.start(t);
+    noiseSrc.stop(t + 0.13);
   },
 
   /** "¡Premio conseguido!" — brillante y satisfactorio, muy corto. */

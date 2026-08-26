@@ -17,12 +17,12 @@ import { Mascot } from "../core/mascot.js";
  * core/gameStats.js.
  */
 
-const GRID_SIZE = 10;
+const GRID_SIZE = 8;
 const WORD_POOL = [
   "GATO", "PERRO", "FLOR", "CASA", "LUNA", "SOL", "LIBRO", "MESA",
   "VACA", "PATO", "LLAVE", "COCHE", "QUESO", "PAN", "SILLA", "RELOJ",
 ];
-const WORDS_PER_GAME = 8;
+const WORDS_PER_GAME = 6;
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVXYZ";
 // Derecha, abajo y diagonal abajo-derecha: nunca al revés ni hacia
 // arriba, para que sea fácil de seguir con la vista (nivel fácil/medio).
@@ -102,8 +102,8 @@ export function renderWordSearchGame(container, { profile, onExit }) {
     </div>
     <div class="wordsearch-main-row">
       <div class="rest-game-side-btns">
-        <button class="rest-game-side-btn" id="ws-restart-btn" aria-label="Reiniciar">
-          <span class="rest-game-side-btn-icon">🔄</span><span>Reiniciar</span>
+        <button class="rest-game-side-btn" id="ws-restart-btn" aria-label="Nueva sopa de letras">
+          <span class="rest-game-side-btn-icon">🔄</span><span>Nueva sopa</span>
         </button>
         <button class="rest-game-side-btn" id="ws-finish-btn" aria-label="Salir">
           <span class="rest-game-side-btn-icon">🚪</span><span>Salir</span>
@@ -227,7 +227,10 @@ export function renderWordSearchGame(container, { profile, onExit }) {
       const li = document.getElementById(`ws-word-${placed.indexOf(match)}`);
       li.classList.add("wordsearch-list-item-found");
       foundLabel.textContent = `Encontradas: ${foundCount} / ${placed.length}`;
-      GameSounds.playClear();
+      // Sonido de "premio conseguido" (brillante, satisfactorio) en vez
+      // del genérico de superar un obstáculo — encaja mejor con la
+      // sensación de "descubrir" una palabra.
+      GameSounds.playPrize();
       mascot.celebrate();
       burstConfetti(10);
 
@@ -235,7 +238,7 @@ export function renderWordSearchGame(container, { profile, onExit }) {
         finishGame();
       }
     } else {
-      // No coincide con ninguna palabra: pequeño aviso y se limpia.
+      // No coincide con ninguna palabra: aviso claro de equivocación.
       GameSounds.playSimonWrong();
       setTimeout(clearSelectionHighlight, 260);
     }
@@ -319,7 +322,7 @@ export function renderWordSearchGame(container, { profile, onExit }) {
       <p class="text-lg" style="text-align:center; font-weight:800; color:var(--color-success);">Palabras encontradas: ${placed.length}</p>
       <p class="text-md" style="text-align:center;">¿Quieres volver a jugar?</p>
       <div class="row center wrap" style="gap:16px; margin-top:10px;">
-        <button class="btn btn-accent" id="ws-repeat-btn">🔄 Repetir</button>
+        <button class="btn btn-accent" id="ws-repeat-btn">🔄 Siguiente sopa de letras</button>
         <button class="btn btn-success btn-huge" id="ws-exit-btn">Salir</button>
       </div>
     `;

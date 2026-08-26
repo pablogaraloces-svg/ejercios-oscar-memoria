@@ -68,7 +68,7 @@ export async function renderGameRoom(rootEl, ctx) {
   rootEl.appendChild(intro);
 
   const list = document.createElement("div");
-  list.className = "col game-room-list";
+  list.className = "game-room-grid";
 
   const enabledGames = GAMES.filter((g) => g.enabled);
   for (const game of enabledGames) {
@@ -76,18 +76,14 @@ export async function renderGameRoom(rootEl, ctx) {
     const card = document.createElement("div");
     card.className = "card game-card";
     card.innerHTML = `
-      <div class="row" style="gap:16px; align-items:center;">
-        <span class="game-card-icon">${game.emoji}</span>
-        <div class="col" style="gap:4px; flex:1;">
-          <span class="game-card-name">${game.name}</span>
-          <span class="text-md">${game.description}</span>
-          ${stats.plays ? `<span class="text-sm game-card-stats">Mejor puntuación: ${stats.bestScore} · Partidas jugadas: ${stats.plays}</span>` : ""}
-        </div>
-      </div>
+      <span class="game-card-icon">${game.emoji}</span>
+      <span class="game-card-name">${game.name}</span>
+      <span class="text-sm game-card-desc">${game.description}</span>
+      ${stats.plays ? `<span class="text-sm game-card-stats">Mejor puntuación: ${stats.bestScore} · Partidas: ${stats.plays}</span>` : ""}
     `;
     const playBtn = document.createElement("button");
     playBtn.className = "btn btn-success btn-huge";
-    playBtn.style.marginTop = "14px";
+    playBtn.style.marginTop = "10px";
     playBtn.style.width = "100%";
     playBtn.textContent = "JUGAR";
     playBtn.onclick = () => {

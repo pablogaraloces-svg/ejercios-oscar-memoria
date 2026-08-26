@@ -104,6 +104,54 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 2.4 (Sala de Juegos, volumen, y revisión de los 3 juegos)
+
+**Sala de Juegos — cuadrícula en vez de lista**
+- Ya no aparece como una lista de tarjetas alargadas: ahora se ven todos
+  los juegos de un vistazo, en una cuadrícula ordenada.
+
+**Volumen, otra vez más alto**
+- Segunda ronda de ajuste: los efectos y la música de fondo de ambos
+  juegos suben de nuevo de nivel, verificado sin saturación ni siquiera
+  en el peor caso.
+
+**Cerebrín Saltarín**
+- **Sonido de choque corregido de raíz**: existía, pero era grave y
+  suave, muy parecido al bajo de la música — se camuflaba y no se
+  notaba. Rediseñado con un golpe de textura que se distingue con
+  claridad.
+- Más premios en general, con más peso para los globos. Nuevas frutas
+  (manzana +15, cereza +25) entre los premios que flotan.
+- **Animales rediseñados con los mismos emoji ya usados en el ejercicio
+  de Animales** (🐐🐑🫏🐮) — mucho más reconocibles al instante que las
+  siluetas dibujadas a mano de antes, y resuelve de paso el problema de
+  la oveja poco visible. El aviso de choque en rojo ahora se hace con un
+  resplandor detrás del animal (un emoji no se puede recolorear
+  directamente), con el mismo efecto percibido.
+
+**El juego de los colores — rediseñado por completo**
+- La rueda circular ha sido sustituida por 5 cuadrados redondeados con
+  volumen 3D (mismo lenguaje visual que el botón SALTAR), en una fila
+  horizontal que aprovecha bien el formato ancho de la tablet.
+- Iluminación mucho más intensa (más brillo, más resplandor alrededor) y
+  notas más largas y sonoras.
+- Las rondas llegan hasta 10 (antes 20), y todo el ritmo se ha ralentizado
+  bastante más — verificado que la secuencia más larga dura unos 13
+  segundos, con tiempo de sobra para seguirla con calma.
+- Título subido, más cerca de la parte superior.
+
+**Sopa de letras — reorganizada**
+- Rejilla más pequeña (8×8, antes 10×10) con menos palabras (6, antes 8)
+  pero mucho más grandes — verificado con 1000 generaciones que siempre
+  caben.
+- Nuevo botón "Nueva sopa de letras" / "Siguiente sopa de letras": cada
+  partida ya usaba una selección aleatoria de palabras distinta, y ahora
+  queda claro que sirve exactamente para eso.
+- Sonido de acierto mejorado (uno más satisfactorio, a modo de premio) y
+  confirmado el aviso de equivocación.
+- Aprovechado mejor el espacio de la pantalla: rejilla y lista lateral
+  más grandes y mejor proporcionadas.
+
 ## 🆕 Novedades de la versión 2.3 (volumen, sopa de letras y Simón ajustados)
 
 **Volumen de los juegos, al nivel de la voz**

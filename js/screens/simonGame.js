@@ -5,73 +5,50 @@ import { burstConfetti } from "../core/confetti.js";
 import { Mascot } from "../core/mascot.js";
 
 /**
- * simonGame.js — Juego de memoria inspirado en "Simón": un tablero
- * circular con 5 colores (azul, verde, rojo, amarillo, negro), cada uno
- * con su propia nota musical. Cerebrín muestra una secuencia cada vez
- * más larga y Óscar debe repetirla tocando los colores en el mismo
- * orden.
+ * simonGame.js — Juego de memoria inspirado en "Simón": 5 cuadrados
+ * redondeados con volumen 3D (mismo lenguaje visual que el botón
+ * SALTAR), en una fila horizontal — azul, verde, rojo, amarillo, negro
+ * — cada uno con su propia nota musical. Cerebrín muestra una secuencia
+ * cada vez más larga y Óscar debe repetirla tocando los colores en el
+ * mismo orden.
  *
  * Diseño accesible a propósito: un fallo NUNCA termina la partida de
  * golpe — se repite la misma secuencia con ánimo, sin perder lo ya
- * conseguido. Solo se cierra la partida cuando Óscar decide "Salir", o
- * al alcanzar una secuencia ya muy larga (celebración de "maestría").
+ * conseguido. Ritmo pausado (secuencia lenta, notas largas), pensado
+ * para una persona mayor.
  *
  * Totalmente independiente del sistema de ejercicios/estadísticas
- * cognitivas — igual que Cerebrín Saltarín, guarda sus propios datos
- * (si los guarda) en core/gameStats.js, nunca en "progress".
+ * cognitivas — igual que los demás juegos, guarda sus propios datos en
+ * core/gameStats.js, nunca en "progress".
  */
 
 const COLORS = [
-  { key: "blue", label: "Azul", base: "#2C5FA8", light: "#5B8FD9", lit: "#9CC6FF", note: 261.63 },
-  { key: "green", label: "Verde", base: "#3E8E5B", light: "#6BC98A", lit: "#A9FFC4", note: 329.63 },
-  { key: "red", label: "Rojo", base: "#B23A48", light: "#E06070", lit: "#FFAEB8", note: 392.0 },
-  { key: "yellow", label: "Amarillo", base: "#C79A2E", light: "#F0C34D", lit: "#FFE8A3", note: 440.0 },
-  { key: "black", label: "Negro", base: "#2A2A2E", light: "#55555C", lit: "#A5A5B0", note: 523.25 },
+  { key: "blue", label: "Azul", note: 261.63 },
+  { key: "green", label: "Verde", note: 329.63 },
+  { key: "red", label: "Rojo", note: 392.0 },
+  { key: "yellow", label: "Amarillo", note: 440.0 },
+  { key: "black", label: "Negro", note: 523.25 },
 ];
-const MAX_SEQUENCE = 20; // llegar aquí se celebra como "maestría" del juego
+const MAX_SEQUENCE = 10; // llegar aquí se celebra como "maestría" del juego
 const MAX_RETRIES_PER_ROUND = 3; // nunca se "pierde" del todo, pero sí se anima a intentarlo de nuevo
 
 class SimonGame {
-  constructor(canvas, callbacks = {}) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext("2d");
+  constructor(squares, callbacks = {}) {
+    this.squares = squares; // 5 botones del DOM, uno por color
     this.callbacks = callbacks;
     this.sequence = [];
     this.playerIndex = 0;
     this.round = 0;
     this.retries = 0;
     this.state = "idle"; // idle | showing | listening | ended
-    this.litIndex = -1;
-    this.litUntil = 0;
     this.stopped = false;
-    this._resize();
   }
 
-  /** Cancela cualquier temporizador o animación pendiente (se llama al
-   * salir del juego), para no dejar nada corriendo de fondo si se
-   * abandona a media secuencia. */
+  /** Cancela cualquier temporizador pendiente (se llama al salir del
+   * juego), para no dejar nada corriendo de fondo si se abandona a
+   * media secuencia. */
   stop() {
     this.stopped = true;
-  }
-
-  _resize() {
-    const dpr = window.devicePixelRatio || 1;
-    const rect = this.canvas.parentElement.getBoundingClientRect();
-    // Se agranda respecto a antes, pero sigue limitado tanto por el
-    // ancho disponible como por un tope de alto (60% del alto de la
-    // pantalla), para no salirse nunca del formato horizontal de la
-    // tablet aunque el tablero sea más grande.
-    const size = Math.max(260, Math.min(rect.width, 520, window.innerHeight * 0.6));
-    this.canvas.style.width = size + "px";
-    this.canvas.style.height = size + "px";
-    this.canvas.width = Math.round(size * dpr);
-    this.canvas.height = Math.round(size * dpr);
-    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    this.size = size;
-    this.cx = size / 2;
-    this.cy = size / 2;
-    this.rOuter = size / 2 - 8;
-    this.rInner = size * 0.22;
   }
 
   start() {
@@ -79,7 +56,6 @@ class SimonGame {
     this.round = 0;
     this.addRandomStep();
     this.callbacks.onRoundChange?.(this.round);
-    this._draw();
     this.playSequence(true);
   }
 
@@ -95,26 +71,24 @@ class SimonGame {
     this.callbacks.onStateChange?.("showing");
     if (isFirst) {
       // Espera a que Cerebrín termine de hablar del todo antes de
-      // empezar a mostrar la secuencia — antes se esperaba un tiempo
-      // fijo (demasiado corto) y el juego arrancaba mientras la voz
-      // seguía sonando.
+      // empezar a mostrar la secuencia.
       await this.callbacks.onInstruction?.();
       if (this.stopped) return;
-      await this._sleep(350); // pequeña pausa natural tras la voz, antes de empezar
+      await this._sleep(400); // pequeña pausa natural tras la voz, antes de empezar
     } else {
-      await this._sleep(500);
+      await this._sleep(650);
     }
     if (this.stopped) return;
     for (let i = 0; i < this.sequence.length; i++) {
       if (this.stopped) return;
       const idx = this.sequence[i];
-      // Iluminación y nota más largas, con más pausa entre una y otra:
+      // Iluminación y nota largas, con pausa generosa entre una y otra:
       // pensado para que a una persona mayor le dé tiempo de sobra a
       // seguir la secuencia con calma, sin sensación de prisa.
-      this.lightUp(idx, 900);
-      GameSounds.playNote(COLORS[idx].note, 0.75);
+      this.lightUp(idx, 1100);
+      GameSounds.playNote(COLORS[idx].note, 0.9);
       this.callbacks.onProgress?.();
-      await this._sleep(1050);
+      await this._sleep(1300);
     }
     if (this.stopped) return;
     this.state = "listening";
@@ -122,26 +96,19 @@ class SimonGame {
   }
 
   lightUp(index, ms) {
-    this.litIndex = index;
-    this.litUntil = performance.now() + ms;
-    this._draw();
-    const check = () => {
+    const el = this.squares[index];
+    el.classList.add("simon-square-lit");
+    setTimeout(() => {
       if (this.stopped) return;
-      if (performance.now() >= this.litUntil) {
-        this.litIndex = -1;
-        this._draw();
-      } else {
-        requestAnimationFrame(check);
-      }
-    };
-    requestAnimationFrame(check);
+      el.classList.remove("simon-square-lit");
+    }, ms);
   }
 
   /** Toque del jugador sobre un color concreto (índice 0-4). */
   tap(index) {
     if (this.state !== "listening") return;
-    this.lightUp(index, 260);
-    GameSounds.playNote(COLORS[index].note, 0.3);
+    this.lightUp(index, 320);
+    GameSounds.playNote(COLORS[index].note, 0.35);
 
     if (index === this.sequence[this.playerIndex]) {
       this.playerIndex++;
@@ -161,7 +128,7 @@ class SimonGame {
           this.addRandomStep();
           this.callbacks.onRoundChange?.(this.round);
           this.playSequence(false);
-        }, 1400);
+        }, 1600);
       }
     } else {
       // Un fallo nunca termina la partida: se anima a intentarlo de
@@ -173,104 +140,12 @@ class SimonGame {
       setTimeout(() => {
         if (this.stopped) return;
         this.playSequence(false);
-      }, 1600);
+      }, 1800);
     }
   }
 
   _sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  /** Detecta qué gajo del tablero corresponde a una posición de toque. */
-  hitTest(clientX, clientY) {
-    const rect = this.canvas.getBoundingClientRect();
-    const x = clientX - rect.left - this.cx;
-    const y = clientY - rect.top - this.cy;
-    const dist = Math.hypot(x, y);
-    if (dist < this.rInner || dist > this.rOuter) return -1;
-    let angle = Math.atan2(y, x) + Math.PI / 2;
-    if (angle < 0) angle += Math.PI * 2;
-    const step = (Math.PI * 2) / COLORS.length;
-    return Math.floor(angle / step) % COLORS.length;
-  }
-
-  _draw() {
-    const { ctx, cx, cy, rOuter, rInner } = this;
-    ctx.clearRect(0, 0, this.size, this.size);
-    const step = (Math.PI * 2) / COLORS.length;
-    const gap = 0.035; // pequeño hueco entre gajos, como en el Simón clásico
-
-    COLORS.forEach((color, i) => {
-      const start = -Math.PI / 2 + i * step + gap;
-      const end = -Math.PI / 2 + (i + 1) * step - gap;
-      const isLit = this.litIndex === i;
-      this._drawWedge(ctx, cx, cy, rInner, rOuter, start, end, color, isLit);
-    });
-
-    // Cubo central ("hub"), con el mismo lenguaje de volumen 3D que el
-    // resto de la app — muestra la ronda actual.
-    const hubGrad = ctx.createRadialGradient(cx - rInner * 0.3, cy - rInner * 0.35, 4, cx, cy, rInner);
-    hubGrad.addColorStop(0, "#FFF6E5");
-    hubGrad.addColorStop(1, "#E8DCC4");
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, rInner - 4, 0, Math.PI * 2);
-    ctx.fillStyle = hubGrad;
-    ctx.shadowColor = "rgba(0,0,0,0.25)";
-    ctx.shadowBlur = 10;
-    ctx.shadowOffsetY = 3;
-    ctx.fill();
-    ctx.shadowColor = "transparent";
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "rgba(0,0,0,0.12)";
-    ctx.stroke();
-    ctx.fillStyle = "#2E2E2E";
-    ctx.font = `bold ${Math.round(rInner * 0.42)}px sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(this.round > 0 ? String(this.round) : "🧠", cx, cy + 2);
-    ctx.textBaseline = "alphabetic";
-    ctx.restore();
-  }
-
-  /** Dibuja un "gajo" del tablero con relieve 3D (degradado + brillo +
-   * sombra), y un resplandor extra cuando está iluminado — mismo
-   * lenguaje visual que el botón SALTAR del otro juego. */
-  _drawWedge(ctx, cx, cy, rInner, rOuter, startAngle, endAngle, color, isLit) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(cx + rInner * Math.cos(startAngle), cy + rInner * Math.sin(startAngle));
-    ctx.lineTo(cx + rOuter * Math.cos(startAngle), cy + rOuter * Math.sin(startAngle));
-    ctx.arc(cx, cy, rOuter, startAngle, endAngle);
-    ctx.lineTo(cx + rInner * Math.cos(endAngle), cy + rInner * Math.sin(endAngle));
-    ctx.arc(cx, cy, rInner, endAngle, startAngle, true);
-    ctx.closePath();
-
-    if (isLit) {
-      ctx.shadowColor = color.lit;
-      ctx.shadowBlur = 30;
-    } else {
-      ctx.shadowColor = "rgba(0,0,0,0.28)";
-      ctx.shadowBlur = 6;
-      ctx.shadowOffsetY = 3;
-    }
-
-    const midAngle = (startAngle + endAngle) / 2;
-    const highlightX = cx + Math.cos(midAngle) * rInner * 1.4;
-    const highlightY = cy + Math.sin(midAngle) * rInner * 1.4;
-    const grad = ctx.createRadialGradient(highlightX, highlightY, 4, cx, cy, rOuter);
-    grad.addColorStop(0, isLit ? color.lit : color.light);
-    grad.addColorStop(1, isLit ? color.light : color.base);
-    ctx.fillStyle = grad;
-    ctx.fill();
-    ctx.shadowColor = "transparent";
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetY = 0;
-
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "rgba(0,0,0,0.22)";
-    ctx.stroke();
-    ctx.restore();
   }
 }
 
@@ -287,7 +162,7 @@ export function renderSimonGame(container, { profile, onExit }) {
     <h2 class="title-xl simon-title" style="text-align:center;">🎨 El juego de los colores</h2>
     <p class="text-md" id="simon-instructions" style="text-align:center;">Mira bien los colores que se iluminan, y luego tócalos en el mismo orden.</p>
     <div class="simon-hud">
-      <span class="rest-game-points" id="simon-round">Ronda: 0</span>
+      <span class="rest-game-points" id="simon-round">Ronda: 0 / ${MAX_SEQUENCE}</span>
       <div class="game-volume-control">
         <span aria-hidden="true">🔊</span>
         <input type="range" min="0" max="1" step="0.1" value="1" class="game-volume-slider" id="simon-volume" aria-label="Volumen del juego" />
@@ -302,17 +177,17 @@ export function renderSimonGame(container, { profile, onExit }) {
           <span class="rest-game-side-btn-icon">🚪</span><span>Salir</span>
         </button>
       </div>
-      <div class="simon-board-wrap">
-        <canvas class="simon-board-canvas" id="simon-canvas"></canvas>
-      </div>
       <div class="simon-mascot-col">
         <div class="mascot bounce" id="simon-mascot"><img src="assets/mascot/cerebrin.png" alt="Cerebrín" class="mascot-img" /></div>
       </div>
     </div>
+    <div class="simon-board-row" id="simon-board">
+      ${COLORS.map((c) => `<button class="simon-square simon-square-${c.key}" aria-label="${c.label}"></button>`).join("")}
+    </div>
   `;
   container.appendChild(box);
 
-  const canvas = box.querySelector("#simon-canvas");
+  const squares = [...box.querySelectorAll(".simon-square")];
   const roundLabel = box.querySelector("#simon-round");
   const instructions = box.querySelector("#simon-instructions");
   const volumeSlider = box.querySelector("#simon-volume");
@@ -324,7 +199,7 @@ export function renderSimonGame(container, { profile, onExit }) {
   const startedAt = Date.now();
   let bestRound = 0;
 
-  const game = new SimonGame(canvas, {
+  const game = new SimonGame(squares, {
     // Devuelve una promesa que se resuelve cuando Cerebrín termina de
     // hablar del todo (con una red de seguridad por si el evento de voz
     // no llegara a disparase nunca), para que el juego espere de verdad
@@ -352,7 +227,7 @@ export function renderSimonGame(container, { profile, onExit }) {
       else mascot.idle();
     },
     onRoundChange: (round) => {
-      roundLabel.textContent = `Ronda: ${round}`;
+      roundLabel.textContent = `Ronda: ${round} / ${MAX_SEQUENCE}`;
       bestRound = Math.max(bestRound, round);
     },
     onRoundComplete: () => {
@@ -368,9 +243,8 @@ export function renderSimonGame(container, { profile, onExit }) {
     },
   });
 
-  canvas.addEventListener("click", (e) => {
-    const idx = game.hitTest(e.clientX, e.clientY);
-    if (idx >= 0) game.tap(idx);
+  squares.forEach((sq, i) => {
+    sq.onclick = () => game.tap(i);
   });
 
   game.start();
@@ -449,9 +323,7 @@ export function renderSimonGame(container, { profile, onExit }) {
   return {
     destroy() {
       // Cancela cualquier secuencia/temporizador pendiente si se
-      // abandona el juego a medias — igual de robusto que Cerebrín
-      // Saltarín, aunque este juego no tenga un bucle de animación
-      // continuo (es por turnos).
+      // abandona el juego a medias.
       game.stop();
     },
   };
