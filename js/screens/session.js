@@ -605,6 +605,23 @@ export class SessionRunner {
     });
     this.contentEl.appendChild(grid);
 
+    if (compact) {
+      // Familia: todos los botones deben medir siempre lo mismo, tenga
+      // el nombre las letras que tenga. Si un nombre no cabe en una
+      // sola línea con la letra grande, se reduce el tamaño de letra
+      // (nunca el tamaño del botón) hasta que quepa.
+      this.optionButtons.forEach((btn) => {
+        const nameEl = btn.querySelector(".option-card-name");
+        if (!nameEl) return;
+        const maxWidth = btn.clientWidth - 28; // margen interior de sobra
+        let fontSize = parseFloat(getComputedStyle(nameEl).fontSize);
+        while (nameEl.scrollWidth > maxWidth && fontSize > 15) {
+          fontSize -= 1;
+          nameEl.style.fontSize = `${fontSize}px`;
+        }
+      });
+    }
+
     this.startInactivityTimer(() => this.showInactivityHint());
   }
 

@@ -349,13 +349,19 @@ body.high-contrast .family-title-elegant {
 }
 /* Nombres de familiares (ejercicio de Familia): legibles pero
    compactos, para no repetir el problema de los números "fugados". */
-/* Nombres de familiares (ejercicio de Familia): 3 puntos más grandes que
-   antes para mayor legibilidad, en un botón más estrecho (no tan
-   "largo" de lado a lado como el resto de tarjetas de respuesta). */
+/* Nombres de familiares (ejercicio de Familia): letra grande por
+   defecto; si un nombre es largo, el propio código reduce este tamaño
+   con JavaScript (ver renderChoice) para que quepa en una sola línea
+   SIN cambiar el tamaño del botón — nunca al revés. */
 .option-card-name {
-  font-size: clamp(1.25rem, 1.65vw, 1.65rem);
+  font-size: clamp(1.5rem, 2vw, 2.1rem);
   font-weight: 700;
   color: var(--color-text);
+  white-space: nowrap; /* resguardo: nunca pasa a una segunda línea que cambiaría el alto del botón */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  display: inline-block;
 }
 /* Cálculo: cuadrados y números algo más pequeños que la referencia
    (Animales), para que quepa todo el ejercicio en pantalla sin scroll. */
@@ -1133,7 +1139,9 @@ body.high-contrast .game-room-bg-mascot { display: none; }
 .home-nav-card .emoji { width: 64px; height: 64px; font-size: 2.4rem; }
 
 .option-card-compact {
-  min-height: 76px;
+  width: 100%;
+  height: 104px;
+  min-height: 104px; /* anula el min-height:185px de la clase base .option-card, que si no ganaría sobre esta altura fija */
   max-width: 320px;
   margin: 0 auto;
   padding: 10px;

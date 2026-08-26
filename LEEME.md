@@ -104,6 +104,24 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 2.7 (Familia: botones proporcionales)
+
+**Ejercicio de Familia — corregido de raíz (único cambio de esta versión)**
+- Encontrada la causa exacta de que los botones no midieran todos igual:
+  solo tenían una altura *mínima*, así que un nombre largo que ocupara
+  dos líneas hacía crecer solo ese botón en concreto.
+- Corregido con altura y anchura fijas para todos los botones por igual
+  (320×104px, siempre), y un ajuste automático por JavaScript: si un
+  nombre no cabe en una sola línea con la letra grande, se reduce el
+  tamaño de letra de *ese* nombre en concreto (nunca el tamaño del
+  botón) hasta que quepa.
+- Letra base más grande que antes.
+- Verificado con una simulación con nombres de distinta longitud
+  ("Ana", "Luis", "María Fernández", "Juan Carlos Pérez"): los 4 botones
+  miden exactamente lo mismo, y solo el nombre más largo reduce su
+  letra lo justo para caber.
+- Ningún otro ejercicio se ha tocado en esta versión.
+
 ## 🆕 Novedades de la versión 2.6 (Cerebrín Saltarín con carácter arcade, y limpieza general)
 
 **Cerebrín Saltarín — mucho más presencia y carácter**
