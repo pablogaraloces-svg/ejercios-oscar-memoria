@@ -613,8 +613,8 @@ export class SessionRunner {
   renderPuzzlePiece(ex, hintFlow) {
     const wrap = document.createElement("div");
     wrap.className = "col";
-    wrap.style.gap = "12px";
-    wrap.style.marginTop = "12px";
+    wrap.style.gap = "8px";
+    wrap.style.marginTop = "8px";
 
     // Objeto que necesita la herramienta, y a su lado el hueco donde
     // "encajará" la herramienta correcta al elegirla.

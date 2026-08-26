@@ -91,8 +91,6 @@ export function renderWordSearchGame(container, { profile, onExit }) {
   const box = document.createElement("div");
   box.className = "col center wordsearch-wrap";
   box.innerHTML = `
-    <h2 class="title-xl" style="text-align:center;">🔎 Sopa de letras</h2>
-    <p class="text-md" id="ws-instructions" style="text-align:center;">Toca la primera letra de una palabra y después la última, en línea recta.</p>
     <div class="simon-hud">
       <span class="rest-game-points" id="ws-found-count">Encontradas: 0 / ${placed.length}</span>
       <div class="game-volume-control">
@@ -123,12 +121,12 @@ export function renderWordSearchGame(container, { profile, onExit }) {
   const gridEl = box.querySelector("#ws-grid");
   const listEl = box.querySelector("#ws-word-list");
   const foundLabel = box.querySelector("#ws-found-count");
-  const instructions = box.querySelector("#ws-instructions");
   const volumeSlider = box.querySelector("#ws-volume");
   const mascot = new Mascot(box.querySelector("#ws-mascot"), null);
   mascot.idle();
   volumeSlider.value = String(GameSounds.getVolume());
   volumeSlider.addEventListener("input", (e) => GameSounds.setVolume(Number(e.target.value)));
+  Voice.say("Toca la primera letra de una palabra y después la última, en línea recta.");
 
   const startedAt = Date.now();
   let foundCount = 0;

@@ -11,6 +11,7 @@ let selectedURI = null;
 let voicesReadyCallbacks = [];
 let rate = 0.92; // velocidad: lenta ~0.75, normal ~0.92, rápida ~1.12
 let pitch = 1.0; // tono: se permite un margen pequeño para no sonar artificial
+let volume = 1.0; // volumen de la voz (0-1), independiente del volumen de música/efectos de los juegos
 
 function isSpanish(v) {
   return v.lang?.toLowerCase().startsWith("es");
@@ -33,6 +34,10 @@ function refreshVoices() {
   }
   if (!selectedVoice) {
     selectedVoice =
+      // Si el dispositivo tiene instaladas voces de mayor calidad
+      // (WaveNet/Neural/Enhanced — mucho menos "robóticas"), se prefieren
+      // automáticamente sobre la voz estándar de Google.
+      voices.find((v) => isSpanish(v) && /wavenet|neural|enhanced/i.test(v.name)) ||
       voices.find((v) => isSpanish(v) && /google/i.test(v.name)) ||
       voices.find((v) => isSpanish(v)) ||
       voices[0] ||
@@ -116,6 +121,16 @@ export const Voice = {
     return pitch;
   },
 
+  /** Volumen de la voz (0-1) — se guarda en los ajustes y se aplica
+   * siempre desde el arranque, para que la voz nunca salga ni muy alta
+   * ni muy baja según se haya configurado la última vez. */
+  setVolume(v) {
+    volume = Math.max(0, Math.min(1, Number(v) ?? 1));
+  },
+  getVolume() {
+    return volume;
+  },
+
   say(text, { onEnd, onStart } = {}) {
     if (!enabled || typeof speechSynthesis === "undefined" || !text) {
       if (onEnd) onEnd();
@@ -126,6 +141,7 @@ export const Voice = {
     utter.lang = "es-ES";
     utter.rate = rate;
     utter.pitch = pitch;
+    utter.volume = volume;
     if (selectedVoice) utter.voice = selectedVoice;
     if (onStart) utter.onstart = onStart;
     if (onEnd) utter.onend = onEnd;

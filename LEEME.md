@@ -104,6 +104,71 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 2.6 (Cerebrín Saltarín con carácter arcade, y limpieza general)
+
+**Cerebrín Saltarín — mucho más presencia y carácter**
+- Marcador de puntos rediseñado al estilo "máquina arcade" (pantalla LCD
+  oscura), con el récord justo debajo para saber en todo momento si se
+  está superando.
+- Más premios en general, y la fruta ahora aparece en pequeñas ráfagas
+  de 2-3 seguidas (como un arco de monedas), no una suelta.
+- Nueva animación al recoger cualquier premio que vuela: un destello y
+  los puntos flotando hacia arriba, igual que las monedas de un
+  videojuego de plataformas clásico.
+- Nuevo fondo con sensación de movimiento: además de las nubes, ahora
+  hay montañas lejanas y árboles con efecto de profundidad (cada capa se
+  mueve a su propia velocidad), para que Cerebrín se note corriendo de
+  verdad por el escenario.
+- Pantalla final rediseñada: puntos y récord bien visibles, con aviso
+  especial "¡NUEVO RÉCORD!" animado cuando corresponde.
+- Verificado con una simulación de 1800 fotogramas de juego real (30
+  segundos), confirmando que todo funciona sin errores.
+
+**Todos los juegos, más limpios**
+- Quitado el título y el texto explicativo de los 3 juegos: ahora la voz
+  explica cómo jugar al empezar, y el espacio en pantalla queda
+  completamente libre para el propio juego.
+
+**Administración — mismo orden que la Sala de Juegos**
+- El panel ya no es una lista alargada: ahora es una cuadrícula
+  ordenada, con el mismo lenguaje visual que la Sala de Juegos, y se
+  adapta sola según se añadan más apartados en el futuro.
+
+**Ajustes — pestaña "Audio"**
+- Renombrada desde "Voz y música". Nuevo regulador de volumen de voz,
+  que se guarda y se aplica siempre desde el arranque (nunca sale ni muy
+  alta ni muy baja según se haya configurado la última vez).
+- **Investigada la limitación de las voces de Google**: confirmado que
+  es una restricción real de la API del navegador (una app web no puede
+  acceder a las variantes hombre/mujer que sí aparecen en los Ajustes
+  nativos de Android). Se ha mejorado la selección automática para
+  preferir voces de mayor calidad si están instaladas, y se ha
+  reescrito la nota explicativa con información honesta y el camino real
+  para conseguir voces menos robóticas.
+
+**Sala de Juegos**
+- Cerebrín aparece también de fondo, muy sutil, igual que en la
+  portada — sin tocar el diseño de las tarjetas.
+
+**Ejercicios**
+- La pantalla "Vamos a comenzar los ejercicios de hoy" ya no tiene
+  texto explicativo: solo la mascota y un "¡COMENCEMOS!" grande, alegre
+  y con un pequeño rebote de entrada.
+
+**Familia**
+- Nombres 3 puntos más grandes; botones más estrechos (ya no ocupan
+  todo el ancho de la tarjeta).
+
+**Herramientas**
+- Espaciado ajustado con cuidado (un poco menos, no mucho) para que se
+  vea todo el ejercicio sin necesidad de hacer scroll.
+
+**Nota sobre la verificación**: tras el fallo de sintaxis que se coló en
+una versión anterior, ahora se aplica siempre una comprobación estricta
+de módulo ES (la misma exigencia que un navegador real) a cada archivo
+tocado, además de simular la ejecución real de los 3 juegos completos
+uno detrás de otro antes de dar por terminada cualquier entrega.
+
 ## 🆕 Novedades de la versión 2.5 (corrección de un error real que rompía la app)
 
 **El fallo que impedía usar la versión 2.4**

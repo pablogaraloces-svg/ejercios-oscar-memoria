@@ -38,6 +38,7 @@ function applySettings(settings) {
   if (settings.voiceURI) Voice.setVoiceURI(settings.voiceURI);
   Voice.setRate(settings.voiceRate ?? 0.92);
   Voice.setPitch(settings.voicePitch ?? 1.0);
+  Voice.setVolume(settings.voiceVolume ?? 1.0);
 }
 
 // El audio en el navegador requiere un primer gesto del usuario:
@@ -551,7 +552,9 @@ function renderAdminMenu() {
   const list = document.getElementById("admin-menu-list");
   list.innerHTML = "";
   // Por si en el futuro se añade un nuevo botón al panel: si el orden
-  // guardado no lo incluye todavía, se añade al final automáticamente.
+  // guardado no lo incluye todavía, se añade al final automáticamente
+  // (la cuadrícula se adapta sola a cuantos elementos haya, igual que la
+  // Sala de Juegos).
   const knownIds = Object.keys(ADMIN_MENU_ITEMS);
   const savedOrder = (ctx.settings.adminMenuOrder || []).filter((id) => knownIds.includes(id));
   const order = [...savedOrder, ...knownIds.filter((id) => !savedOrder.includes(id))];
@@ -560,10 +563,11 @@ function renderAdminMenu() {
     const item = ADMIN_MENU_ITEMS[id];
     if (!item) return;
     const card = document.createElement("button");
-    card.className = "option-card admin-menu-card";
-    card.style.width = "100%";
-    card.style.maxWidth = "420px";
-    card.innerHTML = `<span class="emoji">${item.emoji}</span><span>${item.label}</span>`;
+    card.className = "card game-card admin-menu-card";
+    card.innerHTML = `
+      <span class="game-card-icon">${item.emoji}</span>
+      <span class="game-card-name">${item.label}</span>
+    `;
     card.onclick = () => item.action();
 
     const handle = document.createElement("div");

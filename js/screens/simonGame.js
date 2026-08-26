@@ -159,8 +159,6 @@ export function renderSimonGame(container, { profile, onExit }) {
   const box = document.createElement("div");
   box.className = "col center simon-game-wrap";
   box.innerHTML = `
-    <h2 class="title-xl simon-title" style="text-align:center;">🎨 El juego de los colores</h2>
-    <p class="text-md" id="simon-instructions" style="text-align:center;">Mira bien los colores que se iluminan, y luego tócalos en el mismo orden.</p>
     <div class="simon-hud">
       <span class="rest-game-points" id="simon-round">Ronda: 0 / ${MAX_SEQUENCE}</span>
       <div class="game-volume-control">
@@ -189,7 +187,6 @@ export function renderSimonGame(container, { profile, onExit }) {
 
   const squares = [...box.querySelectorAll(".simon-square")];
   const roundLabel = box.querySelector("#simon-round");
-  const instructions = box.querySelector("#simon-instructions");
   const volumeSlider = box.querySelector("#simon-volume");
   const mascot = new Mascot(box.querySelector("#simon-mascot"), null);
   mascot.idle();
@@ -219,10 +216,9 @@ export function renderSimonGame(container, { profile, onExit }) {
         setTimeout(finish, Voice.estimateDurationMs(text) + 800);
       }),
     onStateChange: (state) => {
-      instructions.textContent =
-        state === "showing"
-          ? "Mira bien los colores…"
-          : "¡Ahora te toca a ti! Toca los colores en el mismo orden.";
+      // Sin texto en pantalla (solo la voz al empezar y la propia
+      // mascota, tal y como se ha pedido): el gesto de Cerebrín ya deja
+      // claro si está "pensando" (mostrando la secuencia) o esperando.
       if (state === "showing") mascot.thinking();
       else mascot.idle();
     },

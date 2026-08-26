@@ -262,39 +262,26 @@ export class RestGame {
       // Con bastante menos frecuencia que los animales, y solo si no hay
       // ninguno cerca de esa misma zona — así nunca hace falta
       // reaccionar a dos cosas a la vez.
-      const tooClose = this.obstacles.some((ob) => ob.x > this.w - 60 && ob.x < this.w + 220);
+      const tooClose = this.obstacles.some((ob) => ob.x > this.w - 60 && ob.x < this.w + 260);
       if (!tooClose) {
-        // Se turnan estrella / pájaro / fruta / globo — con más peso para
-        // los globos, que ahora aparecen con más frecuencia.
+        // Se turnan estrella / pájaro / fruta / globo. La fruta aparece
+        // en pequeñas ráfagas de 2-3 seguidas (como un arco de monedas),
+        // en vez de una sola suelta.
         const type = PRIZE_CYCLE[this._nextPrizeIsBalloon % PRIZE_CYCLE.length];
         this._nextPrizeIsBalloon++;
-        let points;
-        let fruitKind = null;
-        if (type === "star") points = 20;
-        else if (type === "bird") points = 30;
-        else if (type === "balloon") points = [10, 40, 100][Math.floor(Math.random() * 3)];
-        else {
-          const fruit = FRUITS[Math.floor(Math.random() * FRUITS.length)];
-          fruitKind = fruit.kind;
-          points = fruit.points;
+        if (type === "fruit") {
+          const count = 2 + Math.floor(Math.random() * 2); // 2 o 3 seguidas
+          const baseY = 118 + Math.random() * 18;
+          for (let i = 0; i < count; i++) {
+            const fruit = FRUITS[Math.floor(Math.random() * FRUITS.length)];
+            this.prizes.push(this._makePrize("fruit", fruit.points, i * 44, baseY + Math.sin(i * 1.1) * 16, fruit.kind));
+          }
+        } else {
+          const points = type === "star" ? 20 : type === "bird" ? 30 : [10, 40, 100][Math.floor(Math.random() * 3)];
+          this.prizes.push(this._makePrize(type, points, 0, 118 + Math.random() * 34, null));
         }
-        this.prizes.push({
-          type,
-          fruitKind,
-          points,
-          x: this.w + 60,
-          // Altura calculada para que SIEMPRE haga falta saltar (por
-          // encima de la cabeza de Cerebrín de pie, ~85px) y SIEMPRE sea
-          // alcanzable en el punto más alto del salto (ahora ~148px, con
-          // margen de sobra en ambos extremos).
-          y: 118 + Math.random() * 34,
-          size: type === "star" ? 44 : type === "bird" ? 38 : type === "fruit" ? 38 : 46,
-          collected: false,
-          missed: false,
-          spin: 0,
-        });
         // Más frecuentes que antes, para que haya más premios al saltar.
-        this.nextPrizeAt = 3300 + Math.random() * 1500;
+        this.nextPrizeAt = 2600 + Math.random() * 1300;
       } else {
         this.nextPrizeAt = 500; // se reintenta enseguida en cuanto haya hueco
       }
@@ -316,6 +303,7 @@ export class RestGame {
       const overlapY = cerebrinTop < prBottom && this.groundY + this.cerebrinY > prTop;
       if (overlapX && overlapY) {
         pr.collected = true;
+        pr.collectedAt = this.elapsed;
         this.addPoints(pr.points);
         this.callbacks.onPrizeCollected?.();
       } else if (prRight < 0) {
@@ -326,7 +314,33 @@ export class RestGame {
         this.callbacks.onPrizeMissed?.();
       }
     });
-    this.prizes = this.prizes.filter((pr) => pr.x > -60);
+    // Los premios recogidos se quedan un instante más (con su propia
+    // animación de "conseguido", ver _draw) antes de desaparecer del todo.
+    this.prizes = this.prizes.filter((pr) => {
+      if (pr.collected) return this.elapsed - pr.collectedAt < 480;
+      return pr.x > -60;
+    });
+  }
+
+  /** Crea un premio nuevo; `xOffset` permite colocar varios seguidos en
+   * una pequeña ráfaga (arco de fruta), como en un videojuego arcade
+   * clásico de monedas. */
+  _makePrize(type, points, xOffset, y, fruitKind) {
+    return {
+      type,
+      fruitKind,
+      points,
+      x: this.w + 60 + xOffset,
+      // Altura calculada para que SIEMPRE haga falta saltar (por encima
+      // de la cabeza de Cerebrín de pie, ~85px) y SIEMPRE sea alcanzable
+      // en el punto más alto del salto (~148px), con margen de sobra.
+      y,
+      size: type === "star" ? 44 : type === "bird" ? 38 : type === "fruit" ? 38 : 46,
+      collected: false,
+      missed: false,
+      collectedAt: 0,
+      spin: 0,
+    };
   }
 
   _draw() {
@@ -351,6 +365,38 @@ export class RestGame {
       ctx.ellipse(cx, cy, 34, 14, 0, 0, Math.PI * 2);
       ctx.ellipse(cx + 22, cy + 4, 22, 11, 0, 0, Math.PI * 2);
       ctx.fill();
+    });
+
+    // Montañas lejanas, muy despacio (fondo, para dar sensación de
+    // profundidad sin distraer).
+    ctx.fillStyle = "rgba(148, 140, 172, 0.32)";
+    [0.05, 0.38, 0.68, 0.95].forEach((frac, i) => {
+      const mx = ((w * frac - t * 7) % (w + 200) + (w + 200)) % (w + 200) - 100;
+      const peakY = groundY - 58 - (i % 2) * 18;
+      ctx.beginPath();
+      ctx.moveTo(mx - 85, groundY);
+      ctx.lineTo(mx, peakY);
+      ctx.lineTo(mx + 85, groundY);
+      ctx.closePath();
+      ctx.fill();
+    });
+
+    // Árboles, un poco más cerca y más rápidos que las montañas (efecto
+    // de profundidad "parallax"): son los que más dan sensación real de
+    // que Cerebrín está corriendo por el escenario.
+    ctx.fillStyle = "rgba(79, 152, 104, 0.55)";
+    [0.08, 0.32, 0.58, 0.8].forEach((frac, i) => {
+      const tx = ((w * frac - t * 42) % (w + 100) + (w + 100)) % (w + 100) - 50;
+      const treeH = 42 + (i % 2) * 8;
+      ctx.beginPath();
+      ctx.moveTo(tx, groundY - treeH);
+      ctx.lineTo(tx - 17, groundY - 6);
+      ctx.lineTo(tx + 17, groundY - 6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "rgba(139, 94, 60, 0.6)";
+      ctx.fillRect(tx - 3, groundY - 8, 6, 10);
+      ctx.fillStyle = "rgba(79, 152, 104, 0.55)";
     });
 
     // Suelo (con un poco de "hierba" sencilla)
@@ -393,9 +439,34 @@ export class RestGame {
     });
 
     // Premios: estrellas, pajaritos, globos y frutas, cada uno con su
-    // valor bien visible, meciéndose suavemente en el aire.
+    // valor bien visible, meciéndose suavemente en el aire. Al
+    // recogerlos, un pequeño "destello + puntos flotando hacia arriba"
+    // (igual que las monedas de un videojuego de plataformas clásico),
+    // en vez de desaparecer de golpe.
     this.prizes.forEach((pr) => {
-      if (pr.collected || pr.missed) return;
+      if (pr.missed) return;
+      if (pr.collected) {
+        const t = Math.min(1, (this.elapsed - pr.collectedAt) / 480);
+        const floatY = groundY - pr.y - t * 46;
+        const scale = 1 + t * 0.5;
+        ctx.save();
+        ctx.globalAlpha = 1 - t;
+        ctx.translate(pr.x, floatY);
+        ctx.scale(scale, scale);
+        ctx.fillStyle = "#FFD54A";
+        this._starPath(ctx, 0, 0, 13, 5.5, 6);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.save();
+        ctx.globalAlpha = 1 - t;
+        ctx.fillStyle = "#2E7D4F";
+        ctx.font = "bold 18px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(`+${pr.points}`, pr.x, floatY - 22);
+        ctx.restore();
+        return;
+      }
       ctx.save();
       ctx.translate(pr.x, groundY - pr.y);
       if (pr.type === "bird") {

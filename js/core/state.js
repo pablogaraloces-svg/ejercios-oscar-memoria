@@ -17,6 +17,7 @@ export const DEFAULT_SETTINGS = {
   voiceURI: null, // voz elegida por la familia (voces instaladas en el dispositivo)
   voiceRate: 0.92, // 0.75 lenta, 0.92 normal, 1.12 rápida
   voicePitch: 1.0, // tono, margen pequeño (0.85 - 1.15)
+  voiceVolume: 1.0, // volumen de la voz (0-1), para que suene siempre al nivel configurado desde el arranque
   highContrast: false,
   textSize: "base", // base | lg | xl
   reduceMotion: false,

@@ -8,7 +8,7 @@ import { getAllProfiles, createProfile, deleteProfileCascade } from "../core/pro
 const TABS = [
   { key: "perfiles", label: "👤 Perfiles" },
   { key: "recordatorios", label: "✅ Recordatorios" },
-  { key: "voz", label: "🔊 Voz y música" },
+  { key: "voz", label: "🔊 Audio" },
   { key: "accesibilidad", label: "🔎 Accesibilidad" },
   { key: "password", label: "🔑 Contraseña admin" },
 ];
@@ -519,6 +519,29 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
     };
     voiceCard.appendChild(pitchInput);
 
+    // Volumen de la voz: para que siempre suene al nivel elegido desde
+    // el arranque, ni muy alta ni muy baja.
+    const volumeTitle = document.createElement("p");
+    volumeTitle.className = "text-md";
+    volumeTitle.style.marginTop = "14px";
+    volumeTitle.textContent = "Volumen de la voz";
+    voiceCard.appendChild(volumeTitle);
+
+    const volumeInput = document.createElement("input");
+    volumeInput.type = "range";
+    volumeInput.min = "0";
+    volumeInput.max = "1";
+    volumeInput.step = "0.1";
+    volumeInput.value = String(s.voiceVolume ?? 1.0);
+    volumeInput.style.width = "100%";
+    volumeInput.style.height = "48px";
+    volumeInput.oninput = async () => {
+      s.voiceVolume = Number(volumeInput.value);
+      Voice.setVolume(s.voiceVolume);
+      await DB.put("settings", s);
+    };
+    voiceCard.appendChild(volumeInput);
+
     const tryBtn = document.createElement("button");
     tryBtn.className = "btn btn-ghost";
     tryBtn.style.marginTop = "10px";
@@ -537,7 +560,7 @@ export async function renderSettings(tabsEl, rootEl, ctx) {
     note.style.marginTop = "10px";
     note.style.color = "var(--color-text-soft)";
     note.textContent =
-      "Nota: para voces más naturales y humanas, se pueden instalar voces de mayor calidad desde los Ajustes de Android (Ajustes > Sistema > Idiomas y entrada > Síntesis de voz > Motor de Google > Instalar datos de voz). En cuanto se instalen, aparecerán aquí automáticamente para elegir, sin necesitar conexión después de instalarlas.";
+      "Nota: esta lista muestra las voces que el propio navegador ofrece a la aplicación — el detalle de variantes (hombre/mujer y sus acentos) que se ve en los Ajustes de Android no siempre está disponible aquí, es una limitación del sistema, no de la aplicación. La app ya elige automáticamente, de entre las instaladas, la de mejor calidad disponible. Para tener voces menos robóticas: en Ajustes de Android > Sistema > Idiomas y entrada > Síntesis de voz > Motor de Google > Instalar datos de voz, se pueden descargar voces de mayor calidad (siguen funcionando sin conexión después); en cuanto se instalen, aparecerán aquí automáticamente para poder probarlas y elegir la que mejor suene.";
     voiceCard.appendChild(note);
     wrap.appendChild(voiceCard);
 
