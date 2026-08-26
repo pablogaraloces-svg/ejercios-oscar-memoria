@@ -588,7 +588,6 @@ export class RestGame {
       ctx.fill();
     }
   }
-    }
 
   /**
    * Animal-obstáculo: el mismo emoji ya usado en el ejercicio de

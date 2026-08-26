@@ -104,6 +104,29 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 2.5 (corrección de un error real que rompía la app)
+
+**El fallo que impedía usar la versión 2.4**
+- Encontrada la causa exacta: en la última edición de `restGame.js`
+  (al quitar un método que ya no se usaba) quedó una llave de cierre `}`
+  sobrante, que cerraba la clase del juego antes de tiempo.
+- Como `session.js` (la sesión de ejercicios) importa esa misma cadena
+  de módulos para el juego de descanso del final, el fallo se propagaba
+  hacia arriba y podía impedir que la aplicación entera cargara bien —
+  coincide exactamente con "no me deja actualizar".
+- Este tipo de error no lo detecta de forma fiable la comprobación de
+  sintaxis normal (`node --check`) en archivos `.js`, así que pasó
+  desapercibido en la verificación anterior. Esta vez lo localicé
+  forzando una comprobación estricta de módulo ES — la misma exigencia
+  que aplica un navegador real — y a partir de ahora la aplico siempre.
+- Corregido y verificado a fondo: además de la sintaxis, se simuló la
+  ejecución real de los 3 juegos con un DOM y un canvas de verdad
+  (construcción de la pantalla, salto, un fotograma completo de
+  actualización, y el dibujo de animales/frutas nuevo), confirmando que
+  todo funciona de principio a fin sin lanzar ningún error. Se
+  importaron también, uno por uno, los 46 módulos del proyecto para
+  descartar cualquier otro problema similar.
+
 ## 🆕 Novedades de la versión 2.4 (Sala de Juegos, volumen, y revisión de los 3 juegos)
 
 **Sala de Juegos — cuadrícula en vez de lista**
