@@ -104,6 +104,12 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 2.8 (prueba de actualización automática)
+
+- Único cambio: el número de versión pasa de 2.7 a 2.8. Sirve para
+  comprobar que la publicación automática en GitHub llega sola a la
+  tablet. No se ha tocado ninguna pantalla, ejercicio ni juego.
+
 ## 🆕 Novedades de la versión 2.7 (Familia: botones proporcionales)
 
 **Ejercicio de Familia — corregido de raíz (único cambio de esta versión)**
