@@ -15,8 +15,22 @@ export function generateFamilyPhotoExercise(family, level = 2) {
 
   // Mantenemos siempre 4 respuestas cuando hay suficientes familiares
   // cargados; con menos disponibles, se usan los que haya (mínimo 2).
-  const optionCount = Math.min(family.length, 4);
-  const chosen = shuffle(family).slice(0, optionCount);
+  // Nunca se muestran a la vez dos familiares con el mismo nombre (por
+  // ejemplo, dos "María"): Óscar no podría distinguir los botones. Si hay
+  // nombres repetidos, en cada pregunta se usa solo uno de ellos, elegido
+  // al azar, así que con el tiempo salen todos.
+  const seenNames = new Set();
+  const uniqueByName = shuffle(family).filter((f) => {
+    const key = (f.name || "").trim().toLocaleLowerCase("es");
+    if (!key) return true; // sin nombre: se deja como estaba antes
+    if (seenNames.has(key)) return false;
+    seenNames.add(key);
+    return true;
+  });
+  if (uniqueByName.length < 2) return null;
+
+  const optionCount = Math.min(uniqueByName.length, 4);
+  const chosen = uniqueByName.slice(0, optionCount);
   const target = chosen[randInt(0, chosen.length - 1)];
 
   return {
@@ -30,7 +44,8 @@ export function generateFamilyPhotoExercise(family, level = 2) {
       label: f.name,
       relation: f.relation || "",
       gender: f.gender || null,
-      correct: f.name === target.name,
+      // Se compara la persona en sí, no solo el nombre escrito.
+      correct: f === target,
     })),
   };
 }

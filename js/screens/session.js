@@ -607,22 +607,48 @@ export class SessionRunner {
 
     if (compact) {
       // Familia: todos los botones deben medir siempre lo mismo, tenga
-      // el nombre las letras que tenga. Si un nombre no cabe en una
-      // sola línea con la letra grande, se reduce el tamaño de letra
-      // (nunca el tamaño del botón) hasta que quepa.
-      this.optionButtons.forEach((btn) => {
-        const nameEl = btn.querySelector(".option-card-name");
-        if (!nameEl) return;
-        const maxWidth = btn.clientWidth - 28; // margen interior de sobra
-        let fontSize = parseFloat(getComputedStyle(nameEl).fontSize);
-        while (nameEl.scrollWidth > maxWidth && fontSize > 15) {
-          fontSize -= 1;
-          nameEl.style.fontSize = `${fontSize}px`;
-        }
-      });
+      // el nombre las letras que tenga (ver fitFamilyNames).
+      this.fitFamilyNames();
+
+      // Si se gira la tablet (o cambia el tamaño de la pantalla) en mitad
+      // del ejercicio, se vuelve a calcular el tamaño de letra de cada
+      // nombre con las nuevas medidas. El aviso se registra una sola vez
+      // por sesión, y espera un momento a que el giro termine antes de
+      // medir, para no hacerlo con las medidas a medio cambiar.
+      if (!this._familyResizeBound) {
+        this._familyResizeBound = true;
+        window.addEventListener("resize", () => {
+          clearTimeout(this._familyResizeTimer);
+          this._familyResizeTimer = setTimeout(() => this.fitFamilyNames(), 250);
+        });
+      }
     }
 
     this.startInactivityTimer(() => this.showInactivityHint());
+  }
+
+  /**
+   * Familia: si un nombre no cabe en una sola línea con la letra grande,
+   * se reduce el tamaño de letra de ese nombre (nunca el tamaño del
+   * botón) hasta que quepa. Antes de medir se vuelve siempre a la letra
+   * original, para que tras un giro de pantalla un nombre que ahora sí
+   * cabe recupere su tamaño grande. Si los botones ya no están en
+   * pantalla (el ejercicio terminó), no hace nada.
+   */
+  fitFamilyNames() {
+    (this.optionButtons || []).forEach((btn) => {
+      if (!btn.isConnected) return;
+      const nameEl = btn.querySelector(".option-card-name");
+      if (!nameEl) return;
+      nameEl.style.fontSize = "";
+      const maxWidth = btn.clientWidth - 28; // margen interior de sobra
+      if (maxWidth <= 0) return; // botón aún sin medidas reales: no tocar
+      let fontSize = parseFloat(getComputedStyle(nameEl).fontSize);
+      while (nameEl.scrollWidth > maxWidth && fontSize > 15) {
+        fontSize -= 1;
+        nameEl.style.fontSize = `${fontSize}px`;
+      }
+    });
   }
 
   /* ---------------- Puzle de herramientas ---------------- */

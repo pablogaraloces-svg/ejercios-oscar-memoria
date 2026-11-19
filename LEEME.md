@@ -104,6 +104,24 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 2.9 (Familia: giro de pantalla y nombres repetidos)
+
+**Ejercicio de Familia — dos ajustes (únicos cambios de esta versión)**
+- Si se gira la tablet en mitad del ejercicio, el tamaño de letra de
+  cada nombre se vuelve a calcular con las nuevas medidas (espera un
+  momento a que termine el giro). Los botones siguen midiendo siempre
+  lo mismo; un nombre que ahora sí cabe recupera su letra grande.
+- Nunca aparecen a la vez dos familiares con el mismo nombre (por
+  ejemplo, dos "María"), porque no se podrían distinguir. Si hay
+  nombres repetidos, en cada pregunta sale solo uno de ellos al azar,
+  así que con el tiempo salen todos. Además, el acierto se comprueba
+  por la persona en sí, no solo por el nombre escrito.
+- Verificado: simulación de 5000 preguntas con dos "María" (nunca salen
+  juntas, siempre hay una sola respuesta correcta y salen las dos
+  personas por igual) y prueba en navegador real girando la pantalla
+  de horizontal a vertical y vuelta.
+- Ningún otro ejercicio se ha tocado en esta versión.
+
 ## 🆕 Novedades de la versión 2.8 (prueba de actualización automática)
 
 - Único cambio: el número de versión pasa de 2.7 a 2.8. Sirve para
