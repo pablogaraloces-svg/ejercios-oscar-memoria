@@ -104,6 +104,25 @@ pudiera saltar sobre el paso equivocado más tarde), que el orden de
 pasos es correcto tanto con recordatorios como sin ellos, y que no queda
 ningún resto del sistema de avance automático anterior.
 
+## 🆕 Novedades de la versión 3.0 (arreglado: la tablet se quedaba en una versión anterior)
+
+**Causa encontrada y corregida (único cambio de esta versión)**
+- GitHub Pages deja guardada cada copia de los archivos unos 10 minutos
+  en el navegador. Al instalarse una versión nueva, el Service Worker
+  pedía los archivos de forma normal y recibía esas copias VIEJAS
+  guardadas, así que la tablet guardaba la versión anterior con el
+  número nuevo y se quedaba atascada. Pasaba al publicar una versión
+  poco después de la anterior (como la 2.9 justo tras la 2.8).
+- Ahora cada archivo se pide directamente a internet al instalar una
+  versión nueva, saltándose esa copia guardada.
+- Verificado en un navegador real simulando la misma caché de 10
+  minutos de GitHub: antes del arreglo la versión nueva no llegaba
+  nunca; con el arreglo llega a la primera, incluso publicando dos
+  versiones seguidas. Una tablet ya atascada se arregla sola al recibir
+  esta versión.
+- Número 3.0 según la norma de numeración (tras la 2.9 viene la 3.0).
+  Ninguna pantalla, ejercicio ni juego se ha tocado.
+
 ## 🆕 Novedades de la versión 2.9 (Familia: giro de pantalla y nombres repetidos)
 
 **Ejercicio de Familia — dos ajustes (únicos cambios de esta versión)**

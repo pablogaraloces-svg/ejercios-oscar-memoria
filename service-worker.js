@@ -5,7 +5,7 @@
  * pequeños suman un decimal (v11.1, v11.2...), los grandes pasan a la
  * siguiente versión mayor (v12).
  */
-const CACHE_VERSION = "acompanante-v2.9";
+const CACHE_VERSION = "acompanante-v3.0";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -75,7 +75,16 @@ const CORE_ASSETS = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) => cache.addAll(CORE_ASSETS)).then(() => self.skipWaiting())
+    // IMPORTANTE: cada archivo se pide con cache: "reload", es decir,
+    // directamente a internet, saltándose la caché normal del navegador.
+    // GitHub Pages deja guardada cada copia unos 10 minutos; sin esto, si
+    // se publicaba una versión nueva poco después de la anterior, el
+    // Service Worker nuevo guardaba los archivos VIEJOS que aún tenía el
+    // navegador, y la tablet se quedaba atascada en la versión anterior.
+    caches
+      .open(CACHE_VERSION)
+      .then((cache) => cache.addAll(CORE_ASSETS.map((url) => new Request(url, { cache: "reload" }))))
+      .then(() => self.skipWaiting())
   );
 });
 
