@@ -23,7 +23,6 @@ import { buildFamilyIdentityPhrase } from "../core/familyPhrase.js";
 import { buildSessionExercises, CATEGORY_LABELS } from "../exercises/index.js";
 import { burstConfetti, celebrateSuccess } from "../core/confetti.js";
 import { getDateKey } from "../core/dateUtils.js";
-import { renderCerebrinSaltarin } from "./gamePlayer.js";
 
 const INACTIVITY_MS = 60000;
 const POSITIVE_MOODS = new Set(["Muy bien", "Bien"]);
@@ -66,7 +65,6 @@ export class SessionRunner {
       ...(reminders.length ? [{ type: "reminders", reminders }] : []),
       { type: "exercises_intro" },
       ...exercises.map((ex) => ({ type: "exercise", exercise: ex })),
-      { type: "rest_game" },
       { type: "closing" },
     ];
     this.renderStep();
@@ -204,7 +202,6 @@ export class SessionRunner {
     else if (step.type === "reminders") this.renderReminders(step.reminders);
     else if (step.type === "exercises_intro") this.renderExercisesIntro();
     else if (step.type === "exercise") this.renderExercise(step.exercise);
-    else if (step.type === "rest_game") this.renderRestGame();
     else if (step.type === "closing") this.renderClosing();
   }
 
@@ -935,34 +932,6 @@ export class SessionRunner {
   }
 
   /* ---------------- Cierre ---------------- */
-
-  /**
-   * "Cerebrín Saltarín" como "juego de descanso": al terminar los
-   * ejercicios cognitivos, se ofrece como premio relajante. Delega toda
-   * la lógica del juego (motor, sonido, música, voz) en el componente
-   * compartido gamePlayer.js — el mismo que usa la Sala de Juegos para
-   * el juego libre — para no duplicar código entre ambos sitios.
-   * Totalmente independiente del sistema de estadísticas cognitivas.
-   */
-  renderRestGame() {
-    // Se limpia siempre el contenido explícitamente: este método también
-    // se llama directamente al "Repetir" (no solo desde renderStep()),
-    // así que no puede depender de que ya venga vacío.
-    this.contentEl.innerHTML = "";
-    this.say("Ahora un ratito de diversión: Cerebrín Saltarín.");
-    // La música relajante de fondo (si estaba sonando durante los
-    // ejercicios) se apaga aquí: el juego tiene su propia música arcade,
-    // y no deben sonar las dos a la vez. Se reanuda sola al terminar la
-    // sesión (goHome() ya se encarga de eso).
-    Music.stop();
-    this._gamePlayer = renderCerebrinSaltarin(this.contentEl, {
-      mode: "rest",
-      profile: this.profile,
-      // "Salir" desde el juego de descanso continúa exactamente el
-      // cierre normal de la sesión — no se toca ese sistema.
-      onExit: () => this.next(),
-    });
-  }
 
   async renderClosing() {
     const box = document.createElement("div");
