@@ -1,6 +1,7 @@
 import { renderCerebrinSaltarin } from "./gamePlayer.js";
 import { renderSimonGame } from "./simonGame.js";
 import { renderWordSearchGame } from "./wordSearchGame.js";
+import { renderTetrisGame } from "./tetrisGame.js";
 import { getGameStats } from "../core/gameStats.js";
 
 /**
@@ -37,6 +38,14 @@ const GAMES = [
     description: "Encuentra las palabras escondidas en la rejilla de letras.",
     enabled: true,
     render: renderWordSearchGame,
+  },
+  {
+    id: "tetris",
+    name: "Tetris",
+    emoji: "🧱",
+    description: "Encaja las piezas que caen para completar líneas, como en el Tetris de siempre.",
+    enabled: true,
+    render: renderTetrisGame,
   },
   // Futuros juegos: añadir aquí una entrada más, con su propio "render".
 ];

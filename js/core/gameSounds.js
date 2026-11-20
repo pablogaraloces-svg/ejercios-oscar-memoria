@@ -56,6 +56,35 @@ const KICK_STEPS = new Set([0, 8]);
 const HIHAT_STEPS = new Set([2, 4, 6, 10, 12, 14]);
 const STEP_DUR = 0.19;
 
+// "Korobéiniki" (canción popular rusa del s. XIX, dominio público): la
+// melodía clásica del Tetris. Cada nota = [frecuencia, duración en
+// corcheas]; 0 = silencio. Ocho compases (64 corcheas) que se repiten.
+const N = { A4: 440.0, B4: 493.88, C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, A5: 880.0, GS4: 415.3 };
+const KOROBEINIKI = [
+  [N.E5, 2], [N.B4, 1], [N.C5, 1], [N.D5, 2], [N.C5, 1], [N.B4, 1],
+  [N.A4, 2], [N.A4, 1], [N.C5, 1], [N.E5, 2], [N.D5, 1], [N.C5, 1],
+  [N.B4, 3], [N.C5, 1], [N.D5, 2], [N.E5, 2],
+  [N.C5, 2], [N.A4, 2], [N.A4, 2], [0, 2],
+  [0, 1], [N.D5, 2], [N.F5, 1], [N.A5, 2], [N.G5, 1], [N.F5, 1],
+  [N.E5, 3], [N.C5, 1], [N.E5, 2], [N.D5, 1], [N.C5, 1],
+  [N.B4, 2], [N.B4, 1], [N.C5, 1], [N.D5, 2], [N.E5, 2],
+  [N.C5, 2], [N.A4, 2], [N.A4, 2], [0, 2],
+];
+// Se expande a un arreglo de 64 corcheas: en cada paso, la nota que empieza (o null).
+const TETRIS_MELODY = (() => {
+  const steps = [];
+  KOROBEINIKI.forEach(([f, len]) => {
+    steps.push(f ? [f, len] : null);
+    for (let i = 1; i < len; i++) steps.push(null);
+  });
+  return steps;
+})();
+// Bajo: raíz grave / octava, alternando cada corchea (un acorde por compás).
+const TETRIS_BASS_ROOTS = [82.41, 110.0, 82.41, 110.0, 73.42, 65.41, 82.41, 110.0]; // E A E A D C E A
+const TETRIS_STEP = 0.2; // corchea tranquila (más lenta que el original, a propósito)
+
+let currentTrack = "arcade";
+
 let noiseBuffer = null;
 function getNoiseBuffer(ctx) {
   if (noiseBuffer) return noiseBuffer;
@@ -115,6 +144,21 @@ function scheduleLoop() {
   if (!running || !audioCtx) return;
   const now = audioCtx.currentTime;
   const lookAhead = 0.9; // se programa con margen (scheduler "look-ahead"), así el bucle es fluido y sin cortes
+  if (currentTrack === "tetris") {
+    while (nextStepTime < now + lookAhead) {
+      const i = stepIndex % TETRIS_MELODY.length;
+      const note = TETRIS_MELODY[i];
+      if (note) playChiptuneNote(note[0], nextStepTime, TETRIS_STEP * note[1] * 0.9, musicGain, "square", 0.09);
+      const root = TETRIS_BASS_ROOTS[Math.floor(i / 8)];
+      playChiptuneNote(i % 2 ? root * 2 : root, nextStepTime, TETRIS_STEP * 0.9, musicGain, "triangle", 0.15);
+      if (i % 8 === 0 || i % 8 === 4) playKick(nextStepTime);
+      if (i % 2 === 1) playHihat(nextStepTime);
+      stepIndex++;
+      nextStepTime += TETRIS_STEP;
+    }
+    scheduleTimer = setTimeout(scheduleLoop, 100);
+    return;
+  }
   while (nextStepTime < now + lookAhead) {
     const i = stepIndex % BASS_PATTERN.length;
     playChiptuneNote(BASS_PATTERN[i], nextStepTime, STEP_DUR * 0.92, musicGain, "triangle", 0.16);
@@ -139,10 +183,12 @@ function duckMusic() {
 }
 
 export const GameSounds = {
-  startMusic(volume = 0.65) {
+  /** `track`: "arcade" (Cerebrín Saltarín, por defecto) o "tetris". */
+  startMusic(volume = 0.65, track = "arcade") {
     const ctx = ensureContext();
     if (!ctx) return;
     baseMusicVolume = volume;
+    currentTrack = track;
     if (ctx.state === "suspended") ctx.resume();
     running = true;
     nextStepTime = ctx.currentTime + 0.05;
@@ -275,6 +321,70 @@ export const GameSounds = {
     duckMusic();
     const t = ctx.currentTime;
     [783.99, 659.25, 523.25].forEach((f, i) => playChiptuneNote(f, t + i * 0.09, 0.14, sfxGain, "triangle", 0.2));
+  },
+
+  /* ---------- Tetris ---------- */
+
+  /** Mover la pieza: un "tic" muy corto y suave. */
+  playTetrisMove() {
+    const ctx = ensureContext();
+    if (!ctx) return;
+    playChiptuneNote(330, ctx.currentTime, 0.04, sfxGain, "square", 0.07);
+  },
+
+  /** Girar la pieza. */
+  playTetrisRotate() {
+    const ctx = ensureContext();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    playChiptuneNote(523.25, t, 0.05, sfxGain, "square", 0.09);
+    playChiptuneNote(784.0, t + 0.03, 0.05, sfxGain, "square", 0.07);
+  },
+
+  /** La pieza se queda fijada: golpe seco y grave. */
+  playTetrisLock() {
+    const ctx = ensureContext();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(180, t);
+    osc.frequency.exponentialRampToValueAtTime(70, t + 0.09);
+    gain.gain.setValueAtTime(0.001, t);
+    gain.gain.exponentialRampToValueAtTime(0.3, t + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    osc.connect(gain);
+    gain.connect(sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.14);
+  },
+
+  /** Líneas completadas: más notas cuantas más líneas (4 = ¡Tetris!). */
+  playTetrisLines(n) {
+    const ctx = ensureContext();
+    if (!ctx) return;
+    duckMusic();
+    const t = ctx.currentTime;
+    const run = n >= 4 ? [523.25, 659.25, 783.99, 1046.5, 1318.5, 1568.0, 2093.0] : [659.25, 783.99, 1046.5, 1318.5].slice(0, n + 1);
+    run.forEach((f, i) => playChiptuneNote(f, t + i * 0.06, 0.14, sfxGain, n >= 4 ? "square" : "triangle", 0.2));
+  },
+
+  /** Subida de nivel. */
+  playTetrisLevelUp() {
+    const ctx = ensureContext();
+    if (!ctx) return;
+    duckMusic();
+    const t = ctx.currentTime + 0.45;
+    [783.99, 987.77, 1174.66, 1567.98].forEach((f, i) => playChiptuneNote(f, t + i * 0.08, 0.16, sfxGain, "triangle", 0.2));
+  },
+
+  /** Fin de partida: descendente y suave, nunca triste ni brusco. */
+  playTetrisGameOver() {
+    const ctx = ensureContext();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    [659.25, 587.33, 523.25, 493.88, 440.0].forEach((f, i) => playChiptuneNote(f, t + i * 0.14, 0.22, sfxGain, "triangle", 0.2));
   },
 
   /** Fanfarria breve al llegar a la meta — claramente distinta de
