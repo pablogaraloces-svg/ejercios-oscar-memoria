@@ -842,7 +842,10 @@ body.high-contrast .family-title-elegant {
   height: auto;
   margin-bottom: var(--space-2);
   filter: drop-shadow(0 16px 30px rgba(46, 54, 74, 0.16));
-  animation: splashEntrance 1.1s var(--ease-spring) both;
+  transform-origin: 50% 78%;
+  animation:
+    splashEntrance 1.1s var(--ease-spring) both,
+    heroCelebrate 3.4s ease-in-out 1.1s infinite;
 }
 
 /* Nunca permitir que nada empuje scroll horizontal */
@@ -1345,7 +1348,9 @@ body.high-contrast .game-room-bg-mascot { display: none; }
   width: min(46vw, 300px);
   height: auto;
   filter: drop-shadow(0 18px 34px rgba(46, 54, 74, 0.18));
-  animation: splashEntrance 1.4s var(--ease-spring) both;
+  animation:
+    splashEntrance 1.4s var(--ease-spring) both,
+    heroFloat 3.6s ease-in-out 1.4s infinite;
   transform-origin: 50% 78%;
 }
 @keyframes splashEntrance {
@@ -1412,7 +1417,10 @@ body.high-contrast .game-room-bg-mascot { display: none; }
   width: min(40vw, 260px);
   height: auto;
   filter: drop-shadow(0 18px 34px rgba(46, 54, 74, 0.18));
-  animation: splashEntrance 1.1s var(--ease-spring) both;
+  transform-origin: 50% 78%;
+  animation:
+    splashEntrance 1.1s var(--ease-spring) both,
+    heroFloat 3.2s ease-in-out 1.1s infinite;
 }
 /* "¡COMENCEMOS!": sin texto explicativo (solo la mascota y la voz), con
    una fuente grande, alegre y con un pequeño rebote de entrada — ya que
@@ -2076,4 +2084,33 @@ body.high-contrast .intro-comencemos {
   .wordsearch-grid { order: 1; width: min(440px, 85vw); }
   .wordsearch-side { order: 2; width: 100%; max-width: 500px; }
   .wordsearch-list { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+}
+
+/* ---------- Cerebrín a pantalla completa: vida continua tras la entrada ---------- */
+/* Tras la entrada con saludo, Cerebrín no se queda congelado: flota
+   suavemente, se balancea un poco y "respira" (inicio y ¡COMENCEMOS!).
+   Empieza y termina en su pose oficial para enlazar sin saltos. */
+@keyframes heroFloat {
+  0%   { transform: translateY(0) rotate(0deg) scale(1); }
+  25%  { transform: translateY(-8px) rotate(-2deg) scale(1.01); }
+  50%  { transform: translateY(-13px) rotate(0deg) scale(1.025); }
+  75%  { transform: translateY(-7px) rotate(2deg) scale(1.01); }
+  100% { transform: translateY(0) rotate(0deg) scale(1); }
+}
+/* Despedida: flota y, de vez en cuando, da un saltito de alegría con un
+   pequeño aterrizaje elástico y un saludo de despedida. */
+@keyframes heroCelebrate {
+  0%   { transform: translateY(0) rotate(0deg) scale(1, 1); }
+  18%  { transform: translateY(-6px) rotate(-2deg) scale(1, 1); }
+  34%  { transform: translateY(0) rotate(0deg) scale(1.03, 0.97); }
+  46%  { transform: translateY(-26px) rotate(0deg) scale(0.98, 1.03); }
+  58%  { transform: translateY(0) rotate(0deg) scale(1.04, 0.96); }
+  66%  { transform: translateY(-4px) rotate(0deg) scale(1, 1); }
+  74%  { transform: translateY(0) rotate(-5deg) scale(1, 1); }
+  82%  { transform: translateY(0) rotate(5deg) scale(1, 1); }
+  90%  { transform: translateY(0) rotate(-2deg) scale(1, 1); }
+  100% { transform: translateY(0) rotate(0deg) scale(1, 1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash-mascot, .intro-mascot, .closing-mascot { animation-iteration-count: 1, 0; }
 }
