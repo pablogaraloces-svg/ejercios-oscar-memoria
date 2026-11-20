@@ -33,6 +33,15 @@ const ANIMALS = [
 // Más peso para los globos (aparecen con más frecuencia que el resto),
 // alternando también con frutas — variedad de premios "que flotan".
 const PRIZE_CYCLE = ["star", "balloon", "fruit", "balloon", "bird", "balloon"];
+// "Vitamina" (power-up al estilo de los clásicos de plataformas): al
+// cogerla, durante un rato Cerebrín puede dar un DOBLE SALTO (pulsar
+// SALTAR otra vez en el aire). Aparece de vez en cuando, nunca seguida.
+const VITAMIN_DURATION_MS = 15000;
+const VITAMIN_FIRST_MS = 20000;
+const VITAMIN_GAP_MIN_MS = 38000;
+const VITAMIN_GAP_MAX_MS = 52000;
+const GRAVITY = 1350;
+
 const FRUITS = [
   { kind: "apple", points: 15 },
   { kind: "cherry", points: 25 },
@@ -101,6 +110,20 @@ export class RestGame {
     this._announcedNearGoal = false;
     this._announcedAlmostThere = false;
     this._nextPrizeIsBalloon = 0;
+    // Vitamina / doble salto
+    this.vitamins = [];
+    this.nextVitaminAt = VITAMIN_FIRST_MS;
+    this.powerUntil = 0;
+    this._wasPowered = false;
+    this.airJumpsLeft = 0;
+    this.floaty = false; // tras el doble salto cae algo más despacio (planea)
+    this.flipStart = -9999; // voltereta del doble salto
+    this.sparkles = [];
+  }
+
+  /** ¿Tiene ahora mismo el súper poder de la vitamina? */
+  _powered() {
+    return this.elapsed < this.powerUntil;
   }
 
   start() {
@@ -115,8 +138,27 @@ export class RestGame {
   }
 
   jump() {
-    if (this.jumping || this.finished) return;
+    if (this.finished) return;
+    if (this.jumping) {
+      // Doble salto (solo con la vitamina activa): un segundo impulso en
+      // el aire, con voltereta y destellos. Nunca saca a Cerebrín por
+      // arriba del escenario: el impulso se calcula según la altura que
+      // le queda libre, y después cae planeando un poco más despacio.
+      if (this._powered() && this.airJumpsLeft > 0) {
+        this.airJumpsLeft--;
+        const maxH = this._maxJumpHeight();
+        const free = Math.max(0, maxH - -this.cerebrinY);
+        this.velocityY = -Math.max(260, Math.sqrt(2 * GRAVITY * free));
+        this.floaty = true;
+        this.flipStart = this.elapsed;
+        this.squash = 1.15;
+        this._burstSparkles(this.cerebrinX, this.groundY + this.cerebrinY - 10, 12);
+        this.callbacks.onDoubleJump?.();
+      }
+      return;
+    }
     this.jumping = true;
+    this.airJumpsLeft = this._powered() ? 1 : 0;
     // Salto con más recorrido que antes, para pasar con margen por
     // encima de un animal (cabra, oveja, burro o vaca) sin llegar a
     // rozarlo, manteniendo un vuelo natural y fácil de anticipar
@@ -182,20 +224,106 @@ export class RestGame {
     // aterrizaje), con un pequeño efecto de "chafado" al tocar el suelo
     // para reforzar visualmente el aterrizaje.
     if (this.jumping) {
-      this.velocityY += 1350 * dt; // gravedad
+      this.velocityY += GRAVITY * (this.floaty && this.velocityY > 0 ? 0.6 : 1) * dt; // gravedad
       this.cerebrinY += this.velocityY * dt;
+      const maxH = this._maxJumpHeight();
+      if (this.cerebrinY < -maxH) {
+        this.cerebrinY = -maxH;
+        this.velocityY = Math.max(this.velocityY, 0);
+      }
       if (this.cerebrinY >= 0) {
         this.cerebrinY = 0;
         this.velocityY = 0;
         this.jumping = false;
+        this.floaty = false;
         this.squash = 0.86; // se "achata" un instante al aterrizar
       }
     }
+
+    // Fin del súper poder: aviso sonoro (lo gestiona gamePlayer).
+    const powered = this._powered();
+    if (this._wasPowered && !powered) this.callbacks.onPowerDown?.();
+    this._wasPowered = powered;
+    // Estela de destellos mientras dura el poder.
+    if (powered && Math.random() < dt * 9) {
+      this._burstSparkles(this.cerebrinX - 18, this.groundY + this.cerebrinY - this.cerebrinDrawH * (0.3 + Math.random() * 0.5), 1);
+    }
+    this.sparkles.forEach((sp) => {
+      sp.x += (sp.vx - this.scrollSpeed * 0.35) * dt;
+      sp.y += sp.vy * dt;
+      sp.vy += 120 * dt;
+      sp.life -= dt;
+    });
+    this.sparkles = this.sparkles.filter((sp) => sp.life > 0);
     // El efecto de chafado se recupera suavemente hacia 1 (tamaño normal).
     this.squash += (1 - this.squash) * Math.min(1, dt * 10);
 
     this._updateObstacles(dt, progress);
     this._updatePrizes(dt, progress);
+    this._updateVitamins(dt);
+  }
+
+  /** Altura máxima (sobre el suelo) a la que puede llegar Cerebrín sin
+   * salirse por arriba del escenario. */
+  _maxJumpHeight() {
+    return this.groundY - this.cerebrinDrawH - 6;
+  }
+
+  _burstSparkles(x, y, count) {
+    const colors = ["#FFD54A", "#FFFFFF", "#F5A93E", "#7FCC9A"];
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const sp = 40 + Math.random() * 90;
+      this.sparkles.push({
+        x, y,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp - 30,
+        life: 0.5 + Math.random() * 0.4,
+        size: 4 + Math.random() * 4,
+        color: colors[i % colors.length],
+      });
+    }
+  }
+
+  _updateVitamins(dt) {
+    this.nextVitaminAt -= dt * 1000;
+    if (this.nextVitaminAt <= 0) {
+      const busy =
+        this._powered() ||
+        this.vitamins.some((v) => !v.collected) ||
+        this.obstacles.some((ob) => ob.x > this.w - 80 && ob.x < this.w + 260) ||
+        this.prizes.some((pr) => pr.x > this.w - 60);
+      if (busy || this.finished) {
+        this.nextVitaminAt = 700; // se reintenta en cuanto haya hueco
+      } else {
+        this.vitamins.push({ x: this.w + 60, y: 122 + Math.random() * 16, size: 46, spin: 0, collected: false, collectedAt: 0 });
+        this.nextVitaminAt = VITAMIN_GAP_MIN_MS + Math.random() * (VITAMIN_GAP_MAX_MS - VITAMIN_GAP_MIN_MS);
+      }
+    }
+
+    const cerebrinLeft = this.cerebrinX - CEREBRIN_SIZE / 2 + 8;
+    const cerebrinRight = this.cerebrinX + CEREBRIN_SIZE / 2 - 8;
+    const cerebrinTop = this.groundY + this.cerebrinY - this.cerebrinDrawH;
+    this.vitamins.forEach((v) => {
+      v.x -= this.scrollSpeed * dt;
+      v.spin += dt * 2;
+      if (v.collected) return;
+      const half = v.size / 2 + 4; // un poco generosa: que sea fácil cogerla
+      const top = this.groundY - v.y - half;
+      const bottom = this.groundY - v.y + half;
+      if (cerebrinRight > v.x - half && cerebrinLeft < v.x + half && cerebrinTop < bottom && this.groundY + this.cerebrinY > top) {
+        v.collected = true;
+        v.collectedAt = this.elapsed;
+        this.powerUntil = this.elapsed + VITAMIN_DURATION_MS;
+        this._wasPowered = true;
+        // Si la coge en pleno salto, ya puede usar el doble salto en ese mismo salto.
+        if (this.jumping) this.airJumpsLeft = 1;
+        this.addPoints(25);
+        this._burstSparkles(v.x, this.groundY - v.y, 18);
+        this.callbacks.onPowerUp?.();
+      }
+    });
+    this.vitamins = this.vitamins.filter((v) => (v.collected ? this.elapsed - v.collectedAt < 600 : v.x > -60));
   }
 
   _updateObstacles(dt, progress) {
@@ -210,8 +338,10 @@ export class RestGame {
       this.obstacles.push({
         animal,
         x: this.w + 40,
-        width: 62,
-        height: 52,
+        // Más pequeños que antes (eran 62x52 y se dibujaban casi tan altos
+        // como el salto): ahora queda margen de sobra por encima.
+        width: 50,
+        height: 40,
         cleared: false,
         hit: false,
         hitAt: -9999,
@@ -262,7 +392,9 @@ export class RestGame {
       // Con bastante menos frecuencia que los animales, y solo si no hay
       // ninguno cerca de esa misma zona — así nunca hace falta
       // reaccionar a dos cosas a la vez.
-      const tooClose = this.obstacles.some((ob) => ob.x > this.w - 60 && ob.x < this.w + 260);
+      const tooClose =
+        this.obstacles.some((ob) => ob.x > this.w - 60 && ob.x < this.w + 260) ||
+        this.vitamins.some((v) => !v.collected && v.x > this.w - 120);
       if (!tooClose) {
         // Se turnan estrella / pájaro / fruta / globo. La fruta aparece
         // en pequeñas ráfagas de 2-3 seguidas (como un arco de monedas),
@@ -494,14 +626,71 @@ export class RestGame {
       }
     });
 
+    // Vitamina: cápsula brillante que flota con un halo que late y dos
+    // destellos girando alrededor (como el champiñón/estrella de los
+    // clásicos de plataformas: se reconoce de un vistazo que es "especial").
+    this.vitamins.forEach((v) => {
+      const cy = groundY - v.y + Math.sin(v.spin * 1.6) * 5;
+      if (v.collected) {
+        const k = Math.min(1, (this.elapsed - v.collectedAt) / 600);
+        ctx.save();
+        ctx.globalAlpha = 1 - k;
+        ctx.fillStyle = "#E85F73";
+        ctx.font = "900 20px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("¡DOBLE SALTO!", v.x, cy - 20 - k * 40);
+        ctx.restore();
+        return;
+      }
+      this._vitaminPath(ctx, v.x, cy, v.size, v.spin);
+    });
+
+    // Destellos (doble salto, vitamina y estela del súper poder).
+    this.sparkles.forEach((sp) => {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(1, sp.life * 2));
+      ctx.fillStyle = sp.color;
+      this._starPath(ctx, sp.x, sp.y, sp.size, sp.size / 2.4, 4);
+      ctx.fill();
+      ctx.restore();
+    });
+
     // Cerebrín: apoyado exactamente sobre la línea del suelo, con un
     // pequeño efecto de "chafado" al despegar/aterrizar, y un temblor
     // rápido y breve si acaba de chocar ("¡Ups!").
     const groundContactY = groundY + this.cerebrinY;
     const shaking = this.elapsed < this.shakeUntil;
     const shakeX = shaking ? Math.sin(this.elapsed * 0.09) * 5 : 0;
+    // Súper poder activo: halo dorado que late detrás de Cerebrín. En los
+    // 3 últimos segundos parpadea, para avisar de que se va a acabar.
+    const powered = this._powered();
+    if (powered) {
+      const left = this.powerUntil - this.elapsed;
+      const blinkOff = left < 3000 && Math.floor(left / 160) % 2 === 0;
+      if (!blinkOff) {
+        const cy = groundContactY - this.cerebrinDrawH * 0.5;
+        const r = this.cerebrinDrawH * (0.78 + Math.sin(this.elapsed / 140) * 0.06);
+        const halo = ctx.createRadialGradient(this.cerebrinX, cy, 4, this.cerebrinX, cy, r);
+        halo.addColorStop(0, "rgba(255, 224, 120, 0.55)");
+        halo.addColorStop(0.6, "rgba(255, 196, 70, 0.22)");
+        halo.addColorStop(1, "rgba(255, 196, 70, 0)");
+        ctx.fillStyle = halo;
+        ctx.beginPath();
+        ctx.arc(this.cerebrinX, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
     ctx.save();
     ctx.translate(this.cerebrinX + shakeX, groundContactY);
+    // Voltereta completa al hacer el doble salto (gira sobre su centro).
+    const flipT = (this.elapsed - this.flipStart) / 480;
+    if (flipT >= 0 && flipT < 1) {
+      const ease = 1 - Math.pow(1 - flipT, 3);
+      ctx.translate(0, -this.cerebrinDrawH / 2);
+      ctx.rotate(ease * Math.PI * 2);
+      ctx.translate(0, this.cerebrinDrawH / 2);
+    }
     ctx.scale(1 / this.squash, this.squash);
     if (this.mascotImg.complete && this.mascotImg.naturalWidth) {
       const dh = this.cerebrinDrawH;
@@ -512,6 +701,82 @@ export class RestGame {
       ctx.arc(0, -34, 34, 0, Math.PI * 2);
       ctx.fill();
     }
+    ctx.restore();
+
+    // Indicador del súper poder (arriba a la izquierda): cápsula + barra
+    // que se va vaciando, para ver cuánto tiempo queda de doble salto.
+    if (powered) {
+      const left = Math.max(0, this.powerUntil - this.elapsed) / VITAMIN_DURATION_MS;
+      const bw = 190, bh = 40, bx = this.w - bw - 12, by = 12;
+      ctx.save();
+      ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+      this._roundedRectPath(ctx, bx, by, bw, bh, 20);
+      ctx.fill();
+      this._vitaminPath(ctx, bx + 22, by + bh / 2, 26, 0, true);
+      ctx.fillStyle = "#B4421F";
+      ctx.font = "900 15px sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillText("DOBLE SALTO", bx + 42, by + 17);
+      ctx.fillStyle = "rgba(0,0,0,0.10)";
+      this._roundedRectPath(ctx, bx + 42, by + 24, bw - 56, 8, 4);
+      ctx.fill();
+      ctx.fillStyle = left < 0.2 ? "#E85F73" : "#F5A93E";
+      this._roundedRectPath(ctx, bx + 42, by + 24, Math.max(8, (bw - 56) * left), 8, 4);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  /** Vitamina: cápsula bicolor (naranja/amarilla) con brillo, halo que
+   * late y dos destellos orbitando. `small` = versión del indicador. */
+  _vitaminPath(ctx, x, y, size, spin, small = false) {
+    ctx.save();
+    ctx.translate(x, y);
+    if (!small) {
+      const pulse = 1 + Math.sin(spin * 3) * 0.08;
+      const halo = ctx.createRadialGradient(0, 0, 2, 0, 0, size * 0.95 * pulse);
+      halo.addColorStop(0, "rgba(255, 230, 140, 0.75)");
+      halo.addColorStop(1, "rgba(255, 210, 90, 0)");
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(0, 0, size * 0.95 * pulse, 0, Math.PI * 2);
+      ctx.fill();
+      for (let i = 0; i < 2; i++) {
+        const a = spin * 2.2 + i * Math.PI;
+        ctx.fillStyle = "#FFFFFF";
+        this._starPath(ctx, Math.cos(a) * size * 0.72, Math.sin(a) * size * 0.42, 5, 2, 4);
+        ctx.fill();
+      }
+      ctx.rotate(-0.5 + Math.sin(spin) * 0.15);
+    } else {
+      ctx.rotate(-0.5);
+    }
+    const len = size, r = size * 0.27;
+    // mitad izquierda (naranja)
+    ctx.fillStyle = "#FF7A3D";
+    ctx.beginPath();
+    ctx.arc(-len / 2 + r, 0, r, Math.PI / 2, (Math.PI * 3) / 2);
+    ctx.lineTo(0, -r);
+    ctx.lineTo(0, r);
+    ctx.closePath();
+    ctx.fill();
+    // mitad derecha (amarilla)
+    ctx.fillStyle = "#FFD54A";
+    ctx.beginPath();
+    ctx.arc(len / 2 - r, 0, r, -Math.PI / 2, Math.PI / 2);
+    ctx.lineTo(0, r);
+    ctx.lineTo(0, -r);
+    ctx.closePath();
+    ctx.fill();
+    // contorno suave + brillo
+    ctx.strokeStyle = "rgba(150, 60, 20, 0.45)";
+    ctx.lineWidth = small ? 1.5 : 2;
+    this._roundedRectPath(ctx, -len / 2, -r, len, r * 2, r);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+    this._roundedRectPath(ctx, -len / 2 + r * 0.6, -r * 0.62, len - r * 1.6, r * 0.42, r * 0.21);
+    ctx.fill();
     ctx.restore();
   }
 
@@ -687,7 +952,7 @@ export class RestGame {
     }
 
     ctx.save();
-    ctx.font = `${Math.round(height * 1.55)}px sans-serif`;
+    ctx.font = `${Math.round(height * 1.45)}px sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
     ctx.fillText(animal.emoji, 0, -bob + 2);

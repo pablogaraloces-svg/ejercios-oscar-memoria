@@ -1822,6 +1822,45 @@ body.high-contrast .intro-comencemos {
     inset 0 3px 6px rgba(255, 255, 255, 0.3),
     inset 0 -6px 10px rgba(0, 0, 0, 0.25);
 }
+/* Con la vitamina activa: botón dorado, brillo que late y un "×2". */
+.rest-game-jump-arcade-btn { position: relative; }
+.rest-game-jump-arcade-btn .rg-x2 {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  color: #E85F73;
+  font-size: 1.15rem;
+  font-weight: 900;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+.rest-game-jump-arcade-btn.powered {
+  background: radial-gradient(circle at 35% 28%, #FFE58A 0%, #FFB938 46%, #E08A12 100%);
+  box-shadow:
+    0 8px 0 #A85F05,
+    0 0 0 6px rgba(255, 213, 74, 0.35),
+    0 12px 22px rgba(224, 138, 18, 0.5),
+    inset 0 3px 6px rgba(255, 255, 255, 0.55),
+    inset 0 -10px 14px rgba(0, 0, 0, 0.18);
+  animation: jumpArcadeBreathe 0.9s ease-in-out infinite;
+}
+.rest-game-jump-arcade-btn.powered .rg-x2 { display: flex; }
+.rest-game-jump-arcade-btn.powered:active {
+  box-shadow:
+    0 2px 0 #A85F05,
+    0 0 0 6px rgba(255, 213, 74, 0.35),
+    inset 0 3px 6px rgba(255, 255, 255, 0.4),
+    inset 0 -6px 10px rgba(0, 0, 0, 0.2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rest-game-jump-arcade-btn.powered { animation: none; }
+}
 @keyframes jumpArcadeBreathe {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.035); }

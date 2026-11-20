@@ -247,6 +247,36 @@ export const GameSounds = {
     [880, 1174.66].forEach((f, i) => playChiptuneNote(f, t + i * 0.06, 0.14, sfxGain, "square", 0.22));
   },
 
+  /** "¡Vitamina!" — arpegio ascendente rápido y brillante, el típico
+   * sonido de "power-up" de los juegos de plataformas clásicos. */
+  playPowerUp() {
+    const ctx = ensureContext();
+    if (!ctx) return;
+    duckMusic();
+    const t = ctx.currentTime;
+    [392.0, 523.25, 659.25, 783.99, 1046.5, 1318.5, 1568.0].forEach((f, i) =>
+      playChiptuneNote(f, t + i * 0.055, 0.12, sfxGain, "square", 0.18)
+    );
+  },
+
+  /** Doble salto: un "fiu" más agudo que el salto normal. */
+  playDoubleJump() {
+    const ctx = ensureContext();
+    if (!ctx) return;
+    duckMusic();
+    const t = ctx.currentTime;
+    [660, 880, 1174.66].forEach((f, i) => playChiptuneNote(f, t + i * 0.04, 0.09, sfxGain, "square", 0.18));
+  },
+
+  /** Se acaba el súper poder: tres notas descendentes, suaves. */
+  playPowerDown() {
+    const ctx = ensureContext();
+    if (!ctx) return;
+    duckMusic();
+    const t = ctx.currentTime;
+    [783.99, 659.25, 523.25].forEach((f, i) => playChiptuneNote(f, t + i * 0.09, 0.14, sfxGain, "triangle", 0.2));
+  },
+
   /** Fanfarria breve al llegar a la meta — claramente distinta de
    * superar un obstáculo, sensación de "final de nivel". */
   playVictory() {

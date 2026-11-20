@@ -55,7 +55,7 @@ export function renderCerebrinSaltarin(container, { mode, profile, onExit }) {
       <div class="rest-game-canvas-wrap">
         <canvas class="rest-game-canvas" id="rg-canvas"></canvas>
       </div>
-      <button class="rest-game-jump-arcade-btn" id="rg-jump-btn">SALTAR</button>
+      <button class="rest-game-jump-arcade-btn" id="rg-jump-btn">SALTAR<span class="rg-x2" aria-hidden="true">×2</span></button>
     </div>
   `;
   container.appendChild(box);
@@ -87,6 +87,7 @@ export function renderCerebrinSaltarin(container, { mode, profile, onExit }) {
   GameSounds.startMusic(0.65);
   Voice.say("Salta para esquivar a los animales y coger los premios que vuelan.");
   const startedAt = Date.now();
+  let vitaminExplained = false;
   let summaryShown = false;
 
   const game = new RestGame(canvas, {
@@ -96,6 +97,22 @@ export function renderCerebrinSaltarin(container, { mode, profile, onExit }) {
     onPrizeCollected: () => GameSounds.playPrize(),
     onPrizeMissed: () => {}, // penalización silenciosa: no hace falta un sonido específico, ya se ve reflejado en los puntos
     onGoalReached: () => GameSounds.playVictory(),
+    // Vitamina: sonido de power-up, el botón SALTAR se vuelve dorado con
+    // un "×2" mientras dura, y Cerebrín explica el poder (solo la primera
+    // vez en cada partida, para no repetirse).
+    onPowerUp: () => {
+      GameSounds.playPowerUp();
+      jumpBtn.classList.add("powered");
+      if (!vitaminExplained) {
+        vitaminExplained = true;
+        Voice.say("¡Una vitamina! Ahora puedes dar un doble salto: pulsa saltar otra vez en el aire.");
+      }
+    },
+    onDoubleJump: () => GameSounds.playDoubleJump(),
+    onPowerDown: () => {
+      GameSounds.playPowerDown();
+      jumpBtn.classList.remove("powered");
+    },
     // Refuerzo hablado puntual, nunca continuo — como pide el diseño.
     onNearGoal: () => Voice.say("¡Ya falta poquito!"),
     onAlmostThere: () => Voice.say("¡Lo estás haciendo muy bien!"),
