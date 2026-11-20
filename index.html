@@ -30,6 +30,10 @@
 
   <!-- Pantalla principal (solo lo esencial para Óscar) — fondo propio, distinto al resto -->
   <section class="screen home-screen-bg" id="screen-home">
+    <!-- Fondo animado "colinas": capa decorativa, solo en la pantalla principal -->
+    <div class="home-bg-fx" aria-hidden="true">
+      <i class="hill h1"></i><i class="hill h2"></i><i class="hill h3"></i><i class="home-bg-grain"></i>
+    </div>
     <img src="assets/mascot/cerebrin.png" alt="" class="home-bg-mascot" aria-hidden="true" />
     <div class="top-bar">
       <div class="row">
@@ -65,8 +69,8 @@
     </div>
     <div class="home-credit-block">
       <p class="home-credit">© Diseñado y programado por Pablo Garaloces 2026</p>
-      <p class="home-version" id="home-version"></p>
     </div>
+    <p class="home-version" id="home-version"></p>
   </section>
 
   <!-- Botón discreto de administración (solo familia, con contraseña) -->

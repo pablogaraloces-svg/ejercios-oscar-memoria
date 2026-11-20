@@ -720,14 +720,21 @@ body.high-contrast .family-title-elegant {
   margin: 0;
   text-align: left;
 }
-/* Versión de la app, justo debajo del crédito: mismo gris, un punto más
-   grande, alineada a la izquierda igual que la línea de arriba. */
+/* Versión de la app: abajo y centrada, sobre las colinas del fondo; algo
+   más grande y más visible que el crédito, pero siempre discreta. */
 .home-version {
-  margin: 3px 0 0;
-  font-size: 0.82rem;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
   color: var(--color-text-soft);
-  opacity: 0.32;
-  text-align: left;
+  opacity: 0.6;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
 }
 
 /* ---------- Burst de celebración emotivo ---------- */
@@ -956,7 +963,9 @@ body.high-contrast .home-screen-bg { background: var(--color-bg); }
   user-select: none;
 }
 @media (orientation: portrait) {
-  .home-bg-mascot { top: 34%; right: -12%; width: 78vw; max-width: 420px; opacity: 0.06; }
+  /* En vertical, Cerebrín de fondo baja a la parte inferior para no quedar
+     detrás de los botones. */
+  .home-bg-mascot { top: auto; bottom: -3%; right: -10%; width: 58vw; max-width: 420px; opacity: 0.06; }
 }
 body.high-contrast .home-bg-mascot { display: none; }
 
@@ -2114,3 +2123,28 @@ body.high-contrast .intro-comencemos {
 @media (prefers-reduced-motion: reduce) {
   .splash-mascot, .intro-mascot, .closing-mascot { animation-iteration-count: 1, 0; }
 }
+
+/* ---------- Pantalla principal: fondo animado "colinas" ---------- */
+/* Tres capas de montes suaves (lejano azulado, medio y cercano verde) que
+   se desplazan muy despacio a distinta velocidad (sensación de
+   profundidad), un sol cálido que late arriba a la derecha y un grano fino
+   de papel que evita las bandas de los degradados. Solo se animan
+   transform/opacity (fluido en la tablet) y se detiene con "reducir
+   movimiento". Vive en su propia capa, detrás de todo lo demás. */
+#screen-home { isolation: isolate; }
+.home-bg-fx{position:absolute;inset:0;overflow:hidden;z-index:-2;pointer-events:none}
+.home-bg-fx::before,.home-bg-fx::after{content:"";position:absolute;pointer-events:none}
+/* grano fino de papel: quita las bandas de los degradados en la tablet y da acabado "de estudio" */
+.home-bg-grain{position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.3 0 0 0 0 0.35 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");opacity:.10;mix-blend-mode:multiply;z-index:3}
+body.high-contrast .home-bg-fx{display:none}
+/* Colinas: tres capas de montes suaves (lejano azulado, medio y cercano verde) con deriva lenta a distinta velocidad = profundidad; sol cálido arriba */
+.home-bg-fx{background:radial-gradient(circle at 84% 12%, rgba(255,203,119,.45), rgba(255,203,119,.12) 18%, transparent 34%)}
+.hill{position:absolute;left:0;bottom:0;width:200%;background-repeat:repeat-x;background-position:0 100%;background-size:50% 100%}
+.hill.h1{height:30%;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 200' preserveAspectRatio='none'%3E%3Cpath d='M0,90 C200,20 520,30 720,95 C920,160 1240,150 1440,90 L1440,200 L0,200Z' fill='%237FA8DE' fill-opacity='.20'/%3E%3C/svg%3E");will-change:transform;animation:drift 120s linear infinite}
+.hill.h2{height:22%;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 200' preserveAspectRatio='none'%3E%3Cpath d='M0,110 C300,40 420,40 720,110 C1020,180 1140,180 1440,110 L1440,200 L0,200Z' fill='%237FCC9A' fill-opacity='.26'/%3E%3C/svg%3E");will-change:transform;animation:drift 80s linear infinite reverse}
+.hill.h3{height:15%;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 200' preserveAspectRatio='none'%3E%3Cpath d='M0,120 C260,70 460,60 720,120 C980,180 1180,170 1440,120 L1440,200 L0,200Z' fill='%234F9868' fill-opacity='.24'/%3E%3C/svg%3E");will-change:transform;animation:drift 55s linear infinite}
+.home-bg-fx::before{width:110px;height:110px;right:13%;top:6%;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,214,140,.55), rgba(255,203,119,0) 70%);animation:sun 9s ease-in-out infinite}
+@keyframes drift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes sun{0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.18);opacity:1}}
+@media (prefers-reduced-motion: reduce){.hill,.home-bg-fx::before{animation:none}}
